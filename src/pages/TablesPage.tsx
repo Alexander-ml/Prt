@@ -145,7 +145,7 @@ export const TablesPage: React.FC = () => {
       <PageHeader
         icon="bi-diagram-3-fill"
         title="Áreas y Plano de Mesas"
-        subtitle="Control interactivo de disponibilidad, plano físico de sala, reservas y traslados (RF-25 – RF-38)."
+        subtitle="Control interactivo de disponibilidad, plano físico de sala, reservas y traslados"
         actions={
           isAdmin && (
             <button
@@ -206,7 +206,7 @@ export const TablesPage: React.FC = () => {
           <SectionCard icon="bi-funnel" title="Filtros del Plano de Sala" className="mb-4">
             <div className="row g-3 align-items-center justify-content-between">
               <div className="col-12 col-md-8 d-flex flex-wrap gap-1.5 align-items-center">
-                <span className="fs-7 text-muted fw-semibold me-2">Área (RF-33):</span>
+                <span className="fs-7 text-muted fw-semibold me-2">Área:</span>
                 <button
                   className={`btn btn-sm text-nowrap fw-semibold ${selectedAreaFilter === 'todas' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
                   style={{ borderRadius: 8 }}
@@ -311,14 +311,14 @@ export const TablesPage: React.FC = () => {
           <div className="col-12 col-lg-5">
             <SectionCard
               icon="bi-geo-alt-fill"
-              title="Áreas Configuradas (RF-28)"
+              title="Áreas Configuradas"
               actions={
                 <button
                   className="btn-brand btn btn-sm fw-semibold"
                   style={{ borderRadius: 8 }}
                   onClick={() => { setEditingArea(null); setAreaFormData({ name: '', description: '' }); setIsAreaModalOpen(true); }}
                 >
-                  <i className="bi bi-plus-lg me-1"></i> Nueva Área (RF-25)
+                  <i className="bi bi-plus-lg me-1"></i> Nueva Área
                 </button>
               }
             >
@@ -360,7 +360,7 @@ export const TablesPage: React.FC = () => {
               noPadding
               actions={
                 <button className="btn-brand btn btn-sm fw-semibold" style={{ borderRadius: 8 }} onClick={openNewTableModal}>
-                  <i className="bi bi-plus-lg me-1"></i> Nueva Mesa (RF-29)
+                  <i className="bi bi-plus-lg me-1"></i> Nueva Mesa
                 </button>
               }
             >
@@ -434,7 +434,7 @@ export const TablesPage: React.FC = () => {
                   }}
                 >
                   <div>
-                    <div className="fw-bold">Ocupar y Tomar Pedido (RF-34, RF-39)</div>
+                    <div className="fw-bold">Ocupar y Tomar Pedido</div>
                     <small className="opacity-75">Cambia a Ocupada e inicia toma de comandas</small>
                   </div>
                   <i className="bi bi-plus-circle-fill fs-3"></i>
@@ -448,7 +448,7 @@ export const TablesPage: React.FC = () => {
                   }}
                 >
                   <div>
-                    <div className="fw-bold">Registrar Reserva Manual (RF-35)</div>
+                    <div className="fw-bold">Registrar Reserva Manual</div>
                     <small style={{ color: 'var(--text-muted)' }}>Anota nombre de cliente y hora prevista</small>
                   </div>
                   <i className="bi bi-bookmark-plus-fill text-warning fs-4"></i>
@@ -478,7 +478,7 @@ export const TablesPage: React.FC = () => {
                   }}
                 >
                   <div>
-                    <div className="fw-bold">Trasladar Pedido a Otra Mesa (RF-38)</div>
+                    <div className="fw-bold">Trasladar Pedido a Otra Mesa</div>
                     <small style={{ color: 'var(--text-muted)' }}>Mueve la comanda a una mesa disponible</small>
                   </div>
                   <i className="bi bi-arrow-right-square-fill fs-4"></i>
@@ -489,7 +489,7 @@ export const TablesPage: React.FC = () => {
                   onClick={() => navigate('/ventas', { state: { billTableId: selectedTableForAction.id } })}
                 >
                   <div>
-                    <div className="fw-bold">Generar Cuenta y Cobrar (RF-56, RF-59)</div>
+                    <div className="fw-bold">Generar Cuenta y Cobrar</div>
                     <small style={{ color: 'var(--text-muted)' }}>Proceder a la división y cierre de venta</small>
                   </div>
                   <i className="bi bi-cash-coin fs-4"></i>
@@ -499,7 +499,7 @@ export const TablesPage: React.FC = () => {
 
             {/* Common Status Controls (RF-36) */}
             <div className="p-3 rounded-3 border mt-2" style={{ background: 'var(--surface-muted)' }}>
-              <label className="form-label fw-bold mb-2" style={{ color: 'var(--text-primary)' }}>Cambiar Estado Manualmente (RF-36):</label>
+              <label className="form-label fw-bold mb-2" style={{ color: 'var(--text-primary)' }}>Cambiar Estado Manualmente:</label>
               <div className="d-flex flex-wrap gap-2">
                 <button
                   className="btn btn-sm btn-outline-success fw-semibold"
@@ -538,7 +538,7 @@ export const TablesPage: React.FC = () => {
               style={{ color: 'var(--color-brand)' }}
               onClick={() => { setTargetJoinTableId(''); setIsJoinModalOpen(true); }}
             >
-              <i className="bi bi-link-45deg me-1"></i> Unir esta mesa con otra para grupos (RF-37)
+              <i className="bi bi-link-45deg me-1"></i> Unir esta mesa con otra para grupos
             </button>
           </div>
         </Modal>
@@ -585,7 +585,7 @@ export const TablesPage: React.FC = () => {
       <Modal
         isOpen={isJoinModalOpen}
         onClose={() => setIsJoinModalOpen(false)}
-        title={`Unir Mesa #${selectedTableForAction?.number} con otra mesa (RF-37)`}
+        title={`Unir Mesa #${selectedTableForAction?.number} con otra mesa`}
       >
         <form onSubmit={handleJoinSubmit}>
           <div className="mb-4">
@@ -618,7 +618,7 @@ export const TablesPage: React.FC = () => {
       <Modal
         isOpen={isTransferModalOpen}
         onClose={() => setIsTransferModalOpen(false)}
-        title={`Trasladar Pedido de Mesa #${selectedTableForAction?.number} (RF-38)`}
+        title={`Trasladar Pedido de Mesa #${selectedTableForAction?.number}`}
       >
         <form onSubmit={handleTransferSubmit}>
           <div className="mb-4">
@@ -651,7 +651,7 @@ export const TablesPage: React.FC = () => {
       <Modal
         isOpen={isAreaModalOpen}
         onClose={() => setIsAreaModalOpen(false)}
-        title={editingArea ? 'Editar Área (RF-26)' : 'Crear Área (RF-25)'}
+        title={editingArea ? 'Editar Área' : 'Crear Área'}
       >
         <form onSubmit={handleAreaSubmit}>
           <div className="mb-3">
@@ -690,7 +690,7 @@ export const TablesPage: React.FC = () => {
           isOpen={!!deletingArea}
           onClose={() => setDeletingArea(null)}
           onConfirm={() => deleteArea(deletingArea.id)}
-          title="Eliminar Área (RF-27)"
+          title="Eliminar Área"
           message={`¿Desea eliminar el área "${deletingArea.name}"? Solo es posible eliminar áreas sin mesas asignadas.`}
           variant="danger"
         />
@@ -700,7 +700,7 @@ export const TablesPage: React.FC = () => {
       <Modal
         isOpen={isTableModalOpen}
         onClose={() => setIsTableModalOpen(false)}
-        title={editingTable ? 'Editar Mesa (RF-30)' : 'Crear Nueva Mesa (RF-29)'}
+        title={editingTable ? 'Editar Mesa' : 'Crear Nueva Mesa'}
       >
         <form onSubmit={handleTableSubmit}>
           <div className="row g-3 mb-3">
@@ -755,7 +755,7 @@ export const TablesPage: React.FC = () => {
           isOpen={!!deletingTable}
           onClose={() => setDeletingTable(null)}
           onConfirm={() => deleteTable(deletingTable.id)}
-          title="Eliminar Mesa (RF-31)"
+          title="Eliminar Mesa"
           message={`¿Desea eliminar la Mesa #${deletingTable.number}?`}
           variant="danger"
         />

@@ -116,7 +116,7 @@ export const SalesPage: React.FC = () => {
       <PageHeader
         icon="bi-cash-coin"
         title="Ventas, Cobro y Facturación"
-        subtitle="Resumen de cuenta, descuentos, división de pago, comprobantes y reportes de ventas (RF-56 – RF-65)."
+        subtitle="Resumen de cuenta, descuentos, división de pago, comprobantes y reportes de ventas."
         actions={
           <div className="d-flex gap-2">
             <button
@@ -143,7 +143,7 @@ export const SalesPage: React.FC = () => {
           <div className="col-12 col-lg-7">
             <SectionCard
               icon="bi-receipt"
-              title="1. Resumen de Cuenta de Mesa (RF-56)"
+              title="1. Resumen de Cuenta de Mesa"
             >
               <div className="mb-4">
                 <label className="form-label">Mesa a liquidar</label>
@@ -195,7 +195,7 @@ export const SalesPage: React.FC = () => {
                   <div className="p-3 rounded-3 mb-3" style={{ background: 'var(--color-brand-light)', border: '1px solid var(--color-brand-subtle)' }}>
                     <label className="form-label fw-bold" style={{ color: 'var(--color-brand)' }}>
                       <i className="bi bi-tag-fill me-1"></i>
-                      Aplicar Promoción Vigente (RF-57)
+                      Aplicar Promoción Vigente
                     </label>
                     <select
                       className="form-select"
@@ -219,7 +219,7 @@ export const SalesPage: React.FC = () => {
                   >
                     <div>
                       <div className="fw-bold" style={{ fontSize: '0.875rem', color: '#5b21b6' }}>
-                        División de Cuenta (RF-58)
+                        División de Cuenta
                       </div>
                       <small style={{ color: '#7c3aed' }}>
                         Dividir en {splitCount} partes iguales — S/ {(totalAmount / splitCount).toFixed(2)} c/u
@@ -246,7 +246,7 @@ export const SalesPage: React.FC = () => {
 
           {/* Right: Total & Payment */}
           <div className="col-12 col-lg-5">
-            <SectionCard icon="bi-wallet2" title="2. Detalle de Cobro y Cierre (RF-59, RF-60)">
+            <SectionCard icon="bi-wallet2" title="2. Detalle de Cobro y Cierre">
               <div className="d-flex flex-column gap-2 mb-4">
                 <div className="d-flex justify-content-between" style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
                   <span>Subtotal consumo:</span>
@@ -272,7 +272,7 @@ export const SalesPage: React.FC = () => {
 
               {/* Payment Method RF-59 */}
               <div className="mb-4">
-                <label className="form-label fw-bold">Forma de Pago (RF-59)</label>
+                <label className="form-label fw-bold">Forma de Pago</label>
                 <div className="d-flex gap-2">
                   {([
                     { id: 'efectivo', icon: 'bi-cash', label: 'Efectivo' },
@@ -307,7 +307,7 @@ export const SalesPage: React.FC = () => {
                 onClick={handleConfirmCheckout}
               >
                 <i className="bi bi-check-circle-fill me-2"></i>
-                Confirmar Cierre de Venta (RF-60)
+                Confirmar Cierre de Venta
               </button>
             </SectionCard>
           </div>
@@ -357,7 +357,7 @@ export const SalesPage: React.FC = () => {
 
           {/* Top dishes RF-63 */}
           {topDishes.length > 0 && (
-            <SectionCard icon="bi-trophy-fill" title="Platos Más Vendidos (RF-63)">
+            <SectionCard icon="bi-trophy-fill" title="Platos Más Vendidos">
               <div className="d-flex flex-column gap-2">
                 {topDishes.map(([dish, qty], i) => {
                   const max = topDishes[0][1];
@@ -405,15 +405,15 @@ export const SalesPage: React.FC = () => {
           {/* Filter + Export */}
           <SectionCard
             icon="bi-funnel"
-            title="Historial de Ventas (RF-62)"
+            title="Historial de Ventas"
             actions={
               isAdmin && (
                 <button
                   className="btn btn-sm btn-outline-primary fw-semibold"
                   style={{ borderRadius: 8, fontSize: '0.78rem' }}
-                  onClick={() => alert('RF-64: Reporte exportado en Excel/PDF.')}
+                  onClick={() => alert('Reporte exportado en Excel/PDF.')}
                 >
-                  <i className="bi bi-download me-1"></i> Exportar (RF-64)
+                  <i className="bi bi-download me-1"></i> Exportar
                 </button>
               )
             }
@@ -487,7 +487,7 @@ export const SalesPage: React.FC = () => {
                         <div className="d-inline-flex gap-1">
                           <button
                             className="btn-icon btn-icon-primary"
-                            title="Imprimir Comprobante (RF-61)"
+                            title="Imprimir Comprobante"
                             onClick={() => setViewReceiptSale(sale)}
                           >
                             <i className="bi bi-printer-fill"></i>
@@ -495,7 +495,7 @@ export const SalesPage: React.FC = () => {
                           {isAdmin && !sale.isCancelled && (
                             <button
                               className="btn-icon btn-icon-danger"
-                              title="Anular Venta (RF-65)"
+                              title="Anular Venta"
                               onClick={() => setCancelSaleObj(sale)}
                             >
                               <i className="bi bi-x-circle-fill"></i>
@@ -516,7 +516,7 @@ export const SalesPage: React.FC = () => {
       )}
 
       {/* Split Bill Modal */}
-      <Modal isOpen={isSplitModalOpen} onClose={() => setIsSplitModalOpen(false)} title="División de Cuenta (RF-58)">
+      <Modal isOpen={isSplitModalOpen} onClose={() => setIsSplitModalOpen(false)} title="División de Cuenta">
         <div className="mb-3">
           <label className="form-label fw-bold">Número de Comensales</label>
           <div className="d-flex align-items-center gap-3">
@@ -552,7 +552,7 @@ export const SalesPage: React.FC = () => {
 
       {/* Receipt Modal RF-61 */}
       {viewReceiptSale && (
-        <Modal isOpen={!!viewReceiptSale} onClose={() => setViewReceiptSale(null)} title={`Comprobante ${viewReceiptSale.id} (RF-61)`} size="sm">
+        <Modal isOpen={!!viewReceiptSale} onClose={() => setViewReceiptSale(null)} title={`Comprobante ${viewReceiptSale.id}`} size="sm">
           <div
             className="p-3 rounded-3 text-center"
             style={{ fontFamily: 'monospace', background: '#fafafa', border: '1px solid var(--border-color)', fontSize: '0.82rem' }}

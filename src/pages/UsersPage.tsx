@@ -102,7 +102,7 @@ export const UsersPage: React.FC = () => {
       <PageHeader
         icon="bi-people-fill"
         title="Personal y Usuarios"
-        subtitle="Alta, edición, activación y control de acceso del personal del restaurante (RF-01 – RF-07)."
+        subtitle="Alta, edición, activación y control de acceso del personal del restaurante."
         actions={
           <button
             className="btn-brand btn fw-semibold"
@@ -153,11 +153,11 @@ export const UsersPage: React.FC = () => {
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Buscar personal por nombre o correo (RF-05)..."
+              placeholder="Buscar personal por nombre o correo..."
             />
           </div>
           <div className="col-12 col-md-6 d-flex align-items-center justify-content-md-end gap-2">
-            <label className="fs-7 text-muted fw-semibold me-1">Filtrar por Rol (RF-06):</label>
+            <label className="fs-7 text-muted fw-semibold me-1">Filtrar por Rol:</label>
             <select
               className="form-select form-select-sm w-auto fw-semibold"
               style={{ borderRadius: 8 }}
@@ -245,21 +245,21 @@ export const UsersPage: React.FC = () => {
                         <div className="d-inline-flex gap-1">
                           <button
                             className="btn-icon btn-icon-primary"
-                            title="Editar datos (RF-02)"
+                            title="Editar datos"
                             onClick={() => handleOpenEditModal(user)}
                           >
                             <i className="bi bi-pencil-fill"></i>
                           </button>
                           <button
                             className="btn-icon"
-                            title="Restablecer Contraseña (RF-03)"
+                            title="Restablecer Contraseña"
                             onClick={() => resetUserPassword(user.id)}
                           >
                             <i className="bi bi-key-fill"></i>
                           </button>
                           <button
                             className={`btn-icon ${user.active ? 'btn-icon-danger' : 'btn-icon-success'}`}
-                            title={user.active ? 'Desactivar Cuenta (RF-04)' : 'Activar Cuenta'}
+                            title={user.active ? 'Desactivar Cuenta' : 'Activar Cuenta'}
                             onClick={() => setConfirmUser(user)}
                           >
                             <i className={`bi ${user.active ? 'bi-person-slash' : 'bi-person-check-fill'}`}></i>
@@ -279,7 +279,7 @@ export const UsersPage: React.FC = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingUser ? 'Editar Datos de Personal (RF-02)' : 'Registrar Nuevo Personal (RF-01)'}
+        title={editingUser ? 'Editar Datos de Personal' : 'Registrar Nuevo Personal'}
         subtitle="Asigna identidad y rol propio a los miembros del equipo."
       >
         <form onSubmit={handleSubmit}>

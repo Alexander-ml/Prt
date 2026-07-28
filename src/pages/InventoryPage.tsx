@@ -489,7 +489,7 @@ export const InventoryPage: React.FC = () => {
                 onClick={() => setIsRestock(true)}
               >
                 <i className="bi bi-box-arrow-in-down me-1" />
-                Ingreso (RF-68)
+                Ingreso
               </button>
               <button
                 type="button"
@@ -498,7 +498,7 @@ export const InventoryPage: React.FC = () => {
                 onClick={() => setIsRestock(false)}
               >
                 <i className="bi bi-box-arrow-up me-1" />
-                Consumo / Ajuste (RF-69)
+                Consumo / Ajuste
               </button>
             </div>
           </div>

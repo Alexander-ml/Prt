@@ -72,7 +72,7 @@ export const KitchenPage: React.FC = () => {
       {/* Page Header */}
       <PageHeader
         icon="bi-display-fill"
-        title="Cocina — Kitchen Display System (KDS)"
+        title="Cocina - Kitchen Display System (KDS)"
         subtitle="Control de comandas en tiempo real, tiempos de preparación y disponibilidad de platos."
         actions={
           <button
@@ -84,17 +84,6 @@ export const KitchenPage: React.FC = () => {
           </button>
         }
       />
-
-      {/* Role Warning Banner */}
-      {currentRole !== 'Cocina' && (
-        <div className="alert alert-warning rounded-3 d-flex align-items-center gap-2 mb-4">
-          <i className="bi bi-info-circle-fill fs-5 flex-shrink-0"></i>
-          <span>
-            Estás visualizando el KDS como <strong>{currentRole}</strong>. Puedes cambiar al rol{' '}
-            <strong>Cocina</strong> desde el menú superior para simular la operación directa del chef.
-          </span>
-        </div>
-      )}
 
       {/* Summary Stats Row */}
       <div className="row g-3 mb-4">

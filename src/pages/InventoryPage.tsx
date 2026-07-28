@@ -1,10 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import type { Insumo } from '../types';
+import { PageHeader } from '../components/common/PageHeader';
+import { SectionCard } from '../components/common/SectionCard';
+import { StatCard } from '../components/common/StatCard';
 import { SearchBar } from '../components/common/SearchBar';
 import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { EmptyState } from '../components/common/EmptyState';
+
+const CATEGORIES = ['todas', 'Carnes', 'Mariscos', 'Licores', 'Abarrotes', 'Lácteos', 'Verduras'];
 
 export const InventoryPage: React.FC = () => {
   const {
@@ -119,167 +124,252 @@ export const InventoryPage: React.FC = () => {
   }
 
   return (
-    <div className="container-fluid p-0">
-      {/* Header Title */}
-      <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
-        <div>
-          <h4 className="fw-bold text-dark mb-1">
-            <i className="bi bi-boxes text-primary me-2"></i>
-            Gestión de Inventario y Stock de Insumos
-          </h4>
-          <p className="text-muted fs-7 mb-0">
-            Control de insumos disponibles, alertas de reposición e ingresos/consumos (RF-66 - RF-72).
-          </p>
+    <div className="container-fluid p-0 animate-fadeinup">
+
+      {/* ── Page Header ── */}
+      <PageHeader
+        icon="bi-boxes"
+        title="Inventario e Insumos"
+        subtitle="Control de insumos disponibles, alertas de reposición y movimientos de stock (RF-66 – RF-72)."
+        actions={
+          <button
+            className="btn btn-brand fw-semibold"
+            onClick={() => handleOpenModal()}
+            aria-label="Registrar nuevo insumo"
+          >
+            <i className="bi bi-plus-lg me-2" />
+            Registrar Insumo
+          </button>
+        }
+      />
+
+      {/* ── Stat Cards Row ── */}
+      <div className="row g-3 mb-4 stagger-children">
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="Total Insumos"
+            value={insumos.length}
+            icon="bi-boxes"
+            colorTheme="indigo"
+          />
         </div>
-        <button className="btn btn-brand btn-md fw-semibold shadow-sm" onClick={() => handleOpenModal()}>
-          <i className="bi bi-plus-lg me-1.5"></i> Registrar Insumo (RF-66)
-        </button>
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="Bajo Stock Mínimo"
+            value={lowStockInsumos.length}
+            icon="bi-exclamation-triangle-fill"
+            colorTheme="rose"
+          />
+        </div>
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="Stock Suficiente"
+            value={insumos.length - lowStockInsumos.length}
+            icon="bi-shield-check"
+            colorTheme="emerald"
+          />
+        </div>
       </div>
 
-      {/* Low Stock Alerts Banner (RF-72) */}
+      {/* ── Low Stock Alert Banner (RF-72) ── */}
       {lowStockInsumos.length > 0 && (
-        <div className="alert alert-danger bg-danger-subtle border-danger-subtle text-danger-emphasis rounded-3 p-3 mb-4 shadow-sm">
-          <div className="d-flex align-items-center gap-2 mb-1">
-            <i className="bi bi-exclamation-octagon-fill fs-5 text-danger"></i>
-            <strong className="fs-6">Alerta de Insumos con Disponibilidad Baja (RF-72)</strong>
+        <div className="alert alert-danger border-danger-subtle rounded-3 p-3 mb-4 shadow-sm">
+          <div className="d-flex align-items-center gap-2 mb-2">
+            <i className="bi bi-exclamation-octagon-fill fs-5 text-danger" />
+            <strong className="fs-7">
+              Alerta de Reposición Urgente (RF-72) —{' '}
+              {lowStockInsumos.length} insumo{lowStockInsumos.length > 1 ? 's' : ''} por debajo del mínimo
+            </strong>
           </div>
-          <p className="fs-7 mb-2">Los siguientes insumos requieren reposición urgente para evitar quiebres de stock en cocina:</p>
           <div className="d-flex flex-wrap gap-2">
             {lowStockInsumos.map(ins => (
-              <span key={ins.id} className="badge bg-danger text-white fs-7 px-3 py-1.5 rounded-pill">
-                {ins.name}: {ins.currentStock} {ins.unit} (Mín: {ins.minStock} {ins.unit})
+              <span
+                key={ins.id}
+                className="badge rounded-pill fs-7"
+                style={{ background: '#dc3545', color: '#fff', padding: '5px 12px' }}
+              >
+                {ins.name}: {ins.currentStock} / {ins.minStock} {ins.unit}
               </span>
             ))}
           </div>
         </div>
       )}
 
-      {/* Search & Category Filter Card (RF-70) */}
-      <div className="card glass-card border-0 mb-4 p-3">
+      {/* ── Filter Bar ── */}
+      <SectionCard className="mb-4">
         <div className="row g-3 align-items-center">
-          <div className="col-12 col-md-6">
+          <div className="col-12 col-md-5">
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
               placeholder="Buscar insumo por nombre (RF-70)..."
             />
           </div>
-          <div className="col-12 col-md-6 d-flex align-items-center justify-content-md-end gap-2">
-            <label className="fs-7 text-muted fw-semibold me-1">Categoría de Insumo:</label>
-            <select
-              className="form-select form-select-sm w-auto rounded-3 border-secondary-subtle fw-medium shadow-none"
-              value={selectedCategory}
-              onChange={e => setSelectedCategory(e.target.value)}
-            >
-              <option value="todas">Todas las Categorías</option>
-              <option value="Carnes">Carnes</option>
-              <option value="Mariscos">Mariscos</option>
-              <option value="Licores">Licores</option>
-              <option value="Abarrotes">Abarrotes</option>
-              <option value="Lácteos">Lácteos</option>
-              <option value="Verduras">Verduras</option>
-            </select>
+          <div className="col-12 col-md-7 d-flex align-items-center justify-content-md-end gap-2 flex-wrap">
+            <span className="fs-7 text-muted fw-semibold me-1">Categoría:</span>
+            <ul className="nav nav-pills gap-1 flex-wrap mb-0">
+              {CATEGORIES.map(cat => (
+                <li className="nav-item" key={cat}>
+                  <button
+                    className={`nav-link py-1 px-3 fs-7${selectedCategory === cat ? ' active' : ''}`}
+                    onClick={() => setSelectedCategory(cat)}
+                    style={{ borderRadius: 20, fontWeight: 500 }}
+                  >
+                    {cat === 'todas' ? 'Todas' : cat}
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-      </div>
+      </SectionCard>
 
-      {/* Insumos Data Table (RF-71) */}
-      <div className="custom-table-container">
-        <table className="custom-table">
-          <thead>
-            <tr>
-              <th>Nombre del Insumo</th>
-              <th>Categoría</th>
-              <th>Stock Actual (RF-71)</th>
-              <th>Stock Mínimo</th>
-              <th>Costo Aprox. Un.</th>
-              <th>Última Reposición</th>
-              <th>Estado Stock</th>
-              <th className="text-end">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredInsumos.map(ins => {
-              const isLow = ins.currentStock <= ins.minStock;
-
-              return (
-                <tr key={ins.id}>
-                  <td>
-                    <div className="fw-bold text-dark">{ins.name}</div>
-                  </td>
-                  <td>
-                    <span className="badge bg-secondary-subtle text-secondary">{ins.category}</span>
-                  </td>
-                  <td>
-                    <span className={`fw-bold fs-6 ${isLow ? 'text-danger' : 'text-dark'}`}>
-                      {ins.currentStock} {ins.unit}
-                    </span>
-                  </td>
-                  <td><span className="text-muted">{ins.minStock} {ins.unit}</span></td>
-                  <td>S/ {ins.costPerUnit.toFixed(2)} / {ins.unit}</td>
-                  <td><small className="text-muted">{ins.lastRestockDate}</small></td>
-                  <td>
-                    <Badge
-                      status={isLow ? 'STOCK BAJO' : 'OK'}
-                      variant={isLow ? 'danger' : 'success'}
-                    />
-                  </td>
-                  <td className="text-end">
-                    <div className="d-inline-flex gap-1">
-                      <button
-                        className="btn btn-sm btn-light border text-success"
-                        title="Registrar Ingreso/Ajuste (RF-68, RF-69)"
-                        onClick={() => {
-                          setTargetInsumo(ins);
-                          setMovementQty(5);
-                          setIsRestock(true);
-                          setIsMovementModalOpen(true);
-                        }}
-                      >
-                        <i className="bi bi-box-arrow-in-down"></i> Movimiento
-                      </button>
-
-                      <button
-                        className="btn btn-sm btn-light border text-primary"
-                        title="Editar Insumo (RF-67)"
-                        onClick={() => handleOpenModal(ins)}
-                      >
-                        <i className="bi bi-pencil-square"></i>
-                      </button>
-                    </div>
-                  </td>
+      {/* ── Main Table ── */}
+      <SectionCard noPadding>
+        <div className="table-responsive-x">
+          <div className="custom-table-container">
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  <th>Insumo</th>
+                  <th>Categoría</th>
+                  <th>Stock Actual</th>
+                  <th>Mín. Reposición</th>
+                  <th>Costo Un.</th>
+                  <th style={{ minWidth: 160 }}>Disponibilidad</th>
+                  <th>Última Reposición</th>
+                  <th className="text-end">Acciones</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {filteredInsumos.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="text-center py-5 text-muted fs-7">
+                      <i className="bi bi-inbox fs-3 d-block mb-2 opacity-50" />
+                      No se encontraron insumos con los filtros actuales.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredInsumos.map(ins => {
+                    const isLow = ins.currentStock <= ins.minStock;
 
-      {/* Insumo Modal (RF-66, RF-67) */}
+                    // Disponibilidad progress bar (requirement #7)
+                    const stockRatio = ins.minStock > 0 ? ins.currentStock / (ins.minStock * 2) : 1;
+                    const pct = Math.min(100, Math.round(stockRatio * 100));
+                    const fillClass = pct < 50 ? 'critical' : pct < 80 ? 'low' : 'ok';
+
+                    return (
+                      <tr key={ins.id}>
+                        <td>
+                          <div className="fw-bold text-dark">{ins.name}</div>
+                        </td>
+                        <td>
+                          <span className="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1">
+                            {ins.category}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className="fw-bold fs-7"
+                            style={{ color: isLow ? '#dc3545' : 'inherit' }}
+                          >
+                            {ins.currentStock} {ins.unit}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="text-muted fs-7">
+                            {ins.minStock} {ins.unit}
+                          </span>
+                        </td>
+                        <td className="fs-7">
+                          S/ {ins.costPerUnit.toFixed(2)} / {ins.unit}
+                        </td>
+                        <td>
+                          <div className="stock-progress-bar">
+                            <div
+                              className={`stock-progress-fill ${fillClass}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <div
+                            className="fs-7 mt-1"
+                            style={{
+                              color: fillClass === 'critical' ? '#dc3545'
+                                : fillClass === 'low' ? '#d97706'
+                                : '#10b981',
+                              fontWeight: 600
+                            }}
+                          >
+                            {pct}% del óptimo
+                          </div>
+                        </td>
+                        <td>
+                          <small className="text-muted">{ins.lastRestockDate}</small>
+                        </td>
+                        <td className="text-end">
+                          <div className="btn-icon d-inline-flex gap-1">
+                            <button
+                              className="btn-icon-success"
+                              title="Registrar Movimiento de Stock (RF-68, RF-69)"
+                              aria-label={`Registrar movimiento para ${ins.name}`}
+                              onClick={() => {
+                                setTargetInsumo(ins);
+                                setMovementQty(5);
+                                setIsRestock(true);
+                                setIsMovementModalOpen(true);
+                              }}
+                            >
+                              <i className="bi bi-box-arrow-in-down" />
+                            </button>
+                            <button
+                              className="btn-icon-primary"
+                              title="Editar Insumo (RF-67)"
+                              aria-label={`Editar insumo ${ins.name}`}
+                              onClick={() => handleOpenModal(ins)}
+                            >
+                              <i className="bi bi-pencil-square" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* ── Insumo Modal (RF-66, RF-67) ── */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingInsumo ? 'Editar Insumo (RF-67)' : 'Registrar Nuevo Insumo (RF-66)'}
       >
         <form onSubmit={handleSubmitInsumo}>
+          {/* Nombre */}
           <div className="mb-3">
             <label className="form-label fs-7 fw-semibold text-dark">Nombre del Insumo *</label>
             <input
               type="text"
-              className="form-control rounded-3"
+              className="form-control"
               placeholder="Ej. Lomo Fino de Res"
               required
               value={formData.name}
+              style={{ borderRadius: 8 }}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
             />
           </div>
 
+          {/* Unidad + Categoría */}
           <div className="row g-3 mb-3">
             <div className="col-6">
               <label className="form-label fs-7 fw-semibold text-dark">Unidad de Medida *</label>
               <select
-                className="form-select rounded-3"
+                className="form-select"
                 value={formData.unit}
+                style={{ borderRadius: 8 }}
                 onChange={e => setFormData({ ...formData, unit: e.target.value })}
               >
                 <option value="Kg">Kilogramos (Kg)</option>
@@ -292,8 +382,9 @@ export const InventoryPage: React.FC = () => {
             <div className="col-6">
               <label className="form-label fs-7 fw-semibold text-dark">Categoría *</label>
               <select
-                className="form-select rounded-3"
+                className="form-select"
                 value={formData.category}
+                style={{ borderRadius: 8 }}
                 onChange={e => setFormData({ ...formData, category: e.target.value })}
               >
                 <option value="Carnes">Carnes</option>
@@ -306,6 +397,7 @@ export const InventoryPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Numeric fields */}
           <div className="row g-3 mb-4">
             <div className="col-4">
               <label className="form-label fs-7 fw-semibold text-dark">Stock Inicial</label>
@@ -313,9 +405,10 @@ export const InventoryPage: React.FC = () => {
                 type="number"
                 min="0"
                 step="0.5"
-                className="form-control rounded-3"
+                className="form-control"
                 required
                 value={formData.currentStock}
+                style={{ borderRadius: 8 }}
                 onChange={e => setFormData({ ...formData, currentStock: parseFloat(e.target.value) || 0 })}
               />
             </div>
@@ -325,9 +418,10 @@ export const InventoryPage: React.FC = () => {
                 type="number"
                 min="1"
                 step="0.5"
-                className="form-control rounded-3"
+                className="form-control"
                 required
                 value={formData.minStock}
+                style={{ borderRadius: 8 }}
                 onChange={e => setFormData({ ...formData, minStock: parseFloat(e.target.value) || 1 })}
               />
             </div>
@@ -337,64 +431,114 @@ export const InventoryPage: React.FC = () => {
                 type="number"
                 min="0"
                 step="0.5"
-                className="form-control rounded-3"
+                className="form-control"
                 required
                 value={formData.costPerUnit}
+                style={{ borderRadius: 8 }}
                 onChange={e => setFormData({ ...formData, costPerUnit: parseFloat(e.target.value) || 0 })}
               />
             </div>
           </div>
 
-          <div className="d-flex justify-content-end gap-2 border-top pt-2">
-            <button type="button" className="btn btn-light" onClick={() => setIsModalOpen(false)}>Cancelar</button>
-            <button type="submit" className="btn btn-brand fw-semibold">Guardar Insumo</button>
+          <div className="d-flex justify-content-end gap-2 border-top pt-3">
+            <button type="button" className="btn btn-light" onClick={() => setIsModalOpen(false)}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn-brand fw-semibold">
+              <i className="bi bi-check2 me-1" />
+              Guardar Insumo
+            </button>
           </div>
         </form>
       </Modal>
 
-      {/* Movement Modal (RF-68, RF-69) */}
+      {/* ── Movement Modal (RF-68, RF-69) ── */}
       <Modal
         isOpen={isMovementModalOpen}
         onClose={() => setIsMovementModalOpen(false)}
         title={`Movimiento de Stock: ${targetInsumo?.name}`}
       >
         <form onSubmit={handleMovementSubmit}>
+          {/* Insumo summary card */}
+          {targetInsumo && (
+            <div
+              className="rounded-3 p-3 mb-4 d-flex align-items-center gap-3"
+              style={{ background: 'var(--bs-secondary-bg, #f8f9fa)' }}
+            >
+              <div
+                className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style={{ width: 44, height: 44, background: '#e0e7ff' }}
+              >
+                <i className="bi bi-boxes" style={{ color: '#4f46e5', fontSize: 20 }} />
+              </div>
+              <div>
+                <div className="fw-bold text-dark">{targetInsumo.name}</div>
+                <div className="fs-7 text-muted">
+                  Stock actual:{' '}
+                  <span
+                    className="fw-semibold"
+                    style={{
+                      color: targetInsumo.currentStock <= targetInsumo.minStock ? '#dc3545' : '#10b981'
+                    }}
+                  >
+                    {targetInsumo.currentStock} {targetInsumo.unit}
+                  </span>
+                  {' '}· Mínimo: {targetInsumo.minStock} {targetInsumo.unit}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tipo de movimiento */}
           <div className="mb-3">
             <label className="form-label fs-7 fw-semibold text-dark">Tipo de Movimiento</label>
             <div className="d-flex gap-2">
               <button
                 type="button"
                 className={`btn flex-grow-1 ${isRestock ? 'btn-success text-white' : 'btn-outline-secondary'}`}
+                style={{ borderRadius: 8 }}
                 onClick={() => setIsRestock(true)}
               >
-                <i className="bi bi-box-arrow-in-down me-1"></i> Ingreso de Reposición (RF-68)
+                <i className="bi bi-box-arrow-in-down me-1" />
+                Ingreso (RF-68)
               </button>
               <button
                 type="button"
                 className={`btn flex-grow-1 ${!isRestock ? 'btn-warning text-dark' : 'btn-outline-secondary'}`}
+                style={{ borderRadius: 8 }}
                 onClick={() => setIsRestock(false)}
               >
-                <i className="bi bi-box-arrow-up me-1"></i> Consumo / Ajuste (RF-69)
+                <i className="bi bi-box-arrow-up me-1" />
+                Consumo / Ajuste (RF-69)
               </button>
             </div>
           </div>
 
+          {/* Cantidad */}
           <div className="mb-4">
-            <label className="form-label fs-7 fw-semibold text-dark">Cantidad ({targetInsumo?.unit}) *</label>
+            <label className="form-label fs-7 fw-semibold text-dark">
+              Cantidad ({targetInsumo?.unit}) *
+            </label>
             <input
               type="number"
               step="0.5"
               min="0.1"
-              className="form-control form-control-lg rounded-3 fw-bold text-center"
+              className="form-control form-control-lg fw-bold text-center"
               required
               value={movementQty}
+              style={{ borderRadius: 8 }}
               onChange={e => setMovementQty(parseFloat(e.target.value) || 0)}
             />
           </div>
 
-          <div className="d-flex justify-content-end gap-2 border-top pt-2">
-            <button type="button" className="btn btn-light" onClick={() => setIsMovementModalOpen(false)}>Cancelar</button>
-            <button type="submit" className="btn btn-brand fw-semibold">Registrar Movimiento</button>
+          <div className="d-flex justify-content-end gap-2 border-top pt-3">
+            <button type="button" className="btn btn-light" onClick={() => setIsMovementModalOpen(false)}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn-brand fw-semibold">
+              <i className="bi bi-arrow-repeat me-1" />
+              Registrar Movimiento
+            </button>
           </div>
         </form>
       </Modal>

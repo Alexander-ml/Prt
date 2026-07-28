@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { PageHeader } from '../components/common/PageHeader';
 import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { EmptyState } from '../components/common/EmptyState';
+import { StatCard } from '../components/common/StatCard';
 
 export const KitchenPage: React.FC = () => {
   const {
@@ -11,7 +13,7 @@ export const KitchenPage: React.FC = () => {
     updateOrderItemStatus,
     markOrderReady,
     notifyDishIndisponibility,
-    currentRole
+    currentRole,
   } = useApp();
 
   // Modal for notifying dish unavailability during service (RF-55)
@@ -30,113 +32,209 @@ export const KitchenPage: React.FC = () => {
     setIsIndisponibleModalOpen(false);
   };
 
+  // Summary stats
+  const activeCommandas = kitchenOrders.filter(o => o.status === 'en_preparacion').length;
+  const itemsListos = kitchenOrders.reduce(
+    (acc, o) => acc + o.items.filter(i => i.status === 'listo').length,
+    0
+  );
+  const itemsPendientes = kitchenOrders.reduce(
+    (acc, o) => acc + o.items.filter(i => i.status === 'pendiente' || i.status === 'preparando').length,
+    0
+  );
+
+  /**
+   * Parse a time string (e.g. "10:35 AM" or "10:35") and compute elapsed minutes
+   * relative to the current time. Returns null when parsing fails.
+   */
+  const getElapsedMinutes = (sentAt: string | undefined): number | null => {
+    if (!sentAt) return null;
+    try {
+      const now = new Date();
+      // Build a full date string using today's date so Date can parse it
+      const parsed = new Date(`${now.toDateString()} ${sentAt}`);
+      if (isNaN(parsed.getTime())) return null;
+      return Math.floor((now.getTime() - parsed.getTime()) / 60000);
+    } catch {
+      return null;
+    }
+  };
+
+  const getTimeColorClass = (minutes: number | null): string => {
+    if (minutes === null) return 'text-secondary';
+    if (minutes < 10) return 'text-success';
+    if (minutes <= 20) return 'text-warning';
+    return 'text-danger';
+  };
+
   return (
     <div className="container-fluid p-0">
-      {/* KDS Header Bar */}
-      <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
-        <div>
-          <h4 className="fw-bold text-dark mb-1">
-            <i className="bi bi-display-fill text-amber-600 me-2"></i>
-            Pantalla KDS de Cocina (Kitchen Display System)
-          </h4>
-          <p className="text-muted fs-7 mb-0">
-            Control de comanda en cocina, tiempos de preparación e indisponibilidad en tiempo real (RF-50 - RF-55).
-          </p>
-        </div>
-
-        <div className="d-flex gap-2 align-items-center">
+      {/* Page Header */}
+      <PageHeader
+        icon="bi-display-fill"
+        title="Cocina — Kitchen Display System (KDS)"
+        subtitle="Control de comandas en tiempo real, tiempos de preparación y disponibilidad de platos (RF-50 – RF-55)."
+        actions={
           <button
-            className="btn btn-outline-danger btn-md fw-semibold shadow-sm"
+            className="btn btn-outline-danger fw-semibold"
             onClick={() => setIsIndisponibleModalOpen(true)}
           >
-            <i className="bi bi-slash-circle-fill me-1.5"></i> Notificar Agotado / Indisponible (RF-55)
+            <i className="bi bi-slash-circle-fill me-2"></i>
+            Notificar Agotado
           </button>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Role Banner if not Cocina */}
+      {/* Role Warning Banner */}
       {currentRole !== 'Cocina' && (
-        <div className="alert alert-warning bg-warning-subtle text-warning-emphasis border-warning-subtle rounded-3 p-3 mb-4 fs-7">
-          <i className="bi bi-info-circle-fill me-2"></i>
-          Estás navegando la vista KDS como <strong>{currentRole}</strong>. Puedes cambiar a rol <strong>Cocina</strong> desde el menú superior para simular la operación directa del chef.
+        <div className="alert alert-warning rounded-3 d-flex align-items-center gap-2 mb-4">
+          <i className="bi bi-info-circle-fill fs-5 flex-shrink-0"></i>
+          <span>
+            Estás visualizando el KDS como <strong>{currentRole}</strong>. Puedes cambiar al rol{' '}
+            <strong>Cocina</strong> desde el menú superior para simular la operación directa del chef.
+          </span>
         </div>
       )}
 
-      {/* Tickets Container (RF-50) */}
+      {/* Summary Stats Row */}
+      <div className="row g-3 mb-4">
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="Comandas Activas"
+            value={activeCommandas}
+            icon="bi-receipt"
+            colorTheme="indigo"
+          />
+        </div>
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="Items Listos"
+            value={itemsListos}
+            icon="bi-check-circle-fill"
+            colorTheme="emerald"
+          />
+        </div>
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="Items Pendientes"
+            value={itemsPendientes}
+            icon="bi-clock"
+            colorTheme="amber"
+          />
+        </div>
+      </div>
+
+      {/* Tickets Grid (RF-50) */}
       {kitchenOrders.length === 0 ? (
         <EmptyState
           icon="bi-check-circle-fill"
           title="¡Cocina al Día!"
-          description="No hay pedidos pendientes en la comanda de cocina. Todos los platos han sido despachados."
+          description="No hay pedidos pendientes en la comanda. Todos los platos han sido despachados."
         />
       ) : (
         <div className="row g-4 mb-4">
           {kitchenOrders.map(order => {
             const isReady = order.status === 'listo';
+            const elapsedMinutes = getElapsedMinutes(order.sentToKitchenAt);
+            const timeColorClass = getTimeColorClass(elapsedMinutes);
+            const timeLabel =
+              elapsedMinutes !== null
+                ? `${elapsedMinutes} min`
+                : order.sentToKitchenAt || '—';
 
             return (
-              <div key={order.id} className="col-12 col-md-6 col-lg-4 col-xl-3">
-                <div className={`kds-ticket h-100 ${isReady ? 'ready' : 'preparing'}`}>
+              <div key={order.id} className="col-12 col-md-6 col-xl-4">
+                <div className={`kds-ticket h-100 ${isReady ? 'status-ready' : 'status-preparing'}`}>
+
                   {/* Ticket Header */}
-                  <div className="p-3 bg-light border-bottom d-flex align-items-center justify-content-between">
+                  <div className="kds-ticket-header bg-light border-bottom d-flex align-items-center justify-content-between">
                     <div>
-                      <h5 className="fw-extrabold text-dark mb-0">Mesa #{order.tableNumber}</h5>
-                      <small className="text-muted">{order.areaName} • {order.waiterName}</small>
+                      <h5 className="fw-bold mb-0">Mesa #{order.tableNumber}</h5>
+                      <small className="text-muted">
+                        {order.areaName} • {order.waiterName}
+                      </small>
                     </div>
                     <div className="text-end">
                       <Badge
                         status={isReady ? 'LISTO' : 'EN PREPARACIÓN'}
                         variant={isReady ? 'success' : 'warning'}
                       />
-                      {/* Transcurred time display (RF-54) */}
-                      <div className="text-danger fw-bold fs-8 mt-1">
+                      {/* Elapsed time (RF-54) */}
+                      <div className={`fw-bold fs-8 mt-1 ${timeColorClass}`}>
                         <i className="bi bi-stopwatch me-1"></i>
-                        {order.sentToKitchenAt || 'Hace minutos'} (RF-54)
+                        {timeLabel} <span className="text-muted fw-normal">(RF-54)</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Items List (RF-51, RF-52) */}
-                  <div className="p-3 flex-grow-1 d-flex flex-column gap-2">
+                  <div className="p-3 d-flex flex-column gap-2">
                     {order.items.map(item => (
                       <div
                         key={item.id}
-                        className={`p-2.5 rounded-3 border ${
+                        className={`kds-item ${
                           item.status === 'listo'
-                            ? 'bg-success-subtle border-success-subtle'
+                            ? 'kds-item-ready'
                             : item.status === 'preparando'
-                            ? 'bg-white border-warning-subtle'
-                            : 'bg-light'
+                            ? 'kds-item-preparing'
+                            : ''
                         }`}
                       >
-                        <div className="d-flex align-items-center justify-content-between mb-1">
-                          <span className="fw-bold text-dark fs-7">
-                            <span className="badge bg-primary me-1.5">{item.quantity}x</span>
-                            {item.dishName}
+                        {/* Quantity + Dish Name */}
+                        <div className="d-flex align-items-center gap-2 mb-1">
+                          <span className="badge bg-primary">
+                            {item.quantity}x
                           </span>
+                          <span className="fw-bold text-dark fs-7">{item.dishName}</span>
                         </div>
 
-                        {/* Special Observations (RF-51) */}
+                        {/* Special Observation (RF-51) */}
                         {item.observation && (
-                          <div className="alert alert-warning p-1 px-2 mb-2 fs-8 fw-semibold border-0 rounded-2">
-                            <i className="bi bi-exclamation-circle-fill me-1"></i>
-                            {item.observation}
+                          <div className="alert alert-warning p-2 mb-2 d-flex align-items-center gap-2">
+                            <i className="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+                            <span className="fs-7 fw-semibold">{item.observation}</span>
                           </div>
                         )}
 
-                        {/* Item Status Change Buttons (RF-52) */}
-                        <div className="d-flex gap-1 pt-1 justify-content-end">
+                        {/* Item Status Buttons (RF-52) */}
+                        <div className="d-flex gap-2 justify-content-end">
                           <button
-                            className={`btn btn-xs ${item.status === 'preparando' ? 'btn-warning text-dark' : 'btn-light border'} fw-semibold px-2 py-0.5 fs-8`}
+                            className={`kds-status-btn btn ${
+                              item.status === 'preparando'
+                                ? ''
+                                : 'btn-outline-secondary'
+                            }`}
+                            style={{
+                              padding: '0.4rem 0.85rem',
+                              fontSize: '0.8rem',
+                              fontWeight: 700,
+                              borderRadius: 6,
+                              ...(item.status === 'preparando'
+                                ? { background: '#3b82f6', color: '#fff', border: 'none' }
+                                : {}),
+                            }}
                             onClick={() => updateOrderItemStatus(order.id, item.id, 'preparando')}
                           >
                             Preparando
                           </button>
                           <button
-                            className={`btn btn-xs ${item.status === 'listo' ? 'btn-success text-white' : 'btn-light border'} fw-semibold px-2 py-0.5 fs-8`}
+                            className={`kds-status-btn btn ${
+                              item.status === 'listo'
+                                ? ''
+                                : 'btn-outline-secondary'
+                            }`}
+                            style={{
+                              padding: '0.4rem 0.85rem',
+                              fontSize: '0.8rem',
+                              fontWeight: 700,
+                              borderRadius: 6,
+                              ...(item.status === 'listo'
+                                ? { background: '#10b981', color: '#fff', border: 'none' }
+                                : {}),
+                            }}
                             onClick={() => updateOrderItemStatus(order.id, item.id, 'listo')}
                           >
-                            Listo
+                            Listo ✓
                           </button>
                         </div>
                       </div>
@@ -146,13 +244,13 @@ export const KitchenPage: React.FC = () => {
                   {/* Ticket Footer Action (RF-53) */}
                   <div className="p-3 bg-light border-top mt-auto">
                     <button
-                      className={`btn ${isReady ? 'btn-success' : 'btn-brand'} w-100 fw-bold shadow-sm`}
+                      className={`btn ${isReady ? 'btn-success' : 'btn-brand'} w-100 fw-bold`}
                       onClick={() => markOrderReady(order.id)}
                     >
-                      <i className="bi bi-check2-all me-1.5"></i>
-                      {isReady ? '¡Comanda Despachada!' : 'Marcar Toda la Mesa LISTA (RF-53)'}
+                      {isReady ? '¡Comanda Despachada!' : 'Marcar Mesa Lista (RF-53)'}
                     </button>
                   </div>
+
                 </div>
               </div>
             );

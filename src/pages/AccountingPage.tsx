@@ -61,15 +61,15 @@ export const AccountingPage: React.FC = () => {
       <PageHeader
         icon="bi-journal-text"
         title="Contabilidad Formal"
-        subtitle="Resumen financiero derivado de ventas, ingresos y egresos del período (RF-73 – RF-75)."
+        subtitle="Resumen financiero derivado de ventas, ingresos y egresos del período."
         actions={
           <div className="d-flex gap-2">
             <button
               className="btn btn-sm btn-outline-primary fw-semibold"
               style={{ borderRadius: 8 }}
-              onClick={() => alert('RF-75: Información contable exportada en Excel/CSV.')}
+              onClick={() => alert('Información contable exportada exitosamente.')}
             >
-              <i className="bi bi-download me-1"></i> Exportar (RF-75)
+              <i className="bi bi-download me-1"></i> Exportar Reporte
             </button>
             <button
               className="btn-brand btn btn-sm fw-semibold"
@@ -188,7 +188,7 @@ export const AccountingPage: React.FC = () => {
       {/* Ledger Detail RF-74 */}
       <SectionCard
         icon="bi-list-columns"
-        title="Detalle de Ingresos y Egresos (RF-74)"
+        title="Detalle de Ingresos y Egresos"
         actions={
           <div className="d-flex align-items-center gap-2">
             <label className="form-label mb-0" style={{ fontSize: '0.8rem' }}>Período:</label>

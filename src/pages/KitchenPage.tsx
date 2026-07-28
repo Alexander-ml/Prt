@@ -73,7 +73,7 @@ export const KitchenPage: React.FC = () => {
       <PageHeader
         icon="bi-display-fill"
         title="Cocina — Kitchen Display System (KDS)"
-        subtitle="Control de comandas en tiempo real, tiempos de preparación y disponibilidad de platos (RF-50 – RF-55)."
+        subtitle="Control de comandas en tiempo real, tiempos de preparación y disponibilidad de platos."
         actions={
           <button
             className="btn btn-outline-danger fw-semibold"
@@ -124,7 +124,7 @@ export const KitchenPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Tickets Grid (RF-50) */}
+      {/* Tickets Grid */}
       {kitchenOrders.length === 0 ? (
         <EmptyState
           icon="bi-check-circle-fill"
@@ -159,15 +159,15 @@ export const KitchenPage: React.FC = () => {
                         status={isReady ? 'LISTO' : 'EN PREPARACIÓN'}
                         variant={isReady ? 'success' : 'warning'}
                       />
-                      {/* Elapsed time (RF-54) */}
+                      {/* Elapsed time */}
                       <div className={`fw-bold fs-8 mt-1 ${timeColorClass}`}>
                         <i className="bi bi-stopwatch me-1"></i>
-                        {timeLabel} <span className="text-muted fw-normal">(RF-54)</span>
+                        {timeLabel}
                       </div>
                     </div>
                   </div>
 
-                  {/* Items List (RF-51, RF-52) */}
+                  {/* Items List */}
                   <div className="p-3 d-flex flex-column gap-2">
                     {order.items.map(item => (
                       <div
@@ -188,7 +188,7 @@ export const KitchenPage: React.FC = () => {
                           <span className="fw-bold text-dark fs-7">{item.dishName}</span>
                         </div>
 
-                        {/* Special Observation (RF-51) */}
+                        {/* Special Observation */}
                         {item.observation && (
                           <div className="alert alert-warning p-2 mb-2 d-flex align-items-center gap-2">
                             <i className="bi bi-exclamation-circle-fill flex-shrink-0"></i>
@@ -196,7 +196,7 @@ export const KitchenPage: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Item Status Buttons (RF-52) */}
+                        {/* Item Status Buttons */}
                         <div className="d-flex gap-2 justify-content-end">
                           <button
                             className={`kds-status-btn btn ${
@@ -241,13 +241,13 @@ export const KitchenPage: React.FC = () => {
                     ))}
                   </div>
 
-                  {/* Ticket Footer Action (RF-53) */}
+                  {/* Ticket Footer Action */}
                   <div className="p-3 bg-light border-top mt-auto">
                     <button
                       className={`btn ${isReady ? 'btn-success' : 'btn-brand'} w-100 fw-bold`}
                       onClick={() => markOrderReady(order.id)}
                     >
-                      {isReady ? '¡Comanda Despachada!' : 'Marcar Mesa Lista (RF-53)'}
+                      {isReady ? '¡Comanda Despachada!' : 'Marcar Mesa Lista'}
                     </button>
                   </div>
 
@@ -258,11 +258,11 @@ export const KitchenPage: React.FC = () => {
         </div>
       )}
 
-      {/* Notify Dish Indisponibility Modal (RF-55) */}
+      {/* Notify Dish Indisponibility Modal */}
       <Modal
         isOpen={isIndisponibleModalOpen}
         onClose={() => setIsIndisponibleModalOpen(false)}
-        title="Notificar Indisponibilidad de Plato (RF-55)"
+        title="Notificar Indisponibilidad de Plato"
         subtitle="Informa inmediatamente a sala sobre la falta de insumos o agotado puntual durante el servicio."
       >
         <form onSubmit={handleIndisponibleSubmit}>

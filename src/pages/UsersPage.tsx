@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import type { UserAccount, UserRole } from '../types';
+import { PageHeader } from '../components/common/PageHeader';
+import { SectionCard } from '../components/common/SectionCard';
+import { StatCard } from '../components/common/StatCard';
 import { SearchBar } from '../components/common/SearchBar';
 import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
@@ -90,26 +93,61 @@ export const UsersPage: React.FC = () => {
     );
   }
 
+  const activeUsersCount = users.filter(u => u.active).length;
+  const inactiveUsersCount = users.filter(u => !u.active).length;
+
   return (
     <div className="container-fluid p-0">
-      {/* Title & Header */}
-      <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
-        <div>
-          <h4 className="fw-bold text-dark mb-1">
-            <i className="bi bi-people-fill text-primary me-2"></i>
-            Gestión de Usuarios y Personal
-          </h4>
-          <p className="text-muted fs-7 mb-0">
-            Administra las cuentas del personal del restaurante (Administrador, Mesero, Cocina) y sus accesos (RF-01 - RF-07).
-          </p>
+      {/* Page Header */}
+      <PageHeader
+        icon="bi-people-fill"
+        title="Personal y Usuarios"
+        subtitle="Alta, edición, activación y control de acceso del personal del restaurante (RF-01 – RF-07)."
+        actions={
+          <button
+            className="btn-brand btn fw-semibold"
+            style={{ borderRadius: 8 }}
+            onClick={handleOpenCreateModal}
+          >
+            <i className="bi bi-person-plus-fill me-1.5"></i>
+            Registrar Personal
+          </button>
+        }
+      />
+
+      {/* Row of 3 StatCards */}
+      <div className="row g-3 mb-4 stagger-children">
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="Total Personal"
+            value={users.length}
+            subtitle="Cuentas registradas"
+            icon="bi-people-fill"
+            colorTheme="indigo"
+          />
         </div>
-        <button className="btn btn-brand btn-md fw-semibold shadow-sm" onClick={handleOpenCreateModal}>
-          <i className="bi bi-person-plus-fill me-1.5"></i> Registrar Personal
-        </button>
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="Usuarios Activos"
+            value={activeUsersCount}
+            subtitle="Con acceso habilitado"
+            icon="bi-person-check-fill"
+            colorTheme="emerald"
+          />
+        </div>
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="Usuarios Inactivos"
+            value={inactiveUsersCount}
+            subtitle="Acceso deshabilitado"
+            icon="bi-person-dash-fill"
+            colorTheme="rose"
+          />
+        </div>
       </div>
 
-      {/* Filter & Search Bar Card */}
-      <div className="card glass-card border-0 mb-4 p-3">
+      {/* Filter & Search Bar */}
+      <SectionCard icon="bi-funnel" title="Filtros y Búsqueda de Personal" className="mb-4">
         <div className="row g-3 align-items-center">
           <div className="col-12 col-md-6">
             <SearchBar
@@ -121,7 +159,8 @@ export const UsersPage: React.FC = () => {
           <div className="col-12 col-md-6 d-flex align-items-center justify-content-md-end gap-2">
             <label className="fs-7 text-muted fw-semibold me-1">Filtrar por Rol (RF-06):</label>
             <select
-              className="form-select form-select-sm w-auto rounded-3 border-secondary-subtle fw-medium shadow-none"
+              className="form-select form-select-sm w-auto fw-semibold"
+              style={{ borderRadius: 8 }}
               value={selectedRole}
               onChange={e => setSelectedRole(e.target.value)}
             >
@@ -132,99 +171,109 @@ export const UsersPage: React.FC = () => {
             </select>
           </div>
         </div>
-      </div>
+      </SectionCard>
 
       {/* Users Data Table (RF-07) */}
-      <div className="custom-table-container">
-        <table className="custom-table">
-          <thead>
-            <tr>
-              <th>Personal</th>
-              <th>Rol Asignado</th>
-              <th>Teléfono</th>
-              <th>Estado Cuenta</th>
-              <th>Último Acceso</th>
-              <th className="text-end">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="text-center py-4">
-                  <EmptyState
-                    title="No se encontraron usuarios"
-                    description="Intenta cambiar los filtros de búsqueda o registra un nuevo usuario."
-                  />
-                </td>
-              </tr>
-            ) : (
-              filteredUsers.map(user => (
-                <tr key={user.id}>
-                  <td>
-                    <div className="d-flex align-items-center gap-2.5">
-                      <div
-                        className="rounded-circle bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center"
-                        style={{ width: 38, height: 38 }}
-                      >
-                        {user.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="fw-bold text-dark">{user.name}</div>
-                        <small className="text-muted">{user.email}</small>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <Badge
-                      status={user.role}
-                      variant={
-                        user.role === 'Administrador' ? 'primary' : user.role === 'Mesero' ? 'success' : 'warning'
-                      }
-                    />
-                  </td>
-                  <td>
-                    <span className="text-muted fs-7">{user.phone || 'No registrado'}</span>
-                  </td>
-                  <td>
-                    <Badge
-                      status={user.active ? 'Activa' : 'Desactivada'}
-                      variant={user.active ? 'success' : 'secondary'}
-                    />
-                  </td>
-                  <td>
-                    <span className="text-muted fs-7">{user.lastLogin || 'Nunca'}</span>
-                  </td>
-                  <td className="text-end">
-                    <div className="d-inline-flex gap-1">
-                      <button
-                        className="btn btn-sm btn-light text-primary border"
-                        title="Editar datos (RF-02)"
-                        onClick={() => handleOpenEditModal(user)}
-                      >
-                        <i className="bi bi-pencil-square"></i>
-                      </button>
-                      <button
-                        className="btn btn-sm btn-light text-warning-emphasis border"
-                        title="Restablecer Contraseña (RF-03)"
-                        onClick={() => resetUserPassword(user.id)}
-                      >
-                        <i className="bi bi-key-fill"></i>
-                      </button>
-                      <button
-                        className={`btn btn-sm ${user.active ? 'btn-light text-danger' : 'btn-light text-success'} border`}
-                        title={user.active ? 'Desactivar Cuenta (RF-04)' : 'Activar Cuenta'}
-                        onClick={() => setConfirmUser(user)}
-                      >
-                        <i className={`bi ${user.active ? 'bi-person-x-fill' : 'bi-person-check-fill'}`}></i>
-                      </button>
-                    </div>
-                  </td>
+      <SectionCard icon="bi-list-ul" title="Listado de Cuentas del Equipo" noPadding>
+        <div className="table-responsive-x">
+          <div className="custom-table-container">
+            <table className="custom-table" style={{ minWidth: 650 }}>
+              <thead>
+                <tr>
+                  <th>Personal</th>
+                  <th>Rol Asignado</th>
+                  <th>Teléfono</th>
+                  <th>Estado Cuenta</th>
+                  <th>Último Acceso</th>
+                  <th className="text-end">Acciones</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-4">
+                      <EmptyState
+                        title="No se encontraron usuarios"
+                        description="Intenta cambiar los filtros de búsqueda o registra un nuevo usuario."
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map(user => (
+                    <tr key={user.id}>
+                      <td>
+                        <div className="d-flex align-items-center gap-2.5">
+                          <div
+                            className="rounded-circle fw-bold d-flex align-items-center justify-content-center flex-shrink-0"
+                            style={{
+                              width: 38,
+                              height: 38,
+                              background: user.role === 'Administrador' ? 'var(--color-brand-light)' : user.role === 'Mesero' ? 'var(--color-emerald-bg)' : 'var(--color-amber-bg)',
+                              color: user.role === 'Administrador' ? 'var(--color-brand)' : user.role === 'Mesero' ? 'var(--color-emerald)' : 'var(--color-amber)',
+                              fontSize: '0.9rem',
+                            }}
+                          >
+                            {user.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="fw-bold" style={{ color: 'var(--text-primary)', fontSize: '0.875rem' }}>{user.name}</div>
+                            <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{user.email}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <Badge
+                          status={user.role}
+                          variant={
+                            user.role === 'Administrador' ? 'primary' : user.role === 'Mesero' ? 'success' : 'warning'
+                          }
+                        />
+                      </td>
+                      <td>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>{user.phone || 'No registrado'}</span>
+                      </td>
+                      <td>
+                        <Badge
+                          status={user.active ? 'Activa' : 'Desactivada'}
+                          variant={user.active ? 'success' : 'secondary'}
+                        />
+                      </td>
+                      <td>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{user.lastLogin || 'Nunca'}</span>
+                      </td>
+                      <td className="text-end">
+                        <div className="d-inline-flex gap-1">
+                          <button
+                            className="btn-icon btn-icon-primary"
+                            title="Editar datos (RF-02)"
+                            onClick={() => handleOpenEditModal(user)}
+                          >
+                            <i className="bi bi-pencil-fill"></i>
+                          </button>
+                          <button
+                            className="btn-icon"
+                            title="Restablecer Contraseña (RF-03)"
+                            onClick={() => resetUserPassword(user.id)}
+                          >
+                            <i className="bi bi-key-fill"></i>
+                          </button>
+                          <button
+                            className={`btn-icon ${user.active ? 'btn-icon-danger' : 'btn-icon-success'}`}
+                            title={user.active ? 'Desactivar Cuenta (RF-04)' : 'Activar Cuenta'}
+                            onClick={() => setConfirmUser(user)}
+                          >
+                            <i className={`bi ${user.active ? 'bi-person-slash' : 'bi-person-check-fill'}`}></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </SectionCard>
 
       {/* Modal Form (RF-01, RF-02) */}
       <Modal
@@ -235,10 +284,11 @@ export const UsersPage: React.FC = () => {
       >
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label className="form-label fs-7 fw-semibold text-dark">Nombre Completo *</label>
+            <label className="form-label">Nombre Completo *</label>
             <input
               type="text"
-              className="form-control rounded-3"
+              className="form-control"
+              style={{ borderRadius: 8 }}
               placeholder="Ej. Roberto Sánchez"
               required
               value={formData.name}
@@ -247,10 +297,11 @@ export const UsersPage: React.FC = () => {
           </div>
 
           <div className="mb-3">
-            <label className="form-label fs-7 fw-semibold text-dark">Correo Electrónico *</label>
+            <label className="form-label">Correo Electrónico *</label>
             <input
               type="email"
-              className="form-control rounded-3"
+              className="form-control"
+              style={{ borderRadius: 8 }}
               placeholder="ejemplo@gourmetos.com"
               required
               value={formData.email}
@@ -259,10 +310,11 @@ export const UsersPage: React.FC = () => {
           </div>
 
           <div className="mb-3">
-            <label className="form-label fs-7 fw-semibold text-dark">Teléfono de Contacto</label>
+            <label className="form-label">Teléfono de Contacto</label>
             <input
               type="text"
-              className="form-control rounded-3"
+              className="form-control"
+              style={{ borderRadius: 8 }}
               placeholder="+51 999 888 777"
               value={formData.phone}
               onChange={e => setFormData({ ...formData, phone: e.target.value })}
@@ -270,9 +322,10 @@ export const UsersPage: React.FC = () => {
           </div>
 
           <div className="mb-4">
-            <label className="form-label fs-7 fw-semibold text-dark">Rol Asignado *</label>
+            <label className="form-label">Rol Asignado *</label>
             <select
-              className="form-select rounded-3"
+              className="form-select"
+              style={{ borderRadius: 8 }}
               value={formData.role}
               onChange={e => setFormData({ ...formData, role: e.target.value as UserRole })}
             >
@@ -282,11 +335,11 @@ export const UsersPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="d-flex justify-content-end gap-2 pt-2 border-top">
-            <button type="button" className="btn btn-light fw-medium" onClick={() => setIsModalOpen(false)}>
+          <div className="d-flex justify-content-end gap-2 pt-2" style={{ borderTop: '1px solid var(--border-color)' }}>
+            <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={() => setIsModalOpen(false)}>
               Cancelar
             </button>
-            <button type="submit" className="btn btn-brand fw-semibold">
+            <button type="submit" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }}>
               {editingUser ? 'Guardar Cambios' : 'Registrar Cuenta'}
             </button>
           </div>

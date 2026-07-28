@@ -5,7 +5,6 @@ import { PageHeader } from '../components/common/PageHeader';
 import { SectionCard } from '../components/common/SectionCard';
 import { StatCard } from '../components/common/StatCard';
 import { SearchBar } from '../components/common/SearchBar';
-import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { EmptyState } from '../components/common/EmptyState';
 
@@ -125,30 +124,27 @@ export const InventoryPage: React.FC = () => {
 
   return (
     <div className="container-fluid p-0 animate-fadeinup">
-
-      {/* ── Page Header ── */}
       <PageHeader
         icon="bi-boxes"
         title="Inventario e Insumos"
-        subtitle="Control de insumos disponibles, alertas de reposición y movimientos de stock (RF-66 – RF-72)."
+        subtitle="Control de insumos disponibles, alertas de reposición y movimientos de stock."
         actions={
           <button
-            className="btn btn-brand fw-semibold"
+            className="btn-brand btn btn-sm fw-semibold"
+            style={{ borderRadius: 8 }}
             onClick={() => handleOpenModal()}
-            aria-label="Registrar nuevo insumo"
           >
-            <i className="bi bi-plus-lg me-2" />
-            Registrar Insumo
+            <i className="bi bi-plus-lg me-1"></i> Registrar Insumo
           </button>
         }
       />
 
-      {/* ── Stat Cards Row ── */}
       <div className="row g-3 mb-4 stagger-children">
         <div className="col-12 col-sm-4">
           <StatCard
             title="Total Insumos"
             value={insumos.length}
+            subtitle="Artículos registrados"
             icon="bi-boxes"
             colorTheme="indigo"
           />
@@ -157,6 +153,7 @@ export const InventoryPage: React.FC = () => {
           <StatCard
             title="Bajo Stock Mínimo"
             value={lowStockInsumos.length}
+            subtitle="Requieren reposición inmediata"
             icon="bi-exclamation-triangle-fill"
             colorTheme="rose"
           />
@@ -165,70 +162,68 @@ export const InventoryPage: React.FC = () => {
           <StatCard
             title="Stock Suficiente"
             value={insumos.length - lowStockInsumos.length}
+            subtitle="Niveles óptimos para servicio"
             icon="bi-shield-check"
             colorTheme="emerald"
           />
         </div>
       </div>
 
-      {/* ── Low Stock Alert Banner (RF-72) ── */}
       {lowStockInsumos.length > 0 && (
-        <div className="alert alert-danger border-danger-subtle rounded-3 p-3 mb-4 shadow-sm">
-          <div className="d-flex align-items-center gap-2 mb-2">
-            <i className="bi bi-exclamation-octagon-fill fs-5 text-danger" />
-            <strong className="fs-7">
-              Alerta de Reposición Urgente (RF-72) —{' '}
-              {lowStockInsumos.length} insumo{lowStockInsumos.length > 1 ? 's' : ''} por debajo del mínimo
-            </strong>
+        <div
+          className="alert alert-danger rounded-3 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2"
+          style={{ border: '1px solid #fca5a5' }}
+        >
+          <div className="d-flex align-items-center gap-2">
+            <i className="bi bi-exclamation-octagon-fill fs-5 text-danger flex-shrink-0"></i>
+            <span style={{ fontSize: '0.875rem' }}>
+              <strong>Alerta de Reposición Urgente</strong> —{' '}
+              {lowStockInsumos.length} insumos están por debajo de su stock mínimo de seguridad.
+            </span>
           </div>
-          <div className="d-flex flex-wrap gap-2">
+          <div className="d-flex gap-1 flex-wrap">
             {lowStockInsumos.map(ins => (
               <span
                 key={ins.id}
-                className="badge rounded-pill fs-7"
-                style={{ background: '#dc3545', color: '#fff', padding: '5px 12px' }}
+                className="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold"
+                style={{ borderRadius: 99, fontSize: '0.72rem' }}
               >
-                {ins.name}: {ins.currentStock} / {ins.minStock} {ins.unit}
+                {ins.name}: {ins.currentStock} {ins.unit}
               </span>
             ))}
           </div>
         </div>
       )}
 
-      {/* ── Filter Bar ── */}
-      <SectionCard className="mb-4">
+      <SectionCard icon="bi-funnel" title="Filtros del Inventario" className="mb-4">
         <div className="row g-3 align-items-center">
           <div className="col-12 col-md-5">
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Buscar insumo por nombre (RF-70)..."
+              placeholder="Buscar insumo por nombre..."
             />
           </div>
-          <div className="col-12 col-md-7 d-flex align-items-center justify-content-md-end gap-2 flex-wrap">
-            <span className="fs-7 text-muted fw-semibold me-1">Categoría:</span>
-            <ul className="nav nav-pills gap-1 flex-wrap mb-0">
-              {CATEGORIES.map(cat => (
-                <li className="nav-item" key={cat}>
-                  <button
-                    className={`nav-link py-1 px-3 fs-7${selectedCategory === cat ? ' active' : ''}`}
-                    onClick={() => setSelectedCategory(cat)}
-                    style={{ borderRadius: 20, fontWeight: 500 }}
-                  >
-                    {cat === 'todas' ? 'Todas' : cat}
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <div className="col-12 col-md-7 d-flex align-items-center justify-content-md-end gap-1 overflow-x-auto pb-1">
+            <span className="fs-7 text-muted fw-semibold me-2 flex-shrink-0">Categoría:</span>
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat}
+                className={`btn btn-sm text-capitalize text-nowrap fw-semibold ${selectedCategory === cat ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
+                style={{ borderRadius: 8 }}
+                onClick={() => setSelectedCategory(cat)}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         </div>
       </SectionCard>
 
-      {/* ── Main Table ── */}
-      <SectionCard noPadding>
+      <SectionCard icon="bi-list-ul" title="Listado de Insumos e Ingredientes" noPadding>
         <div className="table-responsive-x">
           <div className="custom-table-container">
-            <table className="custom-table">
+            <table className="custom-table" style={{ minWidth: 700 }}>
               <thead>
                 <tr>
                   <th>Insumo</th>
@@ -236,7 +231,7 @@ export const InventoryPage: React.FC = () => {
                   <th>Stock Actual</th>
                   <th>Mín. Reposición</th>
                   <th>Costo Un.</th>
-                  <th style={{ minWidth: 160 }}>Disponibilidad</th>
+                  <th>Disponibilidad</th>
                   <th>Última Reposición</th>
                   <th className="text-end">Acciones</th>
                 </tr>
@@ -244,74 +239,69 @@ export const InventoryPage: React.FC = () => {
               <tbody>
                 {filteredInsumos.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-5 text-muted fs-7">
-                      <i className="bi bi-inbox fs-3 d-block mb-2 opacity-50" />
-                      No se encontraron insumos con los filtros actuales.
+                    <td colSpan={8} className="text-center py-4">
+                      <EmptyState
+                        icon="bi-box-seam"
+                        title="No se encontraron insumos"
+                        description="Intenta cambiar los filtros de búsqueda o registra un nuevo insumo."
+                      />
                     </td>
                   </tr>
                 ) : (
                   filteredInsumos.map(ins => {
                     const isLow = ins.currentStock <= ins.minStock;
-
-                    // Disponibilidad progress bar (requirement #7)
                     const stockRatio = ins.minStock > 0 ? ins.currentStock / (ins.minStock * 2) : 1;
                     const pct = Math.min(100, Math.round(stockRatio * 100));
                     const fillClass = pct < 50 ? 'critical' : pct < 80 ? 'low' : 'ok';
+                    const fillLabelColor = pct < 50 ? '#e11d48' : pct < 80 ? '#d97706' : '#059669';
 
                     return (
                       <tr key={ins.id}>
                         <td>
-                          <div className="fw-bold text-dark">{ins.name}</div>
+                          <div className="fw-bold" style={{ color: 'var(--text-primary)' }}>{ins.name}</div>
                         </td>
                         <td>
-                          <span className="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1">
+                          <span className="badge" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}>
                             {ins.category}
                           </span>
                         </td>
                         <td>
-                          <span
-                            className="fw-bold fs-7"
-                            style={{ color: isLow ? '#dc3545' : 'inherit' }}
-                          >
+                          <span className={`fw-bold fs-6 ${isLow ? 'text-danger' : ''}`} style={{ color: isLow ? undefined : 'var(--text-primary)' }}>
                             {ins.currentStock} {ins.unit}
                           </span>
                         </td>
                         <td>
-                          <span className="text-muted fs-7">
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>
                             {ins.minStock} {ins.unit}
                           </span>
                         </td>
-                        <td className="fs-7">
-                          S/ {ins.costPerUnit.toFixed(2)} / {ins.unit}
-                        </td>
                         <td>
-                          <div className="stock-progress-bar">
+                          <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+                            S/ {ins.costPerUnit.toFixed(2)}
+                          </span>
+                        </td>
+                        <td style={{ minWidth: 130 }}>
+                          <div className="stock-progress-bar mb-1">
                             <div
                               className={`stock-progress-fill ${fillClass}`}
                               style={{ width: `${pct}%` }}
-                            />
+                            ></div>
                           </div>
-                          <div
-                            className="fs-7 mt-1"
-                            style={{
-                              color: fillClass === 'critical' ? '#dc3545'
-                                : fillClass === 'low' ? '#d97706'
-                                : '#10b981',
-                              fontWeight: 600
-                            }}
-                          >
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: fillLabelColor }}>
                             {pct}% del óptimo
-                          </div>
+                          </span>
                         </td>
                         <td>
-                          <small className="text-muted">{ins.lastRestockDate}</small>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                            {ins.lastRestockDate || 'Sin registro'}
+                          </span>
                         </td>
                         <td className="text-end">
-                          <div className="btn-icon d-inline-flex gap-1">
+                          <div className="d-inline-flex gap-1">
                             <button
-                              className="btn-icon-success"
-                              title="Registrar Movimiento de Stock (RF-68, RF-69)"
-                              aria-label={`Registrar movimiento para ${ins.name}`}
+                              className="btn-icon btn-icon-success"
+                              title="Registrar Movimiento de Stock"
+                              aria-label="Registrar Movimiento"
                               onClick={() => {
                                 setTargetInsumo(ins);
                                 setMovementQty(5);
@@ -319,15 +309,15 @@ export const InventoryPage: React.FC = () => {
                                 setIsMovementModalOpen(true);
                               }}
                             >
-                              <i className="bi bi-box-arrow-in-down" />
+                              <i className="bi bi-arrow-down-up"></i>
                             </button>
                             <button
-                              className="btn-icon-primary"
-                              title="Editar Insumo (RF-67)"
-                              aria-label={`Editar insumo ${ins.name}`}
+                              className="btn-icon btn-icon-primary"
+                              title="Editar Insumo"
+                              aria-label="Editar Insumo"
                               onClick={() => handleOpenModal(ins)}
                             >
-                              <i className="bi bi-pencil-square" />
+                              <i className="bi bi-pencil-fill"></i>
                             </button>
                           </div>
                         </td>
@@ -341,16 +331,15 @@ export const InventoryPage: React.FC = () => {
         </div>
       </SectionCard>
 
-      {/* ── Insumo Modal (RF-66, RF-67) ── */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingInsumo ? 'Editar Insumo (RF-67)' : 'Registrar Nuevo Insumo (RF-66)'}
+        title={editingInsumo ? 'Editar Insumo' : 'Registrar Nuevo Insumo'}
+        subtitle="Agrega o modifica insumos e ingredientes del catálogo."
       >
         <form onSubmit={handleSubmitInsumo}>
-          {/* Nombre */}
           <div className="mb-3">
-            <label className="form-label fs-7 fw-semibold text-dark">Nombre del Insumo *</label>
+            <label className="form-label">Nombre del Insumo *</label>
             <input
               type="text"
               className="form-control"

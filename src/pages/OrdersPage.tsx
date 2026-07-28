@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import type { Order, Dish } from '../types';
+import { PageHeader } from '../components/common/PageHeader';
+import { SectionCard } from '../components/common/SectionCard';
 import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { SearchBar } from '../components/common/SearchBar';
@@ -75,10 +77,10 @@ export const OrdersPage: React.FC = () => {
     return matchesCat && matchesSearch && d.active;
   });
 
-  // Cart operations (RF-40, RF-41, RF-42)
+  // Cart operations
   const handleAddToCart = (dish: Dish) => {
     if (!dish.isAvailableToday) {
-      alert(`El plato "${dish.name}" ha sido notificado como AGOTADO por cocina (RF-55).`);
+      alert(`El plato "${dish.name}" ha sido notificado como AGOTADO por cocina.`);
       return;
     }
     setCartItems(prev => {
@@ -119,7 +121,7 @@ export const OrdersPage: React.FC = () => {
     setIsObsModalOpen(false);
   };
 
-  // Submit & Send Order to Kitchen (RF-44)
+  // Submit & Send Order to Kitchen
   const handleConfirmAndSendOrder = () => {
     if (!selectedTableId || cartItems.length === 0) return;
 
@@ -139,7 +141,7 @@ export const OrdersPage: React.FC = () => {
     if (created) setSelectedOrder(created);
   };
 
-  // Additional items cart operations (RF-45)
+  // Additional items cart operations
   const handleAddToAdditionalCart = (dish: Dish) => {
     setAdditionalCart(prev => {
       const existingIdx = prev.findIndex(item => item.dish.id === dish.id);
@@ -167,7 +169,7 @@ export const OrdersPage: React.FC = () => {
     setIsAddItemsModalOpen(false);
   };
 
-  // Cancel order (RF-49)
+  // Cancel order
   const handleConfirmCancelOrder = () => {
     if (!selectedOrder || !cancelReason.trim()) return;
     cancelOrder(selectedOrder.id, cancelReason);
@@ -180,47 +182,37 @@ export const OrdersPage: React.FC = () => {
 
   return (
     <div className="container-fluid p-0">
-      {/* Header */}
-      <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
-        <div>
-          <h4 className="fw-bold text-dark mb-1">
-            <i className="bi bi-receipt text-primary me-2"></i>
-            Gestión de Pedidos y Comandas
-          </h4>
-          <p className="text-muted fs-7 mb-0">
-            Toma de pedidos en sala, modificaciones, comisionado a cocina y seguimiento de estado (RF-39 - RF-49).
-          </p>
-        </div>
-        <div className="d-flex gap-2">
-          <button
-            className={`btn btn-sm ${activeTab === 'take_order' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-            onClick={() => setActiveTab('take_order')}
-          >
-            <i className="bi bi-plus-circle me-1"></i> Tomar Pedido / Comanda
-          </button>
-          <button
-            className={`btn btn-sm ${activeTab === 'history' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-            onClick={() => setActiveTab('history')}
-          >
-            <i className="bi bi-clock-history me-1"></i> Historial y Supervisión (RF-48)
-          </button>
-        </div>
-      </div>
+      {/* Page Header */}
+      <PageHeader
+        icon="bi-receipt"
+        title="Gestión de Pedidos y Comandas"
+        subtitle="Toma de pedidos en sala, modificaciones, comisionado a cocina y seguimiento de estado."
+        actions={
+          <div className="d-flex gap-2">
+            <button
+              className={`btn btn-sm fw-semibold ${activeTab === 'take_order' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
+              style={{ borderRadius: 8 }}
+              onClick={() => setActiveTab('take_order')}
+            >
+              <i className="bi bi-plus-circle me-1.5"></i> Tomar Pedido / Comanda
+            </button>
+            <button
+              className={`btn btn-sm fw-semibold ${activeTab === 'history' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
+              style={{ borderRadius: 8 }}
+              onClick={() => setActiveTab('history')}
+            >
+              <i className="bi bi-clock-history me-1.5"></i> Historial y Supervisión
+            </button>
+          </div>
+        }
+      />
 
       {activeTab === 'take_order' ? (
         <div className="row g-4 mb-4">
-          {/* Left 7 Cols: Catalog Selection & Quick Add (RF-40) */}
+          {/* Left Cols: Catalog Selection */}
           <div className="col-12 col-lg-7 col-xl-8">
-            <div className="card glass-card border-0 p-3.5">
-              {/* Category Pills & Search */}
+            <SectionCard icon="bi-egg-fried" title="Selección de Platos para Comanda">
               <div className="d-flex flex-column gap-3 mb-3">
-                <div className="d-flex align-items-center justify-content-between">
-                  <h6 className="fw-bold text-dark mb-0">Selección de Platos para Comanda</h6>
-                  <span className="badge bg-secondary-subtle text-secondary fs-8">
-                    {filteredDishes.length} platos disponibles
-                  </span>
-                </div>
-
                 <div className="row g-2">
                   <div className="col-12 col-md-6">
                     <SearchBar
@@ -231,7 +223,8 @@ export const OrdersPage: React.FC = () => {
                   </div>
                   <div className="col-12 col-md-6 d-flex gap-1 overflow-x-auto pb-1">
                     <button
-                      className={`btn btn-sm rounded-pill text-nowrap fw-semibold ${selectedDishCategory === 'todas' ? 'btn-primary' : 'btn-light border text-dark'}`}
+                      className={`btn btn-sm text-nowrap fw-semibold ${selectedDishCategory === 'todas' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
+                      style={{ borderRadius: 8 }}
                       onClick={() => setSelectedDishCategory('todas')}
                     >
                       Todas
@@ -239,7 +232,8 @@ export const OrdersPage: React.FC = () => {
                     {categories.map(c => (
                       <button
                         key={c.id}
-                        className={`btn btn-sm rounded-pill text-nowrap fw-semibold ${selectedDishCategory === c.id ? 'btn-primary' : 'btn-light border text-dark'}`}
+                        className={`btn btn-sm text-nowrap fw-semibold ${selectedDishCategory === c.id ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
+                        style={{ borderRadius: 8 }}
                         onClick={() => setSelectedDishCategory(c.id)}
                       >
                         {c.name}
@@ -250,21 +244,21 @@ export const OrdersPage: React.FC = () => {
               </div>
 
               {/* Dish Selection Grid */}
-              <div className="row g-3" style={{ maxHeight: '620px', overflowY: 'auto' }}>
+              <div className="row g-3" style={{ maxHeight: '600px', overflowY: 'auto' }}>
                 {filteredDishes.map(dish => (
                   <div key={dish.id} className="col-12 col-sm-6 col-md-4">
                     <div
-                      className={`p-3 rounded-3 border bg-white h-100 d-flex flex-column justify-content-between position-relative ${
-                        !dish.isAvailableToday ? 'opacity-50' : 'cursor-pointer hover-shadow'
+                      className={`p-3 rounded-3 border bg-white h-100 d-flex flex-column justify-content-between ${
+                        !dish.isAvailableToday ? 'opacity-50' : 'cursor-pointer'
                       }`}
-                      style={{ transition: 'all 0.15s ease' }}
+                      style={{ transition: 'all 0.15s ease', boxShadow: 'var(--shadow-xs)' }}
                       onClick={() => dish.isAvailableToday && handleAddToCart(dish)}
                     >
                       <div>
-                        <div className="d-flex align-items-start justify-content-between gap-1 mb-1">
-                          <span className="fw-bold text-dark fs-7 line-clamp-1">{dish.name}</span>
+                        <div className="fw-bold mb-1 text-truncate" style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                          {dish.name}
                         </div>
-                        <span className="fw-extrabold text-primary fs-6 d-block mb-2">
+                        <span className="fw-extrabold d-block mb-2" style={{ color: 'var(--color-brand)', fontSize: '1rem' }}>
                           S/ {dish.price.toFixed(2)}
                         </span>
                         {!dish.isAvailableToday && (
@@ -272,7 +266,8 @@ export const OrdersPage: React.FC = () => {
                         )}
                       </div>
                       <button
-                        className="btn btn-sm btn-outline-primary w-100 fw-semibold rounded-2"
+                        className="btn btn-sm btn-outline-primary w-100 fw-semibold"
+                        style={{ borderRadius: 6 }}
                         disabled={!dish.isAvailableToday}
                       >
                         <i className="bi bi-plus-lg me-1"></i> Agregar
@@ -281,16 +276,17 @@ export const OrdersPage: React.FC = () => {
                   </div>
                 ))}
               </div>
-            </div>
+            </SectionCard>
           </div>
 
-          {/* Right 5 Cols: Comanda Builder / Cart & Table Selector (RF-39, RF-41, RF-42, RF-43, RF-44) */}
+          {/* Right Cols: Comanda Builder */}
           <div className="col-12 col-lg-5 col-xl-4">
-            <div className="card glass-card border-0 p-4 h-100 d-flex flex-column">
+            <SectionCard icon="bi-receipt" title="Comanda de Mesa" className="h-100 d-flex flex-column">
               <div className="border-bottom pb-3 mb-3">
-                <label className="form-label fs-7 fw-bold text-dark">1. Seleccionar Mesa para Pedido (RF-39)</label>
+                <label className="form-label fw-bold">1. Seleccionar Mesa</label>
                 <select
-                  className="form-select form-select-lg rounded-3 fw-bold border-primary shadow-none"
+                  className="form-select form-select-lg fw-bold border-primary shadow-none"
+                  style={{ borderRadius: 8 }}
                   value={selectedTableId}
                   onChange={e => setSelectedTableId(e.target.value)}
                 >
@@ -302,39 +298,43 @@ export const OrdersPage: React.FC = () => {
                   ))}
                 </select>
                 {selectedTableObj && (
-                  <small className="text-muted d-block mt-1">
-                    Capacidad: {selectedTableObj.capacity} pers. • Estado actual: {selectedTableObj.status}
+                  <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem', display: 'block', marginTop: 4 }}>
+                    Capacidad: {selectedTableObj.capacity} pers. • Estado: {selectedTableObj.status}
                   </small>
                 )}
               </div>
 
               {/* Cart List */}
-              <div className="flex-grow-1 overflow-y-auto mb-3" style={{ maxHeight: '380px' }}>
-                <h6 className="fw-bold text-dark mb-2">2. Ítems del Pedido no Enviados</h6>
+              <div className="flex-grow-1 overflow-y-auto mb-3" style={{ maxHeight: '360px' }}>
+                <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
+                  2. Ítems del Pedido no Enviados
+                </h3>
                 {cartItems.length === 0 ? (
-                  <div className="text-center py-4 text-muted fs-7 border rounded-3 bg-light">
-                    <i className="bi bi-cart-plus text-secondary fs-3 d-block mb-1"></i>
+                  <div className="text-center py-4 border rounded-3" style={{ background: 'var(--surface-muted)', color: 'var(--text-muted)', fontSize: '0.825rem' }}>
+                    <i className="bi bi-cart-plus d-block mb-1" style={{ fontSize: '1.75rem', color: '#94a3b8' }}></i>
                     Selecciona platos de la lista para armar la comanda.
                   </div>
                 ) : (
                   <div className="d-flex flex-column gap-2">
                     {cartItems.map((item, idx) => (
-                      <div key={idx} className="p-3 rounded-3 border bg-white shadow-sm">
+                      <div key={idx} className="p-2.5 rounded-3 border bg-white shadow-sm">
                         <div className="d-flex align-items-center justify-content-between mb-1">
-                          <span className="fw-bold text-dark fs-7">{item.dish.name}</span>
-                          <span className="fw-bold text-primary fs-7">
+                          <span className="fw-bold" style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                            {item.dish.name}
+                          </span>
+                          <span className="fw-bold" style={{ fontSize: '0.85rem', color: 'var(--color-brand)' }}>
                             S/ {(item.dish.price * item.quantity).toFixed(2)}
                           </span>
                         </div>
 
                         {item.observation && (
-                          <div className="text-warning-emphasis fs-8 bg-warning-subtle p-1.5 rounded mb-2">
+                          <div className="p-1.5 rounded mb-2" style={{ background: 'var(--color-amber-bg)', color: 'var(--color-amber-text)', fontSize: '0.75rem' }}>
                             <i className="bi bi-chat-left-text-fill me-1"></i> Obs: {item.observation}
                           </div>
                         )}
 
                         <div className="d-flex align-items-center justify-content-between pt-2 border-top">
-                          {/* Quantity Controls (RF-41) */}
+                          {/* Quantity Controls */}
                           <div className="d-flex align-items-center gap-2">
                             <button
                               className="btn btn-sm btn-light border px-2 py-0 fw-bold"
@@ -342,7 +342,7 @@ export const OrdersPage: React.FC = () => {
                             >
                               -
                             </button>
-                            <span className="fw-bold text-dark fs-7">{item.quantity}</span>
+                            <span className="fw-bold fs-7">{item.quantity}</span>
                             <button
                               className="btn btn-sm btn-light border px-2 py-0 fw-bold"
                               onClick={() => handleUpdateCartQuantity(idx, 1)}
@@ -354,7 +354,7 @@ export const OrdersPage: React.FC = () => {
                           <div className="d-flex gap-1">
                             <button
                               className="btn btn-sm btn-link text-warning p-0 me-2"
-                              title="Registrar observación (RF-43)"
+                              title="Registrar observación"
                               onClick={() => {
                                 setObsIndex(idx);
                                 setTempObs(item.observation);
@@ -366,7 +366,7 @@ export const OrdersPage: React.FC = () => {
 
                             <button
                               className="btn btn-sm btn-link text-danger p-0"
-                              title="Eliminar plato (RF-42)"
+                              title="Eliminar plato"
                               onClick={() => handleRemoveCartItem(idx)}
                             >
                               <i className="bi bi-trash-fill"></i>
@@ -382,43 +382,45 @@ export const OrdersPage: React.FC = () => {
               {/* Total & Send Action */}
               <div className="pt-3 border-top mt-auto">
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                  <span className="text-muted fw-semibold">Subtotal Estimado:</span>
-                  <span className="fs-4 fw-extrabold text-dark">S/ {cartSubtotal.toFixed(2)}</span>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>Subtotal Estimado:</span>
+                  <span className="fw-extrabold" style={{ fontSize: '1.4rem', color: 'var(--text-primary)' }}>S/ {cartSubtotal.toFixed(2)}</span>
                 </div>
 
                 <button
-                  className="btn btn-brand btn-lg w-100 fw-bold shadow"
+                  className="btn-brand btn w-100 fw-bold py-2.5"
+                  style={{ borderRadius: 10, fontSize: '0.95rem' }}
                   disabled={cartItems.length === 0 || !selectedTableId}
                   onClick={handleConfirmAndSendOrder}
                 >
-                  <i className="bi bi-send-fill me-2"></i> Confirmar y Enviar a Cocina (RF-44)
+                  <i className="bi bi-send-fill me-2"></i> Confirmar y Enviar a Cocina
                 </button>
               </div>
-            </div>
+            </SectionCard>
           </div>
         </div>
       ) : (
-        /* History & Supervision View (RF-46, RF-47, RF-48, RF-49) */
+        /* History & Supervision View */
         <div className="row g-4 mb-4">
           <div className="col-12 col-lg-5 col-xl-4">
-            {/* Active Orders List */}
-            <div className="card glass-card border-0 p-3">
-              <h6 className="fw-bold text-dark mb-3 border-bottom pb-2">Historial de Pedidos por Mesa (RF-48)</h6>
+            <SectionCard icon="bi-clock-history" title="Pedidos por Mesa">
               <div className="d-flex flex-column gap-2" style={{ maxHeight: '600px', overflowY: 'auto' }}>
                 {orders.length === 0 ? (
-                  <div className="text-center py-4 text-muted fs-7">Sin registros de pedidos.</div>
+                  <div className="text-center py-4" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Sin registros de pedidos.</div>
                 ) : (
                   orders.map(ord => (
                     <div
                       key={ord.id}
-                      className={`p-3 rounded-3 border cursor-pointer ${
-                        selectedOrder?.id === ord.id ? 'border-primary bg-primary-subtle' : 'bg-white'
-                      }`}
+                      className="p-3 rounded-3 border cursor-pointer"
+                      style={{
+                        background: selectedOrder?.id === ord.id ? 'var(--color-brand-light)' : 'var(--surface-card)',
+                        borderColor: selectedOrder?.id === ord.id ? 'var(--color-brand)' : 'var(--border-color)',
+                        transition: 'all 0.15s ease',
+                      }}
                       onClick={() => setSelectedOrder(ord)}
                     >
                       <div className="d-flex align-items-center justify-content-between mb-1">
-                        <span className="fw-bold text-dark">
-                          Mesa #{ord.tableNumber} — <small className="text-muted">{ord.areaName}</small>
+                        <span className="fw-bold" style={{ color: 'var(--text-primary)' }}>
+                          Mesa #{ord.tableNumber} <small style={{ color: 'var(--text-muted)' }}>({ord.areaName})</small>
                         </span>
                         <Badge
                           status={ord.status.toUpperCase()}
@@ -433,7 +435,7 @@ export const OrdersPage: React.FC = () => {
                           }
                         />
                       </div>
-                      <div className="d-flex justify-content-between fs-7 text-muted">
+                      <div className="d-flex justify-content-between" style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                         <span>{ord.waiterName}</span>
                         <span>{ord.createdAt}</span>
                       </div>
@@ -441,51 +443,49 @@ export const OrdersPage: React.FC = () => {
                   ))
                 )}
               </div>
-            </div>
+            </SectionCard>
           </div>
 
-          {/* Order Detail View (RF-45, RF-46, RF-47, RF-49) */}
+          {/* Order Detail View */}
           <div className="col-12 col-lg-7 col-xl-8">
             {selectedOrder ? (
-              <div className="card glass-card border-0 p-4">
-                <div className="d-flex align-items-center justify-content-between border-bottom pb-3 mb-3">
-                  <div>
-                    <h5 className="fw-bold text-dark mb-0">
-                      Detalle del Pedido #{selectedOrder.id} (Mesa #{selectedOrder.tableNumber})
-                    </h5>
-                    <small className="text-muted">
-                      Atendido por: <strong>{selectedOrder.waiterName}</strong> • Enviado a cocina: {selectedOrder.sentToKitchenAt || 'Pendiente'}
-                    </small>
-                  </div>
+              <SectionCard
+                icon="bi-receipt"
+                title={`Detalle del Pedido #${selectedOrder.id} (Mesa #${selectedOrder.tableNumber})`}
+                actions={
                   <div className="d-flex gap-2">
                     {selectedOrder.status !== 'cerrado' && selectedOrder.status !== 'cancelado' && (
                       <button
                         className="btn btn-outline-primary btn-sm fw-semibold"
+                        style={{ borderRadius: 8 }}
                         onClick={() => {
                           setAdditionalCart([]);
                           setIsAddItemsModalOpen(true);
                         }}
                       >
-                        <i className="bi bi-plus-lg me-1"></i> Agregar Ítems Adicionales (RF-45)
+                        <i className="bi bi-plus-lg me-1"></i> Agregar Ítems
                       </button>
                     )}
 
                     {isAdmin && selectedOrder.status !== 'cancelado' && selectedOrder.status !== 'cerrado' && (
                       <button
                         className="btn btn-outline-danger btn-sm fw-semibold"
+                        style={{ borderRadius: 8 }}
                         onClick={() => {
                           setCancelReason('');
                           setIsCancelModalOpen(true);
                         }}
                       >
-                        <i className="bi bi-x-circle me-1"></i> Cancelar Pedido (RF-49)
+                        <i className="bi bi-x-circle me-1"></i> Cancelar Pedido
                       </button>
                     )}
                   </div>
-                </div>
-
-                {/* Items Preparation Tracking Table (RF-46) */}
-                <h6 className="fw-bold text-dark mb-2">Estado de Preparación por Ítem (RF-46)</h6>
+                }
+              >
+                {/* Items Preparation Tracking Table */}
+                <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
+                  Estado de Preparación por Ítem
+                </h3>
                 <div className="custom-table-container mb-4">
                   <table className="custom-table">
                     <thead>
@@ -500,16 +500,14 @@ export const OrdersPage: React.FC = () => {
                     <tbody>
                       {selectedOrder.items.map(item => (
                         <tr key={item.id}>
-                          <td><span className="fw-bold text-dark">{item.dishName}</span></td>
+                          <td><span className="fw-bold" style={{ color: 'var(--text-primary)' }}>{item.dishName}</span></td>
                           <td><span className="fw-bold">{item.quantity}</span></td>
                           <td>S/ {item.price.toFixed(2)}</td>
                           <td>
                             {item.observation ? (
-                              <span className="badge bg-warning-subtle text-warning-emphasis fs-8">
-                                {item.observation}
-                              </span>
+                              <Badge status={item.observation} variant="warning" />
                             ) : (
-                              <span className="text-muted fs-8">-</span>
+                              <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>-</span>
                             )}
                           </td>
                           <td>
@@ -530,25 +528,33 @@ export const OrdersPage: React.FC = () => {
                   </table>
                 </div>
 
-                {/* Notification Banner (RF-47) */}
+                {/* Notification Banner */}
                 {selectedOrder.status === 'listo' && (
-                  <div className="alert alert-success bg-success-subtle text-success-emphasis border-success-subtle d-flex align-items-center justify-content-between p-3 rounded-3 shadow-sm">
+                  <div
+                    className="p-3 rounded-3 d-flex align-items-center justify-content-between"
+                    style={{ background: 'var(--color-emerald-bg)', border: '1px solid #6ee7b7' }}
+                  >
                     <div className="d-flex align-items-center gap-2">
-                      <i className="bi bi-bell-fill fs-4 text-success"></i>
+                      <i className="bi bi-bell-fill fs-4" style={{ color: 'var(--color-emerald)' }}></i>
                       <div>
-                        <strong className="d-block">¡Notificación de Cocina (RF-47)!</strong>
-                        <span>Este pedido se encuentra LISTO para retiro en pase.</span>
+                        <strong className="d-block" style={{ color: 'var(--color-emerald-text)', fontSize: '0.9rem' }}>
+                          ¡Notificación de Cocina!
+                        </strong>
+                        <span style={{ fontSize: '0.825rem', color: 'var(--color-emerald-text)' }}>
+                          Este pedido se encuentra LISTO para retiro en pase.
+                        </span>
                       </div>
                     </div>
                     <button
                       className="btn btn-success btn-sm fw-semibold"
+                      style={{ borderRadius: 8 }}
                       onClick={() => navigate('/ventas', { state: { billTableId: selectedOrder.tableId } })}
                     >
-                      Ir a Cobrar <i className="bi bi-arrow-right"></i>
+                      Ir a Cobrar <i className="bi bi-arrow-right ms-1"></i>
                     </button>
                   </div>
                 )}
-              </div>
+              </SectionCard>
             ) : (
               <EmptyState
                 icon="bi-receipt-cutoff"
@@ -560,46 +566,47 @@ export const OrdersPage: React.FC = () => {
         </div>
       )}
 
-      {/* Observation Modal (RF-43) */}
+      {/* Observation Modal */}
       <Modal
         isOpen={isObsModalOpen}
         onClose={() => setIsObsModalOpen(false)}
-        title="Registrar Observación Especial (RF-43)"
+        title="Registrar Observación Especial"
       >
         <div className="mb-4">
-          <label className="form-label fs-7 fw-semibold text-dark">Instrucciones para Cocina</label>
+          <label className="form-label">Instrucciones para Cocina</label>
           <input
             type="text"
-            className="form-control rounded-3"
+            className="form-control"
+            style={{ borderRadius: 8 }}
             placeholder="Ej. Sin picante, término medio, sal reducida..."
             value={tempObs}
             onChange={e => setTempObs(e.target.value)}
           />
         </div>
         <div className="d-flex justify-content-end gap-2 border-top pt-2">
-          <button className="btn btn-light" onClick={() => setIsObsModalOpen(false)}>Cancelar</button>
-          <button className="btn btn-brand fw-semibold" onClick={handleSaveObservation}>Guardar Observación</button>
+          <button className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={() => setIsObsModalOpen(false)}>Cancelar</button>
+          <button className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }} onClick={handleSaveObservation}>Guardar Observación</button>
         </div>
       </Modal>
 
-      {/* Additional Items Modal (RF-45) */}
+      {/* Additional Items Modal */}
       <Modal
         isOpen={isAddItemsModalOpen}
         onClose={() => setIsAddItemsModalOpen(false)}
-        title={`Agregar Ítems Adicionales a Pedido #${selectedOrder?.id} (RF-45)`}
+        title={`Agregar Ítems Adicionales a Pedido #${selectedOrder?.id}`}
         size="lg"
       >
         <div className="row g-3 mb-3">
           <div className="col-12 col-md-6">
-            <label className="form-label fs-7 fw-bold text-dark">Seleccionar Plato para Añadir</label>
+            <label className="form-label fw-bold">Seleccionar Plato para Añadir</label>
             <div className="d-flex flex-column gap-2" style={{ maxHeight: 300, overflowY: 'auto' }}>
               {dishes.filter(d => d.active && d.isAvailableToday).map(d => (
                 <div key={d.id} className="p-2 border rounded bg-white d-flex justify-content-between align-items-center">
                   <div>
-                    <div className="fw-bold fs-7">{d.name}</div>
-                    <small className="text-primary fw-semibold">S/ {d.price.toFixed(2)}</small>
+                    <div className="fw-bold fs-7" style={{ color: 'var(--text-primary)' }}>{d.name}</div>
+                    <small style={{ color: 'var(--color-brand)', fontWeight: 700 }}>S/ {d.price.toFixed(2)}</small>
                   </div>
-                  <button className="btn btn-sm btn-outline-primary" onClick={() => handleAddToAdditionalCart(d)}>
+                  <button className="btn btn-sm btn-outline-primary" style={{ borderRadius: 6 }} onClick={() => handleAddToAdditionalCart(d)}>
                     + Añadir
                   </button>
                 </div>
@@ -608,7 +615,7 @@ export const OrdersPage: React.FC = () => {
           </div>
 
           <div className="col-12 col-md-6 border-start">
-            <label className="form-label fs-7 fw-bold text-dark">Ítems Adicionales por Enviar</label>
+            <label className="form-label fw-bold">Ítems Adicionales por Enviar</label>
             {additionalCart.length === 0 ? (
               <div className="text-center py-4 text-muted fs-7">Sin adicionales seleccionados.</div>
             ) : (
@@ -616,13 +623,14 @@ export const OrdersPage: React.FC = () => {
                 {additionalCart.map((item, i) => (
                   <div key={i} className="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
                     <span className="fw-bold fs-7">{item.dish.name} (x{item.quantity})</span>
-                    <span className="fw-bold text-primary">S/ {(item.dish.price * item.quantity).toFixed(2)}</span>
+                    <span className="fw-bold" style={{ color: 'var(--color-brand)' }}>S/ {(item.dish.price * item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
             )}
             <button
-              className="btn btn-brand w-100 fw-semibold"
+              className="btn-brand btn w-100 fw-semibold"
+              style={{ borderRadius: 8 }}
               disabled={additionalCart.length === 0}
               onClick={handleSendAdditionalItems}
             >
@@ -632,16 +640,17 @@ export const OrdersPage: React.FC = () => {
         </div>
       </Modal>
 
-      {/* Cancel Order Modal (RF-49) */}
+      {/* Cancel Order Modal */}
       <Modal
         isOpen={isCancelModalOpen}
         onClose={() => setIsCancelModalOpen(false)}
-        title="Cancelar Pedido (Supervisión Admin - RF-49)"
+        title="Cancelar Pedido (Supervisión Administrativa)"
       >
         <div className="mb-4">
-          <label className="form-label fs-7 fw-semibold text-dark">Motivo de Cancelación *</label>
+          <label className="form-label">Motivo de Cancelación *</label>
           <textarea
-            className="form-control rounded-3"
+            className="form-control"
+            style={{ borderRadius: 8 }}
             rows={3}
             placeholder="Ej. Solicitud explícita del cliente por demoras..."
             required
@@ -650,9 +659,10 @@ export const OrdersPage: React.FC = () => {
           ></textarea>
         </div>
         <div className="d-flex justify-content-end gap-2 border-top pt-2">
-          <button className="btn btn-light" onClick={() => setIsCancelModalOpen(false)}>Cancelar</button>
+          <button className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={() => setIsCancelModalOpen(false)}>Cancelar</button>
           <button
             className="btn btn-danger fw-semibold"
+            style={{ borderRadius: 8 }}
             disabled={!cancelReason.trim()}
             onClick={handleConfirmCancelOrder}
           >

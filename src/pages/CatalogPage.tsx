@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import type { Dish, Category } from '../types';
+import { PageHeader } from '../components/common/PageHeader';
+import { SectionCard } from '../components/common/SectionCard';
+import { StatCard } from '../components/common/StatCard';
 import { SearchBar } from '../components/common/SearchBar';
 import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
@@ -149,76 +152,107 @@ export const CatalogPage: React.FC = () => {
     setIsCatModalOpen(true);
   };
 
+  const availableDishesCount = dishes.filter(d => d.isAvailableToday).length;
+  const unavailableDishesCount = dishes.filter(d => !d.isAvailableToday).length;
+
   return (
     <div className="container-fluid p-0">
-      {/* Title & Header */}
-      <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
-        <div>
-          <h4 className="fw-bold text-dark mb-1">
-            <i className="bi bi-book-half text-primary me-2"></i>
-            Gestión del Catálogo y Menú
-          </h4>
-          <p className="text-muted fs-7 mb-0">
-            Fuente única de información sobre platos, categorías, precios y disponibilidad (RF-08 - RF-16).
-          </p>
+      {/* Page Header */}
+      <PageHeader
+        icon="bi-book-half"
+        title="Catálogo de Platos y Categorías"
+        subtitle="Gestión del menú digital: platos, precios, disponibilidad y categorías."
+        actions={
+          isAdmin && (
+            <div className="d-flex gap-2">
+              <button
+                className="btn btn-outline-primary btn-sm fw-semibold"
+                style={{ borderRadius: 8 }}
+                onClick={() => handleOpenCategoryModal()}
+              >
+                <i className="bi bi-folder-plus me-1"></i> Nueva Categoría
+              </button>
+              <button
+                className="btn-brand btn btn-sm fw-semibold"
+                style={{ borderRadius: 8 }}
+                onClick={() => handleOpenDishModal()}
+              >
+                <i className="bi bi-plus-lg me-1"></i> Registrar Plato
+              </button>
+            </div>
+          )
+        }
+      />
+
+      {/* Row of 3 StatCards */}
+      <div className="row g-3 mb-4 stagger-children">
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="Total Platos"
+            value={dishes.length}
+            subtitle={`${categories.length} categorías configuradas`}
+            icon="bi-egg-fried"
+            colorTheme="indigo"
+          />
         </div>
-        {isAdmin && (
-          <div className="d-flex gap-2">
-            <button
-              className="btn btn-outline-primary btn-md fw-semibold shadow-sm"
-              onClick={() => handleOpenCategoryModal()}
-            >
-              <i className="bi bi-folder-plus me-1.5"></i> Nueva Categoría
-            </button>
-            <button
-              className="btn btn-brand btn-md fw-semibold shadow-sm"
-              onClick={() => handleOpenDishModal()}
-            >
-              <i className="bi bi-plus-lg me-1.5"></i> Registrar Plato
-            </button>
-          </div>
-        )}
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="Disponibles Hoy"
+            value={availableDishesCount}
+            subtitle="Listos para despacho en cocina"
+            icon="bi-check-circle-fill"
+            colorTheme="emerald"
+          />
+        </div>
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="No Disponibles"
+            value={unavailableDishesCount}
+            subtitle="Agotados o pausados hoy"
+            icon="bi-x-circle-fill"
+            colorTheme="rose"
+          />
+        </div>
       </div>
 
-      {/* Tabs Bar */}
-      <ul className="nav nav-tabs mb-4 border-bottom">
-        <li className="nav-item">
-          <button
-            className={`nav-link fw-semibold px-4 py-2.5 ${activeTab === 'platos' ? 'active text-primary border-primary border-bottom-0' : 'text-muted'}`}
-            onClick={() => setActiveTab('platos')}
-          >
-            <i className="bi bi-egg-fried me-2"></i> Platos y Carta ({dishes.length})
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link fw-semibold px-4 py-2.5 ${activeTab === 'categorias' ? 'active text-primary border-primary border-bottom-0' : 'text-muted'}`}
-            onClick={() => setActiveTab('categorias')}
-          >
-            <i className="bi bi-tags-fill me-2"></i> Categorías ({categories.length})
-          </button>
-        </li>
-      </ul>
+      {/* Navigation Pills for View Selection */}
+      <div className="d-flex align-items-center gap-2 mb-4">
+        <button
+          className={`btn btn-sm fw-semibold ${activeTab === 'platos' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
+          style={{ borderRadius: 8 }}
+          onClick={() => setActiveTab('platos')}
+        >
+          <i className="bi bi-egg-fried me-1.5"></i> Platos y Carta ({dishes.length})
+        </button>
+        <button
+          className={`btn btn-sm fw-semibold ${activeTab === 'categorias' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
+          style={{ borderRadius: 8 }}
+          onClick={() => setActiveTab('categorias')}
+        >
+          <i className="bi bi-tags-fill me-1.5"></i> Categorías ({categories.length})
+        </button>
+      </div>
 
       {activeTab === 'platos' ? (
         <>
-          {/* Filters Card */}
-          <div className="card glass-card border-0 mb-4 p-3">
+          {/* Filters SectionCard */}
+          <SectionCard icon="bi-funnel" title="Filtros del Catálogo" className="mb-4">
             <div className="row g-3 align-items-center">
               <div className="col-12 col-md-5">
                 <SearchBar
                   value={searchQuery}
                   onChange={setSearchQuery}
-                  placeholder="Buscar plato por nombre o descripción (RF-14)..."
+                  placeholder="Buscar plato por nombre o descripción..."
                 />
               </div>
               <div className="col-12 col-sm-6 col-md-3">
                 <select
-                  className="form-select rounded-3 border-secondary-subtle fs-7 fw-medium shadow-none"
+                  className="form-select form-select-sm fw-semibold"
+                  style={{ borderRadius: 8 }}
                   value={selectedCategory}
                   onChange={e => setSelectedCategory(e.target.value)}
                 >
-                  <option value="todas">Todas las Categorías (RF-15)</option>
+                  <option value="todas">Todas las Categorías</option>
                   {categories.map(cat => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
@@ -228,18 +262,19 @@ export const CatalogPage: React.FC = () => {
               </div>
               <div className="col-12 col-sm-6 col-md-4">
                 <select
-                  className="form-select rounded-3 border-secondary-subtle fs-7 fw-medium shadow-none"
+                  className="form-select form-select-sm fw-semibold"
+                  style={{ borderRadius: 8 }}
                   value={selectedAvailability}
                   onChange={e => setSelectedAvailability(e.target.value)}
                 >
-                  <option value="todos">Todos los Estados (RF-15)</option>
+                  <option value="todos">Todos los Estados</option>
                   <option value="activos">Activos en Menú Permanente</option>
                   <option value="disponibles_hoy">Disponibles Hoy para Cocina</option>
                   <option value="inactivos">Desactivados del Menú</option>
                 </select>
               </div>
             </div>
-          </div>
+          </SectionCard>
 
           {/* Dish Cards Grid (RF-16) */}
           {filteredDishes.length === 0 ? (
@@ -247,45 +282,51 @@ export const CatalogPage: React.FC = () => {
               icon="bi-journal-x"
               title="No hay platos que coincidan"
               description="Ajusta los filtros de búsqueda o registra nuevos platos en el catálogo."
-              actionText={isAdmin ? 'Registrar Primer Plato' : undefined}
-              onAction={isAdmin ? () => handleOpenDishModal() : undefined}
+              action={isAdmin ? (
+                <button className="btn-brand btn btn-sm fw-semibold" style={{ borderRadius: 8 }} onClick={() => handleOpenDishModal()}>
+                  Registrar Primer Plato
+                </button>
+              ) : undefined}
             />
           ) : (
-            <div className="row g-4 mb-4">
+            <div className="row g-3 mb-4">
               {filteredDishes.map(dish => (
                 <div key={dish.id} className="col-12 col-sm-6 col-lg-4 col-xl-3">
-                  <div className="card glass-card border-0 h-100 overflow-hidden d-flex flex-column">
-                    <div className="position-relative" style={{ height: 160, overflow: 'hidden' }}>
+                  <div className="section-card h-100 d-flex flex-column" style={{ transition: 'all 0.2s' }}>
+                    <div className="position-relative" style={{ height: 150, overflow: 'hidden', background: '#f8fafc' }}>
                       <img
                         src={dish.image}
                         alt={dish.name}
                         className="w-100 h-100 object-fit-cover"
                       />
-                      <div className="position-absolute top-0 start-0 m-2 d-flex flex-column gap-1">
+                      <div className="position-absolute top-0 start-0 m-2">
                         <Badge status={dish.categoryName} variant="dark" />
                       </div>
                       <div className="position-absolute top-0 end-0 m-2">
                         <Badge
-                          status={dish.active ? 'Menú Activo' : 'Desactivado'}
+                          status={dish.active ? 'Activo' : 'Desactivado'}
                           variant={dish.active ? 'success' : 'secondary'}
                         />
                       </div>
                     </div>
 
-                    <div className="card-body p-3.5 d-flex flex-column flex-grow-1">
+                    <div className="p-3 d-flex flex-column flex-grow-1">
                       <div className="d-flex align-items-start justify-content-between gap-2 mb-1">
-                        <h6 className="fw-bold text-dark mb-0 line-clamp-1">{dish.name}</h6>
-                        <span className="fw-extrabold text-primary fs-6">S/ {dish.price.toFixed(2)}</span>
+                        <h3 className="fw-bold mb-0 text-truncate" style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                          {dish.name}
+                        </h3>
+                        <span className="fw-extrabold flex-shrink-0" style={{ color: 'var(--color-brand)', fontSize: '1.05rem' }}>
+                          S/ {dish.price.toFixed(2)}
+                        </span>
                       </div>
-                      <p className="text-muted fs-7 line-clamp-2 mb-3 flex-grow-1" style={{ fontSize: '0.825rem' }}>
+                      <p className="mb-3 flex-grow-1" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
                         {dish.description}
                       </p>
 
-                      <div className="d-flex align-items-center justify-content-between pt-2 border-top">
+                      <div className="d-flex align-items-center justify-content-between pt-2 border-top mt-auto">
                         <div>
-                          <small className="text-muted d-block" style={{ fontSize: '0.7rem' }}>Cocina Hoy:</small>
                           <Badge
-                            status={dish.isAvailableToday ? 'Disponible' : 'Agotado'}
+                            status={dish.isAvailableToday ? 'Disponible Hoy' : 'Agotado Hoy'}
                             variant={dish.isAvailableToday ? 'info' : 'warning'}
                           />
                         </div>
@@ -293,15 +334,15 @@ export const CatalogPage: React.FC = () => {
                         {isAdmin && (
                           <div className="d-flex gap-1">
                             <button
-                              className="btn btn-sm btn-light border text-primary"
-                              title="Editar Plato (RF-12)"
+                              className="btn-icon btn-icon-primary"
+                              title="Editar Plato"
                               onClick={() => handleOpenDishModal(dish)}
                             >
-                              <i className="bi bi-pencil-square"></i>
+                              <i className="bi bi-pencil-fill"></i>
                             </button>
                             <button
-                              className={`btn btn-sm ${dish.active ? 'btn-light text-danger' : 'btn-light text-success'} border`}
-                              title={dish.active ? 'Desactivar del Menú (RF-13)' : 'Activar en Menú'}
+                              className={`btn-icon ${dish.active ? 'btn-icon-danger' : 'btn-icon-success'}`}
+                              title={dish.active ? 'Desactivar del Menú' : 'Activar en Menú'}
                               onClick={() => toggleDishActive(dish.id)}
                             >
                               <i className={`bi ${dish.active ? 'bi-eye-slash-fill' : 'bi-eye-fill'}`}></i>
@@ -317,75 +358,78 @@ export const CatalogPage: React.FC = () => {
           )}
         </>
       ) : (
-        /* Categories Table (RF-08, RF-09, RF-10) */
-        <div className="custom-table-container">
-          <table className="custom-table">
-            <thead>
-              <tr>
-                <th>Categoría</th>
-                <th>Descripción</th>
-                <th>Platos Asociados</th>
-                {isAdmin && <th className="text-end">Acciones</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {categories.map(cat => {
-                const associatedCount = dishes.filter(d => d.categoryId === cat.id).length;
-                return (
-                  <tr key={cat.id}>
-                    <td>
-                      <div className="fw-bold text-dark">{cat.name}</div>
-                    </td>
-                    <td>
-                      <span className="text-muted fs-7">{cat.description || 'Sin descripción'}</span>
-                    </td>
-                    <td>
-                      <span className="badge bg-primary-subtle text-primary fw-semibold px-2.5 py-1 rounded-pill">
-                        {associatedCount} platos
-                      </span>
-                    </td>
-                    {isAdmin && (
-                      <td className="text-end">
-                        <div className="d-inline-flex gap-1">
-                          <button
-                            className="btn btn-sm btn-light text-primary border"
-                            title="Editar Categoría (RF-09)"
-                            onClick={() => handleOpenCategoryModal(cat)}
-                          >
-                            <i className="bi bi-pencil-square"></i>
-                          </button>
-                          <button
-                            className="btn btn-sm btn-light text-danger border"
-                            title="Eliminar Categoría (RF-10)"
-                            onClick={() => setDeletingCat(cat)}
-                          >
-                            <i className="bi bi-trash-fill"></i>
-                          </button>
-                        </div>
-                      </td>
-                    )}
+        /* Categories Table */
+        <SectionCard icon="bi-tags-fill" title="Categorías del Menú" noPadding>
+          <div className="table-responsive-x">
+            <div className="custom-table-container">
+              <table className="custom-table" style={{ minWidth: 600 }}>
+                <thead>
+                  <tr>
+                    <th>Categoría</th>
+                    <th>Descripción</th>
+                    <th>Platos Asociados</th>
+                    {isAdmin && <th className="text-end">Acciones</th>}
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody>
+                  {categories.map(cat => {
+                    const associatedCount = dishes.filter(d => d.categoryId === cat.id).length;
+                    return (
+                      <tr key={cat.id}>
+                        <td>
+                          <div className="fw-bold" style={{ color: 'var(--text-primary)' }}>{cat.name}</div>
+                        </td>
+                        <td>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>{cat.description || 'Sin descripción'}</span>
+                        </td>
+                        <td>
+                          <Badge status={`${associatedCount} platos`} variant="primary" />
+                        </td>
+                        {isAdmin && (
+                          <td className="text-end">
+                            <div className="d-inline-flex gap-1">
+                              <button
+                                className="btn-icon btn-icon-primary"
+                                title="Editar Categoría"
+                                onClick={() => handleOpenCategoryModal(cat)}
+                              >
+                                <i className="bi bi-pencil-fill"></i>
+                              </button>
+                              <button
+                                className="btn-icon btn-icon-danger"
+                                title="Eliminar Categoría"
+                                onClick={() => setDeletingCat(cat)}
+                              >
+                                <i className="bi bi-trash-fill"></i>
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </SectionCard>
       )}
 
-      {/* Dish Modal (RF-11, RF-12) */}
+      {/* Dish Modal */}
       <Modal
         isOpen={isDishModalOpen}
         onClose={() => setIsDishModalOpen(false)}
-        title={editingDish ? 'Editar Plato del Catálogo (RF-12)' : 'Registrar Nuevo Plato (RF-11)'}
+        title={editingDish ? 'Editar Plato del Catálogo' : 'Registrar Nuevo Plato'}
         size="lg"
       >
         <form onSubmit={handleDishSubmit}>
           <div className="row g-3 mb-3">
             <div className="col-12 col-md-8">
-              <label className="form-label fs-7 fw-semibold text-dark">Nombre del Plato *</label>
+              <label className="form-label">Nombre del Plato *</label>
               <input
                 type="text"
-                className="form-control rounded-3"
+                className="form-control"
+                style={{ borderRadius: 8 }}
                 placeholder="Ej. Ceviche Mixto Especial"
                 required
                 value={dishFormData.name}
@@ -393,12 +437,13 @@ export const CatalogPage: React.FC = () => {
               />
             </div>
             <div className="col-12 col-md-4">
-              <label className="form-label fs-7 fw-semibold text-dark">Precio (S/) *</label>
+              <label className="form-label">Precio (S/) *</label>
               <input
                 type="number"
                 step="0.5"
                 min="0"
-                className="form-control rounded-3"
+                className="form-control"
+                style={{ borderRadius: 8 }}
                 required
                 value={dishFormData.price}
                 onChange={e => setDishFormData({ ...dishFormData, price: parseFloat(e.target.value) || 0 })}
@@ -408,9 +453,10 @@ export const CatalogPage: React.FC = () => {
 
           <div className="row g-3 mb-3">
             <div className="col-12 col-md-6">
-              <label className="form-label fs-7 fw-semibold text-dark">Categoría *</label>
+              <label className="form-label">Categoría *</label>
               <select
-                className="form-select rounded-3"
+                className="form-select"
+                style={{ borderRadius: 8 }}
                 required
                 value={dishFormData.categoryId}
                 onChange={e => setDishFormData({ ...dishFormData, categoryId: e.target.value })}
@@ -422,10 +468,11 @@ export const CatalogPage: React.FC = () => {
               </select>
             </div>
             <div className="col-12 col-md-6">
-              <label className="form-label fs-7 fw-semibold text-dark">URL de Imagen</label>
+              <label className="form-label">URL de Imagen</label>
               <input
                 type="url"
-                className="form-control rounded-3"
+                className="form-control"
+                style={{ borderRadius: 8 }}
                 placeholder="https://..."
                 value={dishFormData.image}
                 onChange={e => setDishFormData({ ...dishFormData, image: e.target.value })}
@@ -434,9 +481,10 @@ export const CatalogPage: React.FC = () => {
           </div>
 
           <div className="mb-4">
-            <label className="form-label fs-7 fw-semibold text-dark">Descripción del Plato</label>
+            <label className="form-label">Descripción del Plato</label>
             <textarea
-              className="form-control rounded-3"
+              className="form-control"
+              style={{ borderRadius: 8 }}
               rows={3}
               placeholder="Ingredientes, preparación o detalles de presentación..."
               value={dishFormData.description}
@@ -445,28 +493,29 @@ export const CatalogPage: React.FC = () => {
           </div>
 
           <div className="d-flex justify-content-end gap-2 pt-3 border-top">
-            <button type="button" className="btn btn-light fw-medium" onClick={() => setIsDishModalOpen(false)}>
+            <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={() => setIsDishModalOpen(false)}>
               Cancelar
             </button>
-            <button type="submit" className="btn btn-brand fw-semibold">
+            <button type="submit" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }}>
               {editingDish ? 'Guardar Cambios' : 'Registrar Plato'}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Category Modal (RF-08, RF-09) */}
+      {/* Category Modal */}
       <Modal
         isOpen={isCatModalOpen}
         onClose={() => setIsCatModalOpen(false)}
-        title={editingCategory ? 'Editar Categoría (RF-09)' : 'Crear Nueva Categoría (RF-08)'}
+        title={editingCategory ? 'Editar Categoría' : 'Crear Nueva Categoría'}
       >
         <form onSubmit={handleCategorySubmit}>
           <div className="mb-3">
-            <label className="form-label fs-7 fw-semibold text-dark">Nombre de Categoría *</label>
+            <label className="form-label">Nombre de Categoría *</label>
             <input
               type="text"
-              className="form-control rounded-3"
+              className="form-control"
+              style={{ borderRadius: 8 }}
               placeholder="Ej. Sopas y Cremas"
               required
               value={catFormData.name}
@@ -475,10 +524,11 @@ export const CatalogPage: React.FC = () => {
           </div>
 
           <div className="mb-4">
-            <label className="form-label fs-7 fw-semibold text-dark">Descripción</label>
+            <label className="form-label">Descripción</label>
             <input
               type="text"
-              className="form-control rounded-3"
+              className="form-control"
+              style={{ borderRadius: 8 }}
               placeholder="Breve descripción funcional..."
               value={catFormData.description}
               onChange={e => setCatFormData({ ...catFormData, description: e.target.value })}
@@ -486,23 +536,23 @@ export const CatalogPage: React.FC = () => {
           </div>
 
           <div className="d-flex justify-content-end gap-2 pt-2 border-top">
-            <button type="button" className="btn btn-light fw-medium" onClick={() => setIsCatModalOpen(false)}>
+            <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={() => setIsCatModalOpen(false)}>
               Cancelar
             </button>
-            <button type="submit" className="btn btn-brand fw-semibold">
+            <button type="submit" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }}>
               {editingCategory ? 'Guardar Categoría' : 'Crear Categoría'}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Delete Category Confirmation (RF-10) */}
+      {/* Delete Category Confirmation */}
       {deletingCat && (
         <ConfirmModal
           isOpen={!!deletingCat}
           onClose={() => setDeletingCat(null)}
           onConfirm={() => deleteCategory(deletingCat.id)}
-          title="Eliminar Categoría (RF-10)"
+          title="Eliminar Categoría"
           message={`¿Desea eliminar la categoría "${deletingCat.name}"? Solo es posible eliminar categorías sin platos asociados.`}
           variant="danger"
           confirmText="Eliminar Categoría"

@@ -810,7 +810,7 @@ body {
 }
 
 .kds-ticket.status-pending    { border-top: 4px solid #f59e0b; }
-.kds-ticket.status-preparing  { border-top: 4px solid #3b82f6; }
+.kds-ticket.status-preparing  { border-top: 4px solid #f6d13b; }
 .kds-ticket.status-ready      { border-top: 4px solid #10b981; }
 
 .kds-ticket.status-urgent {

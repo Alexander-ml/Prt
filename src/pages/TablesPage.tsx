@@ -149,11 +149,13 @@ export const TablesPage: React.FC = () => {
         actions={
           isAdmin && (
             <button
-              className={`btn btn-sm fw-semibold ${viewMode === 'config' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-              style={{ borderRadius: 8 }}
+              type="button"
+              className={`btn btn-sm fw-semibold rounded-3 ${
+                viewMode === 'config' ? 'btn-primary' : 'btn-outline-secondary'
+              }`}
               onClick={() => setViewMode(viewMode === 'plano' ? 'config' : 'plano')}
             >
-              <i className="bi bi-gear-fill me-1"></i>
+              <i className="bi bi-gear-fill me-1" aria-hidden="true"></i>
               {viewMode === 'plano' ? 'Configurar Áreas & Mesas' : 'Volver a Plano de Sala'}
             </button>
           )
@@ -164,7 +166,7 @@ export const TablesPage: React.FC = () => {
         <>
           {/* StatCards Row */}
           <div className="row g-3 mb-4 stagger-children">
-            <div className="col-12 col-sm-6 col-xl-3">
+            <div className="col-6 col-xl-3">
               <StatCard
                 title="Total Mesas"
                 value={tables.length}
@@ -173,7 +175,7 @@ export const TablesPage: React.FC = () => {
                 colorTheme="indigo"
               />
             </div>
-            <div className="col-12 col-sm-6 col-xl-3">
+            <div className="col-6 col-xl-3">
               <StatCard
                 title="Disponibles"
                 value={availableCount}
@@ -182,7 +184,7 @@ export const TablesPage: React.FC = () => {
                 colorTheme="emerald"
               />
             </div>
-            <div className="col-12 col-sm-6 col-xl-3">
+            <div className="col-6 col-xl-3">
               <StatCard
                 title="Ocupadas"
                 value={occupiedCount}
@@ -191,7 +193,7 @@ export const TablesPage: React.FC = () => {
                 colorTheme="rose"
               />
             </div>
-            <div className="col-12 col-sm-6 col-xl-3">
+            <div className="col-6 col-xl-3">
               <StatCard
                 title="Reservadas"
                 value={reservedCount}
@@ -205,11 +207,13 @@ export const TablesPage: React.FC = () => {
           {/* Filter Bar */}
           <SectionCard icon="bi-funnel" title="Filtros del Plano de Sala" className="mb-4">
             <div className="row g-3 align-items-center justify-content-between">
-              <div className="col-12 col-md-8 d-flex flex-wrap gap-1.5 align-items-center">
-                <span className="fs-7 text-muted fw-semibold me-2">Área:</span>
+              <div className="col-12 col-md-8 d-flex flex-wrap gap-2 align-items-center">
+                <span className="small text-muted fw-semibold me-1">Área:</span>
                 <button
-                  className={`btn btn-sm text-nowrap fw-semibold ${selectedAreaFilter === 'todas' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-                  style={{ borderRadius: 8 }}
+                  type="button"
+                  className={`btn btn-sm rounded-pill fw-semibold ${
+                    selectedAreaFilter === 'todas' ? 'btn-primary' : 'btn-outline-secondary'
+                  }`}
                   onClick={() => setSelectedAreaFilter('todas')}
                 >
                   Todas ({tables.length})
@@ -217,20 +221,23 @@ export const TablesPage: React.FC = () => {
                 {areas.map(area => (
                   <button
                     key={area.id}
-                    className={`btn btn-sm text-nowrap fw-semibold ${selectedAreaFilter === area.id ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-                    style={{ borderRadius: 8 }}
+                    type="button"
+                    className={`btn btn-sm rounded-pill fw-semibold text-nowrap ${
+                      selectedAreaFilter === area.id ? 'btn-primary' : 'btn-outline-secondary'
+                    }`}
                     onClick={() => setSelectedAreaFilter(area.id)}
                   >
                     {area.name} ({tables.filter(t => t.areaId === area.id).length})
                   </button>
                 ))}
               </div>
-
               <div className="col-12 col-md-4 d-flex justify-content-md-end gap-2 align-items-center">
-                <span className="fs-7 text-muted fw-semibold me-1">Estado:</span>
+                <label htmlFor="statusFilterSelect" className="small text-muted fw-semibold mb-0 text-nowrap">
+                  Estado:
+                </label>
                 <select
-                  className="form-select form-select-sm w-auto fw-semibold"
-                  style={{ borderRadius: 8 }}
+                  id="statusFilterSelect"
+                  className="form-select form-select-sm w-auto fw-semibold rounded-3"
                   value={selectedStatusFilter}
                   onChange={e => setSelectedStatusFilter(e.target.value)}
                 >
@@ -247,56 +254,97 @@ export const TablesPage: React.FC = () => {
           {/* Interactive Floorplan Grid (RF-32) */}
           <div className="row g-3 mb-4">
             {filteredTables.map(table => {
-              const activeOrder = orders.find(o => o.id === table.currentOrderId || (o.tableId === table.id && o.status !== 'cerrado'));
+              const activeOrder = orders.find(
+                o => o.id === table.currentOrderId || (o.tableId === table.id && o.status !== 'cerrado')
+              );
+
+              const statusConfig: Record<string, { label: string; badge: string; border: string; icon: string }> = {
+                disponible: {
+                  label: 'Disponible',
+                  badge: 'bg-success-subtle text-success-emphasis',
+                  border: 'border-success',
+                  icon: 'bi-check-circle-fill',
+                },
+                ocupada: {
+                  label: 'Ocupada',
+                  badge: 'bg-danger-subtle text-danger-emphasis',
+                  border: 'border-danger',
+                  icon: 'bi-people-fill',
+                },
+                reservada: {
+                  label: 'Reservada',
+                  badge: 'bg-warning-subtle text-warning-emphasis',
+                  border: 'border-warning',
+                  icon: 'bi-bookmark-star-fill',
+                },
+                limpieza: {
+                  label: 'En Limpieza',
+                  badge: 'bg-info-subtle text-info-emphasis',
+                  border: 'border-info',
+                  icon: 'bi-droplet-fill',
+                },
+              };
+              const cfg = statusConfig[table.status] ?? statusConfig.disponible;
 
               return (
-                <div key={table.id} className="col-12 col-sm-6 col-md-4 col-xl-3">
+                <div key={table.id} className="col-6 col-md-4 col-xl-3">
                   <div
-                    className={`table-card status-${table.status}`}
+                    className={`table-card card h-100 shadow-sm rounded-4 border-start border-4 ${cfg.border}`}
                     onClick={() => setSelectedTableForAction(table)}
                     role="button"
                     tabIndex={0}
                     onKeyDown={e => e.key === 'Enter' && setSelectedTableForAction(table)}
                   >
-                    <div>
-                      <div className="d-flex align-items-center justify-content-between mb-2">
-                        <span className="fw-bold fs-5" style={{ color: 'var(--text-primary)' }}>Mesa #{table.number}</span>
-                        <span className="table-status-pill">{table.status}</span>
+                    <div className="card-body d-flex flex-column p-3">
+                      <div className="d-flex align-items-center justify-content-between mb-2 gap-2">
+                        <span className="fw-bold fs-4 text-dark">Mesa #{table.number}</span>
+                        <span className={`badge rounded-pill text-nowrap ${cfg.badge}`}>
+                          <i className={`bi ${cfg.icon} me-1`} aria-hidden="true"></i>
+                          {cfg.label}
+                        </span>
                       </div>
-
-                      <div className="d-flex align-items-center gap-2 text-muted fs-7 mb-2">
-                        <span><i className="bi bi-geo-alt me-1"></i>{table.areaName}</span>
+                      <div className="d-flex align-items-center gap-2 text-muted small mb-2">
+                        <span className="text-truncate">
+                          <i className="bi bi-geo-alt me-1" aria-hidden="true"></i>
+                          {table.areaName}
+                        </span>
                         <span>•</span>
-                        <span><i className="bi bi-people me-1"></i>{table.capacity} pers.</span>
+                        <span className="text-nowrap">
+                          <i className="bi bi-people me-1" aria-hidden="true"></i>
+                          {table.capacity} pers.
+                        </span>
                       </div>
 
                       {table.joinedWith && table.joinedWith.length > 0 && (
-                        <div className="badge border mb-2 text-truncate" style={{ background: 'var(--color-brand-light)', color: 'var(--color-brand)' }}>
-                          <i className="bi bi-link-45deg me-1"></i>Unida con: {table.joinedWith.join(', ')}
+                        <div className="badge bg-primary-subtle text-primary-emphasis mb-2 text-truncate">
+                          <i className="bi bi-link-45deg me-1" aria-hidden="true"></i>
+                          Unida con: {table.joinedWith.join(', ')}
                         </div>
                       )}
 
                       {table.status === 'reservada' && (
-                        <div className="p-2 rounded-2 fs-7 mb-2" style={{ background: 'var(--color-amber-bg)', color: 'var(--color-amber-text)' }}>
-                          <i className="bi bi-bookmark-star-fill text-warning me-1"></i>
+                        <div className="p-2 rounded-3 bg-warning-subtle text-warning-emphasis small mb-2">
+                          <i className="bi bi-bookmark-star-fill me-1" aria-hidden="true"></i>
                           <strong>{table.reservationName}</strong> ({table.reservationTime})
                         </div>
                       )}
 
                       {table.status === 'ocupada' && activeOrder && (
-                        <div className="p-2 rounded-2 border fs-7 mb-2" style={{ background: 'var(--surface-muted)' }}>
-                          <div className="d-flex justify-content-between fw-bold" style={{ color: 'var(--text-primary)' }}>
+                        <div className="p-2 rounded-3 border bg-light small mb-2">
+                          <div className="d-flex justify-content-between fw-bold text-dark">
                             <span>Pedido #{activeOrder.id.slice(-4)}</span>
-                            <span style={{ color: 'var(--color-brand)' }}>{activeOrder.items.length} platos</span>
+                            <span className="text-primary">{activeOrder.items.length} platos</span>
                           </div>
-                          <small style={{ color: 'var(--text-muted)' }}>{activeOrder.waiterName}</small>
+                          <small className="text-muted">{activeOrder.waiterName}</small>
                         </div>
                       )}
-                    </div>
 
-                    <div className="pt-2 border-top mt-2 d-flex justify-content-between align-items-center">
-                      <small style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Clic para opciones</small>
-                      <i className="bi bi-three-dots-vertical text-muted"></i>
+                      <div className="pt-2 border-top mt-auto d-flex justify-content-between align-items-center">
+                        <small className="text-muted" style={{ fontSize: '0.72rem' }}>
+                          Clic para opciones
+                        </small>
+                        <i className="bi bi-three-dots-vertical text-muted" aria-hidden="true"></i>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -314,36 +362,51 @@ export const TablesPage: React.FC = () => {
               title="Áreas Configuradas"
               actions={
                 <button
-                  className="btn-brand btn btn-sm fw-semibold"
-                  style={{ borderRadius: 8 }}
-                  onClick={() => { setEditingArea(null); setAreaFormData({ name: '', description: '' }); setIsAreaModalOpen(true); }}
+                  type="button"
+                  className="btn-brand btn btn-sm fw-semibold rounded-3"
+                  onClick={() => {
+                    setEditingArea(null);
+                    setAreaFormData({ name: '', description: '' });
+                    setIsAreaModalOpen(true);
+                  }}
                 >
-                  <i className="bi bi-plus-lg me-1"></i> Nueva Área
+                  <i className="bi bi-plus-lg me-1" aria-hidden="true"></i> Nueva Área
                 </button>
               }
             >
               <div className="d-flex flex-column gap-2">
                 {areas.map(area => (
-                  <div key={area.id} className="p-3 rounded-3 border bg-white d-flex align-items-center justify-content-between shadow-sm">
-                    <div>
-                      <div className="fw-bold" style={{ color: 'var(--text-primary)' }}>{area.name}</div>
-                      <small style={{ color: 'var(--text-muted)' }}>{area.description || 'Sin descripción'}</small>
-                      <small className="d-block fw-semibold mt-1" style={{ color: 'var(--color-brand)' }}>
+                  <div
+                    key={area.id}
+                    className="p-3 rounded-3 border bg-white d-flex align-items-center justify-content-between shadow-sm"
+                  >
+                    <div className="text-truncate me-2">
+                      <div className="fw-bold text-dark">{area.name}</div>
+                      <small className="text-muted">{area.description || 'Sin descripción'}</small>
+                      <small className="d-block fw-semibold mt-1 text-primary">
                         {tables.filter(t => t.areaId === area.id).length} mesas asignadas
                       </small>
                     </div>
-                    <div className="d-flex gap-1">
+                    <div className="d-flex gap-1 flex-shrink-0">
                       <button
+                        type="button"
                         className="btn-icon btn-icon-primary"
-                        onClick={() => { setEditingArea(area); setAreaFormData({ name: area.name, description: area.description }); setIsAreaModalOpen(true); }}
+                        aria-label={`Editar área ${area.name}`}
+                        onClick={() => {
+                          setEditingArea(area);
+                          setAreaFormData({ name: area.name, description: area.description });
+                          setIsAreaModalOpen(true);
+                        }}
                       >
-                        <i className="bi bi-pencil-fill"></i>
+                        <i className="bi bi-pencil-fill" aria-hidden="true"></i>
                       </button>
                       <button
+                        type="button"
                         className="btn-icon btn-icon-danger"
+                        aria-label={`Eliminar área ${area.name}`}
                         onClick={() => setDeletingArea(area)}
                       >
-                        <i className="bi bi-trash-fill"></i>
+                        <i className="bi bi-trash-fill" aria-hidden="true"></i>
                       </button>
                     </div>
                   </div>
@@ -359,53 +422,63 @@ export const TablesPage: React.FC = () => {
               title="Listado de Mesas Registradas"
               noPadding
               actions={
-                <button className="btn-brand btn btn-sm fw-semibold" style={{ borderRadius: 8 }} onClick={openNewTableModal}>
-                  <i className="bi bi-plus-lg me-1"></i> Nueva Mesa
+                <button type="button" className="btn-brand btn btn-sm fw-semibold rounded-3" onClick={openNewTableModal}>
+                  <i className="bi bi-plus-lg me-1" aria-hidden="true"></i> Nueva Mesa
                 </button>
               }
             >
-              <div className="table-responsive-x">
-                <div className="custom-table-container">
-                  <table className="custom-table" style={{ minWidth: 500 }}>
-                    <thead>
-                      <tr>
-                        <th>Número</th>
-                        <th>Área Asignada</th>
-                        <th>Capacidad</th>
-                        <th className="text-end">Acciones</th>
+              <div className="table-responsive">
+                <table className="table table-hover align-middle mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Número</th>
+                      <th>Área Asignada</th>
+                      <th>Capacidad</th>
+                      <th className="text-end">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tables.map(table => (
+                      <tr key={table.id}>
+                        <td>
+                          <span className="fw-bold text-dark">Mesa #{table.number}</span>
+                        </td>
+                        <td>
+                          <span className="badge bg-secondary-subtle text-secondary-emphasis border">
+                            {table.areaName}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="fw-semibold text-dark">{table.capacity} personas</span>
+                        </td>
+                        <td className="text-end">
+                          <div className="d-inline-flex gap-1">
+                            <button
+                              type="button"
+                              className="btn-icon btn-icon-primary"
+                              aria-label={`Editar mesa ${table.number}`}
+                              onClick={() => {
+                                setEditingTable(table);
+                                setTableFormData({ number: table.number, areaId: table.areaId, capacity: table.capacity });
+                                setIsTableModalOpen(true);
+                              }}
+                            >
+                              <i className="bi bi-pencil-fill" aria-hidden="true"></i>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-icon btn-icon-danger"
+                              aria-label={`Eliminar mesa ${table.number}`}
+                              onClick={() => setDeletingTable(table)}
+                            >
+                              <i className="bi bi-trash-fill" aria-hidden="true"></i>
+                            </button>
+                          </div>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {tables.map(table => (
-                        <tr key={table.id}>
-                          <td><span className="fw-bold" style={{ color: 'var(--text-primary)' }}>Mesa #{table.number}</span></td>
-                          <td><span className="badge" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}>{table.areaName}</span></td>
-                          <td><span className="fw-semibold" style={{ color: 'var(--text-primary)' }}>{table.capacity} personas</span></td>
-                          <td className="text-end">
-                            <div className="d-inline-flex gap-1">
-                              <button
-                                className="btn-icon btn-icon-primary"
-                                onClick={() => {
-                                  setEditingTable(table);
-                                  setTableFormData({ number: table.number, areaId: table.areaId, capacity: table.capacity });
-                                  setIsTableModalOpen(true);
-                                }}
-                              >
-                                <i className="bi bi-pencil-fill"></i>
-                              </button>
-                              <button
-                                className="btn-icon btn-icon-danger"
-                                onClick={() => setDeletingTable(table)}
-                              >
-                                <i className="bi bi-trash-fill"></i>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </SectionCard>
           </div>
@@ -426,22 +499,22 @@ export const TablesPage: React.FC = () => {
             {selectedTableForAction.status === 'disponible' && (
               <>
                 <button
-                  className="btn btn-lg fw-semibold d-flex align-items-center justify-content-between text-white p-3 rounded-3"
-                  style={{ background: 'linear-gradient(135deg, #059669, #10b981)', border: 'none' }}
+                  type="button"
+                  className="btn btn-success btn-lg fw-semibold d-flex align-items-center justify-content-between text-white p-3 rounded-4"
                   onClick={() => {
                     occupyTable(selectedTableForAction.id);
                     navigate('/pedidos', { state: { createForTableId: selectedTableForAction.id } });
                   }}
                 >
-                  <div>
+                  <div className="text-start">
                     <div className="fw-bold">Ocupar y Tomar Pedido</div>
                     <small className="opacity-75">Cambia a Ocupada e inicia toma de comandas</small>
                   </div>
-                  <i className="bi bi-plus-circle-fill fs-3"></i>
+                  <i className="bi bi-plus-circle-fill fs-3" aria-hidden="true"></i>
                 </button>
-
                 <button
-                  className="btn btn-outline-warning text-dark fw-semibold text-start p-3 rounded-3 border-2 d-flex justify-content-between align-items-center"
+                  type="button"
+                  className="btn btn-outline-warning text-dark fw-semibold text-start p-3 rounded-4 border-2 d-flex justify-content-between align-items-center"
                   onClick={() => {
                     setResName('');
                     setIsReserveModalOpen(true);
@@ -449,9 +522,9 @@ export const TablesPage: React.FC = () => {
                 >
                   <div>
                     <div className="fw-bold">Registrar Reserva Manual</div>
-                    <small style={{ color: 'var(--text-muted)' }}>Anota nombre de cliente y hora prevista</small>
+                    <small className="text-muted">Anota nombre de cliente y hora prevista</small>
                   </div>
-                  <i className="bi bi-bookmark-plus-fill text-warning fs-4"></i>
+                  <i className="bi bi-bookmark-plus-fill text-warning fs-4" aria-hidden="true"></i>
                 </button>
               </>
             )}
@@ -460,18 +533,19 @@ export const TablesPage: React.FC = () => {
             {selectedTableForAction.status === 'ocupada' && (
               <>
                 <button
-                  className="btn-brand btn btn-lg fw-semibold text-start p-3 rounded-3 d-flex justify-content-between align-items-center"
+                  type="button"
+                  className="btn-brand btn btn-lg fw-semibold text-start p-3 rounded-4 d-flex justify-content-between align-items-center"
                   onClick={() => navigate('/pedidos', { state: { focusTableId: selectedTableForAction.id } })}
                 >
                   <div>
                     <div className="fw-bold">Ver / Editar Pedido de Mesa</div>
                     <small className="opacity-75">Agregar platos, enviar a cocina o gestionar</small>
                   </div>
-                  <i className="bi bi-receipt fs-3"></i>
+                  <i className="bi bi-receipt fs-3" aria-hidden="true"></i>
                 </button>
-
                 <button
-                  className="btn btn-outline-primary fw-semibold text-start p-3 rounded-3 d-flex justify-content-between align-items-center"
+                  type="button"
+                  className="btn btn-outline-primary fw-semibold text-start p-3 rounded-4 d-flex justify-content-between align-items-center"
                   onClick={() => {
                     setTargetTransferTableId('');
                     setIsTransferModalOpen(true);
@@ -479,53 +553,65 @@ export const TablesPage: React.FC = () => {
                 >
                   <div>
                     <div className="fw-bold">Trasladar Pedido a Otra Mesa</div>
-                    <small style={{ color: 'var(--text-muted)' }}>Mueve la comanda a una mesa disponible</small>
+                    <small className="text-muted">Mueve la comanda a una mesa disponible</small>
                   </div>
-                  <i className="bi bi-arrow-right-square-fill fs-4"></i>
+                  <i className="bi bi-arrow-right-square-fill fs-4" aria-hidden="true"></i>
                 </button>
-
                 <button
-                  className="btn btn-outline-success fw-semibold text-start p-3 rounded-3 d-flex justify-content-between align-items-center"
+                  type="button"
+                  className="btn btn-outline-success fw-semibold text-start p-3 rounded-4 d-flex justify-content-between align-items-center"
                   onClick={() => navigate('/ventas', { state: { billTableId: selectedTableForAction.id } })}
                 >
                   <div>
                     <div className="fw-bold">Generar Cuenta y Cobrar</div>
-                    <small style={{ color: 'var(--text-muted)' }}>Proceder a la división y cierre de venta</small>
+                    <small className="text-muted">Proceder a la división y cierre de venta</small>
                   </div>
-                  <i className="bi bi-cash-coin fs-4"></i>
+                  <i className="bi bi-cash-coin fs-4" aria-hidden="true"></i>
                 </button>
               </>
             )}
 
             {/* Common Status Controls (RF-36) */}
-            <div className="p-3 rounded-3 border mt-2" style={{ background: 'var(--surface-muted)' }}>
-              <label className="form-label fw-bold mb-2" style={{ color: 'var(--text-primary)' }}>Cambiar Estado Manualmente:</label>
+            <div className="p-3 rounded-3 border bg-light mt-2">
+              <label className="form-label fw-bold text-dark mb-2">Cambiar Estado Manualmente:</label>
               <div className="d-flex flex-wrap gap-2">
                 <button
-                  className="btn btn-sm btn-outline-success fw-semibold"
-                  style={{ borderRadius: 6 }}
-                  onClick={() => { changeTableStatus(selectedTableForAction.id, 'disponible'); setSelectedTableForAction(null); }}
+                  type="button"
+                  className="btn btn-sm btn-outline-success fw-semibold rounded-2"
+                  onClick={() => {
+                    changeTableStatus(selectedTableForAction.id, 'disponible');
+                    setSelectedTableForAction(null);
+                  }}
                 >
                   Disponible
                 </button>
                 <button
-                  className="btn btn-sm btn-outline-danger fw-semibold"
-                  style={{ borderRadius: 6 }}
-                  onClick={() => { changeTableStatus(selectedTableForAction.id, 'ocupada'); setSelectedTableForAction(null); }}
+                  type="button"
+                  className="btn btn-sm btn-outline-danger fw-semibold rounded-2"
+                  onClick={() => {
+                    changeTableStatus(selectedTableForAction.id, 'ocupada');
+                    setSelectedTableForAction(null);
+                  }}
                 >
                   Ocupada
                 </button>
                 <button
-                  className="btn btn-sm btn-outline-warning fw-semibold text-dark"
-                  style={{ borderRadius: 6 }}
-                  onClick={() => { changeTableStatus(selectedTableForAction.id, 'reservada'); setSelectedTableForAction(null); }}
+                  type="button"
+                  className="btn btn-sm btn-outline-warning fw-semibold text-dark rounded-2"
+                  onClick={() => {
+                    changeTableStatus(selectedTableForAction.id, 'reservada');
+                    setSelectedTableForAction(null);
+                  }}
                 >
                   Reservada
                 </button>
                 <button
-                  className="btn btn-sm btn-outline-info fw-semibold text-dark"
-                  style={{ borderRadius: 6 }}
-                  onClick={() => { changeTableStatus(selectedTableForAction.id, 'limpieza'); setSelectedTableForAction(null); }}
+                  type="button"
+                  className="btn btn-sm btn-outline-info fw-semibold text-dark rounded-2"
+                  onClick={() => {
+                    changeTableStatus(selectedTableForAction.id, 'limpieza');
+                    setSelectedTableForAction(null);
+                  }}
                 >
                   En Limpieza
                 </button>
@@ -534,11 +620,14 @@ export const TablesPage: React.FC = () => {
 
             {/* Join Tables (RF-37) */}
             <button
-              className="btn btn-link text-decoration-none fw-semibold text-start p-1 mt-1"
-              style={{ color: 'var(--color-brand)' }}
-              onClick={() => { setTargetJoinTableId(''); setIsJoinModalOpen(true); }}
+              type="button"
+              className="btn btn-link text-decoration-none fw-semibold text-start p-1 mt-1 text-primary"
+              onClick={() => {
+                setTargetJoinTableId('');
+                setIsJoinModalOpen(true);
+              }}
             >
-              <i className="bi bi-link-45deg me-1"></i> Unir esta mesa con otra para grupos
+              <i className="bi bi-link-45deg me-1" aria-hidden="true"></i> Unir esta mesa con otra para grupos
             </button>
           </div>
         </Modal>
@@ -552,11 +641,11 @@ export const TablesPage: React.FC = () => {
       >
         <form onSubmit={handleReserveSubmit}>
           <div className="mb-3">
-            <label className="form-label">Nombre del Cliente *</label>
+            <label htmlFor="resNameInput" className="form-label">Nombre del Cliente *</label>
             <input
+              id="resNameInput"
               type="text"
-              className="form-control"
-              style={{ borderRadius: 8 }}
+              className="form-control rounded-3"
               placeholder="Ej. Familia Ramírez"
               required
               value={resName}
@@ -564,19 +653,23 @@ export const TablesPage: React.FC = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="form-label">Hora Prevista *</label>
+            <label htmlFor="resTimeInput" className="form-label">Hora Prevista *</label>
             <input
+              id="resTimeInput"
               type="time"
-              className="form-control"
-              style={{ borderRadius: 8 }}
+              className="form-control rounded-3"
               required
               value={resTime}
               onChange={e => setResTime(e.target.value)}
             />
           </div>
-          <div className="d-flex justify-content-end gap-2 border-top pt-2">
-            <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={() => setIsReserveModalOpen(false)}>Cancelar</button>
-            <button type="submit" className="btn btn-warning fw-semibold" style={{ borderRadius: 8 }}>Guardar Reserva</button>
+          <div className="d-flex justify-content-end gap-2 border-top pt-3">
+            <button type="button" className="btn btn-outline-secondary rounded-3" onClick={() => setIsReserveModalOpen(false)}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn-warning fw-semibold rounded-3">
+              Guardar Reserva
+            </button>
           </div>
         </form>
       </Modal>
@@ -589,10 +682,10 @@ export const TablesPage: React.FC = () => {
       >
         <form onSubmit={handleJoinSubmit}>
           <div className="mb-4">
-            <label className="form-label">Seleccionar Mesa para Agrupar *</label>
+            <label htmlFor="joinTableSelect" className="form-label">Seleccionar Mesa para Agrupar *</label>
             <select
-              className="form-select"
-              style={{ borderRadius: 8 }}
+              id="joinTableSelect"
+              className="form-select rounded-3"
               required
               value={targetJoinTableId}
               onChange={e => setTargetJoinTableId(e.target.value)}
@@ -607,9 +700,13 @@ export const TablesPage: React.FC = () => {
                 ))}
             </select>
           </div>
-          <div className="d-flex justify-content-end gap-2 border-top pt-2">
-            <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={() => setIsJoinModalOpen(false)}>Cancelar</button>
-            <button type="submit" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }}>Unir Mesas</button>
+          <div className="d-flex justify-content-end gap-2 border-top pt-3">
+            <button type="button" className="btn btn-outline-secondary rounded-3" onClick={() => setIsJoinModalOpen(false)}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn-brand btn fw-semibold rounded-3">
+              Unir Mesas
+            </button>
           </div>
         </form>
       </Modal>
@@ -622,10 +719,10 @@ export const TablesPage: React.FC = () => {
       >
         <form onSubmit={handleTransferSubmit}>
           <div className="mb-4">
-            <label className="form-label">Mesa de Destino (Disponible) *</label>
+            <label htmlFor="transferTableSelect" className="form-label">Mesa de Destino (Disponible) *</label>
             <select
-              className="form-select"
-              style={{ borderRadius: 8 }}
+              id="transferTableSelect"
+              className="form-select rounded-3"
               required
               value={targetTransferTableId}
               onChange={e => setTargetTransferTableId(e.target.value)}
@@ -640,9 +737,13 @@ export const TablesPage: React.FC = () => {
                 ))}
             </select>
           </div>
-          <div className="d-flex justify-content-end gap-2 border-top pt-2">
-            <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={() => setIsTransferModalOpen(false)}>Cancelar</button>
-            <button type="submit" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }}>Confirmar Traslado</button>
+          <div className="d-flex justify-content-end gap-2 border-top pt-3">
+            <button type="button" className="btn btn-outline-secondary rounded-3" onClick={() => setIsTransferModalOpen(false)}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn-brand btn fw-semibold rounded-3">
+              Confirmar Traslado
+            </button>
           </div>
         </form>
       </Modal>
@@ -655,11 +756,11 @@ export const TablesPage: React.FC = () => {
       >
         <form onSubmit={handleAreaSubmit}>
           <div className="mb-3">
-            <label className="form-label">Nombre del Área *</label>
+            <label htmlFor="areaNameInput" className="form-label">Nombre del Área *</label>
             <input
+              id="areaNameInput"
               type="text"
-              className="form-control"
-              style={{ borderRadius: 8 }}
+              className="form-control rounded-3"
               placeholder="Ej. Terraza VIP"
               required
               value={areaFormData.name}
@@ -667,19 +768,23 @@ export const TablesPage: React.FC = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="form-label">Descripción</label>
+            <label htmlFor="areaDescInput" className="form-label">Descripción</label>
             <input
+              id="areaDescInput"
               type="text"
-              className="form-control"
-              style={{ borderRadius: 8 }}
+              className="form-control rounded-3"
               placeholder="Ej. Zona exterior con estufas..."
               value={areaFormData.description}
               onChange={e => setAreaFormData({ ...areaFormData, description: e.target.value })}
             />
           </div>
-          <div className="d-flex justify-content-end gap-2 border-top pt-2">
-            <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={() => setIsAreaModalOpen(false)}>Cancelar</button>
-            <button type="submit" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }}>Guardar Área</button>
+          <div className="d-flex justify-content-end gap-2 border-top pt-3">
+            <button type="button" className="btn btn-outline-secondary rounded-3" onClick={() => setIsAreaModalOpen(false)}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn-brand btn fw-semibold rounded-3">
+              Guardar Área
+            </button>
           </div>
         </form>
       </Modal>
@@ -705,24 +810,24 @@ export const TablesPage: React.FC = () => {
         <form onSubmit={handleTableSubmit}>
           <div className="row g-3 mb-3">
             <div className="col-6">
-              <label className="form-label">Número de Mesa *</label>
+              <label htmlFor="tableNumberInput" className="form-label">Número de Mesa *</label>
               <input
+                id="tableNumberInput"
                 type="number"
                 min="1"
-                className="form-control"
-                style={{ borderRadius: 8 }}
+                className="form-control rounded-3"
                 required
                 value={tableFormData.number}
                 onChange={e => setTableFormData({ ...tableFormData, number: parseInt(e.target.value) || 1 })}
               />
             </div>
             <div className="col-6">
-              <label className="form-label">Capacidad (Personas) *</label>
+              <label htmlFor="tableCapacityInput" className="form-label">Capacidad (Personas) *</label>
               <input
+                id="tableCapacityInput"
                 type="number"
                 min="1"
-                className="form-control"
-                style={{ borderRadius: 8 }}
+                className="form-control rounded-3"
                 required
                 value={tableFormData.capacity}
                 onChange={e => setTableFormData({ ...tableFormData, capacity: parseInt(e.target.value) || 2 })}
@@ -730,21 +835,27 @@ export const TablesPage: React.FC = () => {
             </div>
           </div>
           <div className="mb-4">
-            <label className="form-label">Área Asignada *</label>
+            <label htmlFor="tableAreaSelect" className="form-label">Área Asignada *</label>
             <select
-              className="form-select"
-              style={{ borderRadius: 8 }}
+              id="tableAreaSelect"
+              className="form-select rounded-3"
               required
               value={tableFormData.areaId}
               onChange={e => setTableFormData({ ...tableFormData, areaId: e.target.value })}
             >
               <option value="" disabled>Seleccione área...</option>
-              {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              {areas.map(a => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
             </select>
           </div>
-          <div className="d-flex justify-content-end gap-2 border-top pt-2">
-            <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={() => setIsTableModalOpen(false)}>Cancelar</button>
-            <button type="submit" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }}>Guardar Mesa</button>
+          <div className="d-flex justify-content-end gap-2 border-top pt-3">
+            <button type="button" className="btn btn-outline-secondary rounded-3" onClick={() => setIsTableModalOpen(false)}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn-brand btn fw-semibold rounded-3">
+              Guardar Mesa
+            </button>
           </div>
         </form>
       </Modal>

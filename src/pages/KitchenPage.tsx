@@ -79,7 +79,7 @@ export const KitchenPage: React.FC = () => {
             className="btn btn-outline-danger fw-semibold"
             onClick={() => setIsIndisponibleModalOpen(true)}
           >
-            <i className="bi bi-slash-circle-fill me-2"></i>
+            <i className="bi bi-slash-circle-fill me-2" aria-hidden="true"></i>
             Notificar Agotado
           </button>
         }
@@ -87,7 +87,7 @@ export const KitchenPage: React.FC = () => {
 
       {/* Summary Stats Row */}
       <div className="row g-3 mb-4">
-        <div className="col-12 col-sm-4">
+        <div className="col-6 col-md-4">
           <StatCard
             title="Comandas Activas"
             value={activeCommandas}
@@ -95,7 +95,7 @@ export const KitchenPage: React.FC = () => {
             colorTheme="indigo"
           />
         </div>
-        <div className="col-12 col-sm-4">
+        <div className="col-6 col-md-4">
           <StatCard
             title="Items Listos"
             value={itemsListos}
@@ -103,7 +103,7 @@ export const KitchenPage: React.FC = () => {
             colorTheme="emerald"
           />
         </div>
-        <div className="col-12 col-sm-4">
+        <div className="col-12 col-md-4">
           <StatCard
             title="Items Pendientes"
             value={itemsPendientes}
@@ -131,103 +131,136 @@ export const KitchenPage: React.FC = () => {
                 ? `${elapsedMinutes} min`
                 : order.sentToKitchenAt || '—';
 
+            // Derivados solo de presentación (no alteran la lógica de negocio)
+            const isUrgent = !isReady && elapsedMinutes !== null && elapsedMinutes > 20;
+            const timeBadgeBg =
+              elapsedMinutes === null
+                ? 'bg-secondary-subtle text-secondary-emphasis'
+                : elapsedMinutes < 10
+                ? 'bg-success-subtle text-success-emphasis'
+                : elapsedMinutes <= 20
+                ? 'bg-warning-subtle text-warning-emphasis'
+                : 'bg-danger-subtle text-danger-emphasis';
+            const totalItems = order.items.length;
+            const readyItemsCount = order.items.filter(i => i.status === 'listo').length;
+            const progressPct = totalItems > 0 ? Math.round((readyItemsCount / totalItems) * 100) : 0;
+
             return (
               <div key={order.id} className="col-12 col-md-6 col-xl-4">
-                <div className={`kds-ticket h-100 ${isReady ? 'status-ready' : 'status-preparing'}`}>
-
+                <div
+                  className={`kds-ticket h-100 shadow-sm rounded-4 overflow-hidden d-flex flex-column ${
+                    isReady ? 'status-ready' : 'status-preparing'
+                  } ${isUrgent ? 'border border-danger border-2' : ''}`}
+                >
                   {/* Ticket Header */}
-                  <div className="kds-ticket-header bg-light border-bottom d-flex align-items-center justify-content-between">
-                    <div>
-                      <h5 className="fw-bold mb-0">Mesa #{order.tableNumber}</h5>
-                      <small className="text-muted">
+                  <div
+                    className={`kds-ticket-header border-bottom px-3 py-2 d-flex align-items-start justify-content-between gap-2 ${
+                      isReady ? 'bg-success-subtle' : 'bg-warning-subtle'
+                    }`}
+                  >
+                    <div className="text-truncate">
+                      <h5 className="fw-bold mb-0 fs-3 text-dark">Mesa #{order.tableNumber}</h5>
+                      <small className="text-muted text-truncate d-block">
                         {order.areaName} • {order.waiterName}
                       </small>
                     </div>
-                    <div className="text-end">
+                    <div className="text-end flex-shrink-0">
                       <Badge
                         status={isReady ? 'LISTO' : 'EN PREPARACIÓN'}
                         variant={isReady ? 'success' : 'warning'}
                       />
-                      {/* Elapsed time */}
-                      <div className={`fw-bold fs-8 mt-1 ${timeColorClass}`}>
-                        <i className="bi bi-stopwatch me-1"></i>
+                      <div className={`badge rounded-pill fw-bold mt-1 ${timeBadgeBg}`}>
+                        <i className="bi bi-stopwatch me-1" aria-hidden="true"></i>
                         {timeLabel}
                       </div>
                     </div>
                   </div>
 
+                  {/* Progreso de preparación */}
+                  <div className="px-3 pt-2">
+                    <div className="d-flex justify-content-between align-items-center mb-1">
+                      <small className="text-muted fw-semibold">Progreso</small>
+                      <small className="text-muted fw-semibold">
+                        {readyItemsCount}/{totalItems} listos
+                      </small>
+                    </div>
+                    <div
+                      className="progress"
+                      style={{ height: 6 }}
+                      role="progressbar"
+                      aria-valuenow={progressPct}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                    >
+                      <div
+                        className={`progress-bar ${isReady ? 'bg-success' : 'bg-warning'}`}
+                        style={{ width: `${progressPct}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
                   {/* Items List */}
                   <div className="p-3 d-flex flex-column gap-2">
-                    {order.items.map(item => (
-                      <div
-                        key={item.id}
-                        className={`kds-item ${
-                          item.status === 'listo'
-                            ? 'kds-item-ready'
-                            : item.status === 'preparando'
-                            ? 'kds-item-preparing'
-                            : ''
-                        }`}
-                      >
-                        {/* Quantity + Dish Name */}
-                        <div className="d-flex align-items-center gap-2 mb-1">
-                          <span className="badge bg-primary">
-                            {item.quantity}x
-                          </span>
-                          <span className="fw-bold text-dark fs-7">{item.dishName}</span>
-                        </div>
-
-                        {/* Special Observation */}
-                        {item.observation && (
-                          <div className="alert alert-warning p-2 mb-2 d-flex align-items-center gap-2">
-                            <i className="bi bi-exclamation-circle-fill flex-shrink-0"></i>
-                            <span className="fs-7 fw-semibold">{item.observation}</span>
+                    {order.items.map(item => {
+                      const itemBorderClass =
+                        item.status === 'listo'
+                          ? 'border-success bg-success-subtle bg-opacity-50'
+                          : item.status === 'preparando'
+                          ? 'border-warning bg-warning-subtle bg-opacity-50'
+                          : 'border-secondary-subtle bg-body';
+                      return (
+                        <div
+                          key={item.id}
+                          className={`kds-item border-start border-4 rounded-3 p-2 ${itemBorderClass}`}
+                        >
+                          {/* Quantity + Dish Name */}
+                          <div className="d-flex align-items-center gap-2 mb-1">
+                            <span className="badge bg-dark rounded-pill fs-6 px-2">
+                              {item.quantity}x
+                            </span>
+                            <span className="fw-bold text-dark fs-5">{item.dishName}</span>
                           </div>
-                        )}
 
-                        {/* Item Status Buttons */}
-                        <div className="d-flex gap-2 justify-content-end">
-                          <button
-                            className={`kds-status-btn btn ${
-                              item.status === 'preparando'
-                                ? ''
-                                : 'btn-outline-secondary'
-                            }`}
-                            style={{
-                              padding: '0.4rem 0.85rem',
-                              fontSize: '0.8rem',
-                              fontWeight: 700,
-                              borderRadius: 6,
-                              ...(item.status === 'preparando'
-                                ? { background: '#3b82f6', color: '#fff', border: 'none' }
-                                : {}),
-                            }}
-                            onClick={() => updateOrderItemStatus(order.id, item.id, 'preparando')}
+                          {/* Special Observation */}
+                          {item.observation && (
+                            <div className="d-flex align-items-start gap-2 p-2 mb-2 rounded-3 bg-warning-subtle border border-warning-subtle text-warning-emphasis">
+                              <i className="bi bi-exclamation-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+                              <span className="fs-7 fw-semibold">{item.observation}</span>
+                            </div>
+                          )}
+
+                          {/* Item Status Buttons */}
+                          <div
+                            className="btn-group w-100"
+                            role="group"
+                            aria-label={`Estado de ${item.dishName}`}
                           >
-                            Preparando
-                          </button>
-                          <button
-                            className={`kds-status-btn btn ${
-                              item.status === 'listo'
-                                ? ''
-                                : 'btn-outline-secondary'
-                            }`}
-                            style={{
-                              padding: '0.4rem 0.85rem',
-                              fontSize: '0.8rem',
-                              fontWeight: 700,
-                              borderRadius: 6,
-                              ...(item.status === 'listo'
-                                ? { background: '#10b981', color: '#fff', border: 'none' }
-                                : {}),
-                            }}
-                            onClick={() => updateOrderItemStatus(order.id, item.id, 'listo')}
-                          >
-                            Listo ✓
-                          </button>
+                            <button
+                              type="button"
+                              className={`btn btn-sm fw-semibold ${
+                                item.status === 'preparando' ? 'btn-warning' : 'btn-outline-secondary'
+                              }`}
+                              aria-pressed={item.status === 'preparando'}
+                              onClick={() => updateOrderItemStatus(order.id, item.id, 'preparando')}
+                            >
+                              <i className="bi bi-fire me-1" aria-hidden="true"></i>
+                              Preparando
+                            </button>
+                            <button
+                              type="button"
+                              className={`btn btn-sm fw-semibold ${
+                                item.status === 'listo' ? 'btn-success' : 'btn-outline-secondary'
+                              }`}
+                              aria-pressed={item.status === 'listo'}
+                              onClick={() => updateOrderItemStatus(order.id, item.id, 'listo')}
+                            >
+                              <i className="bi bi-check-lg me-1" aria-hidden="true"></i>
+                              Listo
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Ticket Footer Action */}
@@ -236,10 +269,13 @@ export const KitchenPage: React.FC = () => {
                       className={`btn ${isReady ? 'btn-success' : 'btn-brand'} w-100 fw-bold`}
                       onClick={() => markOrderReady(order.id)}
                     >
+                      <i
+                        className={`bi ${isReady ? 'bi-check-circle-fill' : 'bi-bell-fill'} me-2`}
+                        aria-hidden="true"
+                      ></i>
                       {isReady ? '¡Comanda Despachada!' : 'Marcar Mesa Lista'}
                     </button>
                   </div>
-
                 </div>
               </div>
             );
@@ -256,10 +292,14 @@ export const KitchenPage: React.FC = () => {
       >
         <form onSubmit={handleIndisponibleSubmit}>
           <div className="mb-4">
-            <label className="form-label fs-7 fw-semibold text-dark">Seleccionar Plato Agotado *</label>
+            <label htmlFor="dishToMarkSelect" className="form-label fs-7 fw-semibold text-dark">
+              Seleccionar Plato Agotado *
+            </label>
             <select
+              id="dishToMarkSelect"
               className="form-select rounded-3"
               required
+              aria-describedby="dishToMarkHelp"
               value={selectedDishToMark}
               onChange={e => setSelectedDishToMark(e.target.value)}
             >
@@ -270,16 +310,16 @@ export const KitchenPage: React.FC = () => {
                 </option>
               ))}
             </select>
-            <small className="text-muted d-block mt-2">
+            <div id="dishToMarkHelp" className="form-text mt-2">
               Al marcar como agotado, los meseros verán una alerta inmediata al intentar agregar este plato a nuevas comandas.
-            </small>
+            </div>
           </div>
-
-          <div className="d-flex justify-content-end gap-2 border-top pt-2">
+          <div className="d-flex justify-content-end gap-2 border-top pt-3">
             <button type="button" className="btn btn-light" onClick={() => setIsIndisponibleModalOpen(false)}>
               Cancelar
             </button>
-            <button type="submit" className="btn btn-danger fw-semibold">
+            <button type="submit" className="btn btn-danger fw-semibold" disabled={!selectedDishToMark}>
+              <i className="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
               Cambiar Disponibilidad
             </button>
           </div>

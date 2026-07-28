@@ -49,43 +49,6 @@ export const DashboardPage: React.FC = () => {
         }
       />
 
-      {/* Role Switcher Banner */}
-      <div
-        className="alert-prototype rounded-3 p-3 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3"
-      >
-        <div className="d-flex align-items-center gap-3">
-          <div
-            style={{
-              width: 40, height: 40, borderRadius: 10,
-              background: 'var(--color-brand)', flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <i className="bi bi-magic" style={{ color: '#fff', fontSize: '1.1rem' }}></i>
-          </div>
-          <div>
-            <div className="fw-bold" style={{ fontSize: '0.95rem' }}>
-              Modo Prototipo Interactivo Activo
-            </div>
-            <div style={{ fontSize: '0.82rem', color: '#4338ca', marginTop: '0.15rem' }}>
-              Rol actual: <strong>{currentRole}</strong>. Cambia de rol para explorar distintas perspectivas del sistema.
-            </div>
-          </div>
-        </div>
-        <div className="d-flex gap-2 flex-wrap">
-          {(['Administrador', 'Mesero', 'Cocina'] as const).map(role => (
-            <button
-              key={role}
-              className={`btn btn-sm fw-semibold ${currentRole === role ? 'btn-primary' : 'btn-outline-primary bg-white'}`}
-              style={{ borderRadius: 8, fontSize: '0.8rem' }}
-              onClick={() => setCurrentRole(role)}
-            >
-              {role}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* KPI Cards */}
       <div className="row g-3 mb-4 stagger-children">
         <div className="col-12 col-sm-6 col-xl-3">

@@ -9,6 +9,7 @@ import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { EmptyState } from '../components/common/EmptyState';
+import { CustomDropdownSelect } from '../components/common/CustomDropdownSelect';
 
 export const CatalogPage: React.FC = () => {
   const {
@@ -166,18 +167,18 @@ export const CatalogPage: React.FC = () => {
           isAdmin && (
             <div className="d-flex gap-2">
               <button
-                className="btn btn-outline-primary btn-sm fw-semibold"
-                style={{ borderRadius: 8 }}
+                type="button"
+                className="btn btn-outline-primary btn-sm fw-semibold rounded-3"
                 onClick={() => handleOpenCategoryModal()}
               >
-                <i className="bi bi-folder-plus me-1"></i> Nueva Categoría
+                <i className="bi bi-folder-plus me-1" aria-hidden="true"></i> Nueva Categoría
               </button>
               <button
-                className="btn-brand btn btn-sm fw-semibold"
-                style={{ borderRadius: 8 }}
+                type="button"
+                className="btn-brand btn btn-sm fw-semibold rounded-3"
                 onClick={() => handleOpenDishModal()}
               >
-                <i className="bi bi-plus-lg me-1"></i> Registrar Plato
+                <i className="bi bi-plus-lg me-1" aria-hidden="true"></i> Registrar Plato
               </button>
             </div>
           )
@@ -215,21 +216,31 @@ export const CatalogPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Navigation Pills for View Selection */}
-      <div className="d-flex align-items-center gap-2 mb-4">
+      {/* View Toggle: Platos vs Categorías */}
+      <div className="btn-group mb-4" role="tablist" aria-label="Cambiar vista del catálogo">
         <button
-          className={`btn btn-sm fw-semibold ${activeTab === 'platos' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-          style={{ borderRadius: 8 }}
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'platos'}
+          className={`btn btn-sm fw-semibold rounded-start-3 ${
+            activeTab === 'platos' ? 'btn-primary' : 'btn-outline-secondary'
+          }`}
           onClick={() => setActiveTab('platos')}
         >
-          <i className="bi bi-egg-fried me-1.5"></i> Platos y Carta ({dishes.length})
+          <i className="bi bi-egg-fried me-2" aria-hidden="true"></i>
+          Platos y Carta ({dishes.length})
         </button>
         <button
-          className={`btn btn-sm fw-semibold ${activeTab === 'categorias' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-          style={{ borderRadius: 8 }}
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'categorias'}
+          className={`btn btn-sm fw-semibold rounded-end-3 ${
+            activeTab === 'categorias' ? 'btn-primary' : 'btn-outline-secondary'
+          }`}
           onClick={() => setActiveTab('categorias')}
         >
-          <i className="bi bi-tags-fill me-1.5"></i> Categorías ({categories.length})
+          <i className="bi bi-tags-fill me-2" aria-hidden="true"></i>
+          Categorías ({categories.length})
         </button>
       </div>
 
@@ -246,32 +257,35 @@ export const CatalogPage: React.FC = () => {
                 />
               </div>
               <div className="col-12 col-sm-6 col-md-3">
-                <select
-                  className="form-select form-select-sm fw-semibold"
-                  style={{ borderRadius: 8 }}
+                {/* Select de categorización: colores neutros, sin semántica de alerta */}
+                <CustomDropdownSelect
                   value={selectedCategory}
-                  onChange={e => setSelectedCategory(e.target.value)}
-                >
-                  <option value="todas">Todas las Categorías</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedCategory}
+                  size="sm"
+                  options={[
+                    { value: 'todas', label: 'Todas las Categorías', icon: 'bi-grid-3x3-gap-fill', colorVariant: 'secondary' },
+                    ...categories.map(cat => ({
+                      value: cat.id,
+                      label: cat.name,
+                      icon: 'bi-tag-fill',
+                      colorVariant: 'primary' as const,
+                    })),
+                  ]}
+                />
               </div>
               <div className="col-12 col-sm-6 col-md-4">
-                <select
-                  className="form-select form-select-sm fw-semibold"
-                  style={{ borderRadius: 8 }}
+                {/* Select de estado: colores semánticos por disponibilidad */}
+                <CustomDropdownSelect
                   value={selectedAvailability}
-                  onChange={e => setSelectedAvailability(e.target.value)}
-                >
-                  <option value="todos">Todos los Estados</option>
-                  <option value="activos">Activos en Menú Permanente</option>
-                  <option value="disponibles_hoy">Disponibles Hoy para Cocina</option>
-                  <option value="inactivos">Desactivados del Menú</option>
-                </select>
+                  onChange={setSelectedAvailability}
+                  size="sm"
+                  options={[
+                    { value: 'todos', label: 'Todos los Estados', icon: 'bi-grid-fill', colorVariant: 'secondary' },
+                    { value: 'activos', label: 'Activos en Menú', icon: 'bi-check-circle-fill', colorVariant: 'success' },
+                    { value: 'disponibles_hoy', label: 'Disponibles Hoy (Cocina)', icon: 'bi-fire', colorVariant: 'warning' },
+                    { value: 'inactivos', label: 'Desactivados del Menú', icon: 'bi-slash-circle-fill', colorVariant: 'danger' },
+                  ]}
+                />
               </div>
             </div>
           </SectionCard>
@@ -282,70 +296,88 @@ export const CatalogPage: React.FC = () => {
               icon="bi-journal-x"
               title="No hay platos que coincidan"
               description="Ajusta los filtros de búsqueda o registra nuevos platos en el catálogo."
-              action={isAdmin ? (
-                <button className="btn-brand btn btn-sm fw-semibold" style={{ borderRadius: 8 }} onClick={() => handleOpenDishModal()}>
-                  Registrar Primer Plato
-                </button>
-              ) : undefined}
+              action={
+                isAdmin ? (
+                  <button
+                    type="button"
+                    className="btn-brand btn btn-sm fw-semibold rounded-3"
+                    onClick={() => handleOpenDishModal()}
+                  >
+                    Registrar Primer Plato
+                  </button>
+                ) : undefined
+              }
             />
           ) : (
             <div className="row g-3 mb-4">
               {filteredDishes.map(dish => (
                 <div key={dish.id} className="col-12 col-sm-6 col-lg-4 col-xl-3">
-                  <div className="section-card h-100 d-flex flex-column" style={{ transition: 'all 0.2s' }}>
+                  <div
+                    className="card h-100 shadow-sm border-0 rounded-4 overflow-hidden"
+                    style={{ transition: 'transform 0.15s ease, box-shadow 0.15s ease' }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.boxShadow = '0 0.75rem 1.5rem rgba(0,0,0,0.12)';
+                      e.currentTarget.style.transform = 'translateY(-3px)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.boxShadow = '';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
                     <div className="position-relative" style={{ height: 150, overflow: 'hidden', background: '#f8fafc' }}>
-                      <img
-                        src={dish.image}
-                        alt={dish.name}
-                        className="w-100 h-100 object-fit-cover"
-                      />
+                      <img src={dish.image} alt={dish.name} className="w-100 h-100 object-fit-cover" />
                       <div className="position-absolute top-0 start-0 m-2">
                         <Badge status={dish.categoryName} variant="dark" />
                       </div>
                       <div className="position-absolute top-0 end-0 m-2">
-                        <Badge
-                          status={dish.active ? 'Activo' : 'Desactivado'}
-                          variant={dish.active ? 'success' : 'secondary'}
-                        />
+                        <Badge status={dish.active ? 'Activo' : 'Desactivado'} variant={dish.active ? 'success' : 'secondary'} />
                       </div>
+                      {!dish.isAvailableToday && (
+                        <div className="position-absolute bottom-0 start-0 end-0 bg-danger bg-opacity-90 text-white text-center py-1 small fw-bold text-uppercase">
+                          <i className="bi bi-slash-circle-fill me-1" aria-hidden="true"></i>
+                          Agotado Hoy
+                        </div>
+                      )}
                     </div>
-
-                    <div className="p-3 d-flex flex-column flex-grow-1">
+                    <div className="card-body d-flex flex-column p-3">
                       <div className="d-flex align-items-start justify-content-between gap-2 mb-1">
-                        <h3 className="fw-bold mb-0 text-truncate" style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                          {dish.name}
-                        </h3>
-                        <span className="fw-extrabold flex-shrink-0" style={{ color: 'var(--color-brand)', fontSize: '1.05rem' }}>
-                          S/ {dish.price.toFixed(2)}
-                        </span>
+                        <h3 className="fw-bold mb-0 text-truncate fs-6 text-dark">{dish.name}</h3>
+                        <span className="fw-bold flex-shrink-0 text-primary fs-6">S/ {dish.price.toFixed(2)}</span>
                       </div>
-                      <p className="mb-3 flex-grow-1" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+                      <p
+                        className="mb-3 flex-grow-1 small text-muted"
+                        style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
                         {dish.description}
                       </p>
-
                       <div className="d-flex align-items-center justify-content-between pt-2 border-top mt-auto">
                         <div>
-                          <Badge
-                            status={dish.isAvailableToday ? 'Disponible Hoy' : 'Agotado Hoy'}
-                            variant={dish.isAvailableToday ? 'info' : 'warning'}
-                          />
+                          {dish.isAvailableToday && (
+                            <Badge status="Disponible Hoy" variant="info" icon="bi-check-lg" />
+                          )}
                         </div>
-
                         {isAdmin && (
                           <div className="d-flex gap-1">
                             <button
+                              type="button"
                               className="btn-icon btn-icon-primary"
-                              title="Editar Plato"
+                              aria-label={`Editar ${dish.name}`}
                               onClick={() => handleOpenDishModal(dish)}
                             >
-                              <i className="bi bi-pencil-fill"></i>
+                              <i className="bi bi-pencil-fill" aria-hidden="true"></i>
                             </button>
                             <button
+                              type="button"
                               className={`btn-icon ${dish.active ? 'btn-icon-danger' : 'btn-icon-success'}`}
-                              title={dish.active ? 'Desactivar del Menú' : 'Activar en Menú'}
+                              aria-label={dish.active ? `Desactivar ${dish.name} del menú` : `Activar ${dish.name} en el menú`}
                               onClick={() => toggleDishActive(dish.id)}
                             >
-                              <i className={`bi ${dish.active ? 'bi-eye-slash-fill' : 'bi-eye-fill'}`}></i>
+                              <i className={`bi ${dish.active ? 'bi-eye-slash-fill' : 'bi-eye-fill'}`} aria-hidden="true"></i>
                             </button>
                           </div>
                         )}
@@ -360,57 +392,60 @@ export const CatalogPage: React.FC = () => {
       ) : (
         /* Categories Table */
         <SectionCard icon="bi-tags-fill" title="Categorías del Menú" noPadding>
-          <div className="table-responsive-x">
-            <div className="custom-table-container">
-              <table className="custom-table" style={{ minWidth: 600 }}>
-                <thead>
-                  <tr>
-                    <th>Categoría</th>
-                    <th>Descripción</th>
-                    <th>Platos Asociados</th>
-                    {isAdmin && <th className="text-end">Acciones</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {categories.map(cat => {
-                    const associatedCount = dishes.filter(d => d.categoryId === cat.id).length;
-                    return (
-                      <tr key={cat.id}>
-                        <td>
-                          <div className="fw-bold" style={{ color: 'var(--text-primary)' }}>{cat.name}</div>
+          <div className="table-responsive">
+            <table className="table table-hover align-middle mb-0" style={{ minWidth: 600 }}>
+              <thead className="table-light">
+                <tr>
+                  <th>Categoría</th>
+                  <th>Descripción</th>
+                  <th>Platos Asociados</th>
+                  {isAdmin && <th className="text-end">Acciones</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {categories.map(cat => {
+                  const associatedCount = dishes.filter(d => d.categoryId === cat.id).length;
+                  return (
+                    <tr key={cat.id}>
+                      <td>
+                        <div className="fw-bold text-dark">
+                          <i className="bi bi-tag-fill me-2 text-muted" aria-hidden="true"></i>
+                          {cat.name}
+                        </div>
+                      </td>
+                      <td>
+                        <span className="small text-muted">{cat.description || 'Sin descripción'}</span>
+                      </td>
+                      <td>
+                        <Badge status={`${associatedCount} platos`} variant="primary" />
+                      </td>
+                      {isAdmin && (
+                        <td className="text-end">
+                          <div className="d-inline-flex gap-1">
+                            <button
+                              type="button"
+                              className="btn-icon btn-icon-primary"
+                              aria-label={`Editar categoría ${cat.name}`}
+                              onClick={() => handleOpenCategoryModal(cat)}
+                            >
+                              <i className="bi bi-pencil-fill" aria-hidden="true"></i>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-icon btn-icon-danger"
+                              aria-label={`Eliminar categoría ${cat.name}`}
+                              onClick={() => setDeletingCat(cat)}
+                            >
+                              <i className="bi bi-trash-fill" aria-hidden="true"></i>
+                            </button>
+                          </div>
                         </td>
-                        <td>
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>{cat.description || 'Sin descripción'}</span>
-                        </td>
-                        <td>
-                          <Badge status={`${associatedCount} platos`} variant="primary" />
-                        </td>
-                        {isAdmin && (
-                          <td className="text-end">
-                            <div className="d-inline-flex gap-1">
-                              <button
-                                className="btn-icon btn-icon-primary"
-                                title="Editar Categoría"
-                                onClick={() => handleOpenCategoryModal(cat)}
-                              >
-                                <i className="bi bi-pencil-fill"></i>
-                              </button>
-                              <button
-                                className="btn-icon btn-icon-danger"
-                                title="Eliminar Categoría"
-                                onClick={() => setDeletingCat(cat)}
-                              >
-                                <i className="bi bi-trash-fill"></i>
-                              </button>
-                            </div>
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </SectionCard>
       )}
@@ -425,11 +460,11 @@ export const CatalogPage: React.FC = () => {
         <form onSubmit={handleDishSubmit}>
           <div className="row g-3 mb-3">
             <div className="col-12 col-md-8">
-              <label className="form-label">Nombre del Plato *</label>
+              <label htmlFor="dishNameInput" className="form-label">Nombre del Plato *</label>
               <input
+                id="dishNameInput"
                 type="text"
-                className="form-control"
-                style={{ borderRadius: 8 }}
+                className="form-control rounded-3"
                 placeholder="Ej. Ceviche Mixto Especial"
                 required
                 value={dishFormData.name}
@@ -437,66 +472,65 @@ export const CatalogPage: React.FC = () => {
               />
             </div>
             <div className="col-12 col-md-4">
-              <label className="form-label">Precio (S/) *</label>
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                className="form-control"
-                style={{ borderRadius: 8 }}
-                required
-                value={dishFormData.price}
-                onChange={e => setDishFormData({ ...dishFormData, price: parseFloat(e.target.value) || 0 })}
-              />
+              <label htmlFor="dishPriceInput" className="form-label">Precio (S/) *</label>
+              <div className="input-group">
+                <span className="input-group-text">S/</span>
+                <input
+                  id="dishPriceInput"
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  className="form-control rounded-end-3"
+                  required
+                  value={dishFormData.price}
+                  onChange={e => setDishFormData({ ...dishFormData, price: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
             </div>
           </div>
-
           <div className="row g-3 mb-3">
             <div className="col-12 col-md-6">
-              <label className="form-label">Categoría *</label>
-              <select
-                className="form-select"
-                style={{ borderRadius: 8 }}
-                required
+              <label className="form-label d-block">Categoría *</label>
+              <CustomDropdownSelect
                 value={dishFormData.categoryId}
-                onChange={e => setDishFormData({ ...dishFormData, categoryId: e.target.value })}
-              >
-                <option value="" disabled>Seleccione categoría...</option>
-                {categories.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+                onChange={value => setDishFormData({ ...dishFormData, categoryId: value })}
+                placeholder="Seleccione categoría..."
+                options={categories.map(c => ({
+                  value: c.id,
+                  label: c.name,
+                  icon: 'bi-tag-fill',
+                  colorVariant: 'primary' as const,
+                }))}
+              />
             </div>
             <div className="col-12 col-md-6">
-              <label className="form-label">URL de Imagen</label>
+              <label htmlFor="dishImageInput" className="form-label">URL de Imagen</label>
               <input
+                id="dishImageInput"
                 type="url"
-                className="form-control"
-                style={{ borderRadius: 8 }}
+                className="form-control rounded-3"
                 placeholder="https://..."
                 value={dishFormData.image}
                 onChange={e => setDishFormData({ ...dishFormData, image: e.target.value })}
               />
             </div>
           </div>
-
           <div className="mb-4">
-            <label className="form-label">Descripción del Plato</label>
+            <label htmlFor="dishDescInput" className="form-label">Descripción del Plato</label>
             <textarea
-              className="form-control"
-              style={{ borderRadius: 8 }}
+              id="dishDescInput"
+              className="form-control rounded-3"
               rows={3}
               placeholder="Ingredientes, preparación o detalles de presentación..."
               value={dishFormData.description}
               onChange={e => setDishFormData({ ...dishFormData, description: e.target.value })}
             ></textarea>
           </div>
-
           <div className="d-flex justify-content-end gap-2 pt-3 border-top">
-            <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={() => setIsDishModalOpen(false)}>
+            <button type="button" className="btn btn-outline-secondary rounded-3" onClick={() => setIsDishModalOpen(false)}>
               Cancelar
             </button>
-            <button type="submit" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }}>
+            <button type="submit" className="btn-brand btn fw-semibold rounded-3">
               {editingDish ? 'Guardar Cambios' : 'Registrar Plato'}
             </button>
           </div>
@@ -511,35 +545,33 @@ export const CatalogPage: React.FC = () => {
       >
         <form onSubmit={handleCategorySubmit}>
           <div className="mb-3">
-            <label className="form-label">Nombre de Categoría *</label>
+            <label htmlFor="catNameInput" className="form-label">Nombre de Categoría *</label>
             <input
+              id="catNameInput"
               type="text"
-              className="form-control"
-              style={{ borderRadius: 8 }}
+              className="form-control rounded-3"
               placeholder="Ej. Sopas y Cremas"
               required
               value={catFormData.name}
               onChange={e => setCatFormData({ ...catFormData, name: e.target.value })}
             />
           </div>
-
           <div className="mb-4">
-            <label className="form-label">Descripción</label>
+            <label htmlFor="catDescInput" className="form-label">Descripción</label>
             <input
+              id="catDescInput"
               type="text"
-              className="form-control"
-              style={{ borderRadius: 8 }}
+              className="form-control rounded-3"
               placeholder="Breve descripción funcional..."
               value={catFormData.description}
               onChange={e => setCatFormData({ ...catFormData, description: e.target.value })}
             />
           </div>
-
           <div className="d-flex justify-content-end gap-2 pt-2 border-top">
-            <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={() => setIsCatModalOpen(false)}>
+            <button type="button" className="btn btn-outline-secondary rounded-3" onClick={() => setIsCatModalOpen(false)}>
               Cancelar
             </button>
-            <button type="submit" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }}>
+            <button type="submit" className="btn-brand btn fw-semibold rounded-3">
               {editingCategory ? 'Guardar Categoría' : 'Crear Categoría'}
             </button>
           </div>

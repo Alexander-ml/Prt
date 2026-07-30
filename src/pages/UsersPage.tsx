@@ -9,6 +9,7 @@ import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { EmptyState } from '../components/common/EmptyState';
+import { CustomDropdownSelect } from '../components/common/CustomDropdownSelect';
 
 export const UsersPage: React.FC = () => {
   const { users, addUser, updateUser, toggleUserStatus, resetUserPassword, currentRole } = useApp();
@@ -157,18 +158,22 @@ export const UsersPage: React.FC = () => {
             />
           </div>
           <div className="col-12 col-md-6 d-flex align-items-center justify-content-md-end gap-2">
-            <label className="fs-7 text-muted fw-semibold me-1">Filtrar por Rol:</label>
-            <select
-              className="form-select form-select-sm w-auto fw-semibold"
-              style={{ borderRadius: 8 }}
-              value={selectedRole}
-              onChange={e => setSelectedRole(e.target.value)}
-            >
-              <option value="todos">Todos los Roles</option>
-              <option value="Administrador">Administrador</option>
-              <option value="Mesero">Mesero</option>
-              <option value="Cocina">Cocina</option>
-            </select>
+            <label id="roleFilterLabel" className="fs-7 text-muted fw-semibold me-1 text-nowrap">Filtrar por Rol:</label>
+            <div style={{ minWidth: 200 }}>
+              <CustomDropdownSelect
+                id="roleFilterSelect"
+                labelId="roleFilterLabel"
+                value={selectedRole}
+                onChange={setSelectedRole}
+                size="sm"
+                options={[
+                  { value: 'todos',          label: 'Todos los Roles',             icon: 'bi-people-fill',    colorVariant: 'secondary' },
+                  { value: 'Administrador',  label: 'Administrador',               icon: 'bi-shield-fill',    colorVariant: 'violet' },
+                  { value: 'Mesero',         label: 'Mesero',                      icon: 'bi-person-fill',    colorVariant: 'primary' },
+                  { value: 'Cocina',         label: 'Cocina',                      icon: 'bi-fire',           colorVariant: 'warning' },
+                ]}
+              />
+            </div>
           </div>
         </div>
       </SectionCard>
@@ -322,17 +327,19 @@ export const UsersPage: React.FC = () => {
           </div>
 
           <div className="mb-4">
-            <label className="form-label">Rol Asignado *</label>
-            <select
-              className="form-select"
-              style={{ borderRadius: 8 }}
+            <label id="rolAsignadoLabel" className="form-label">Rol Asignado *</label>
+            <CustomDropdownSelect
+              id="rolAsignadoSelect"
+              labelId="rolAsignadoLabel"
               value={formData.role}
-              onChange={e => setFormData({ ...formData, role: e.target.value as UserRole })}
-            >
-              <option value="Mesero">Mesero (Atención en Sala y Cobro)</option>
-              <option value="Cocina">Cocina (KDS y Preparación)</option>
-              <option value="Administrador">Administrador (Acceso Total)</option>
-            </select>
+              onChange={(v) => setFormData({ ...formData, role: v as UserRole })}
+              required
+              options={[
+                { value: 'Mesero',        label: 'Mesero',        description: 'Atención en sala, toma de pedidos y cobro',     icon: 'bi-person-fill',   colorVariant: 'primary' },
+                { value: 'Cocina',        label: 'Cocina',        description: 'Kitchen Display System y preparación de platos', icon: 'bi-fire',          colorVariant: 'warning' },
+                { value: 'Administrador', label: 'Administrador', description: 'Acceso total al sistema y configuración',        icon: 'bi-shield-fill',   colorVariant: 'violet'  },
+              ]}
+            />
           </div>
 
           <div className="d-flex justify-content-end gap-2 pt-2" style={{ borderTop: '1px solid var(--border-color)' }}>

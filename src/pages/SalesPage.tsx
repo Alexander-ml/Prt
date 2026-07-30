@@ -9,6 +9,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { StatCard } from '../components/common/StatCard';
 import { PageHeader } from '../components/common/PageHeader';
 import { SectionCard } from '../components/common/SectionCard';
+import { CustomDropdownSelect } from '../components/common/CustomDropdownSelect';
 
 export const SalesPage: React.FC = () => {
   const {
@@ -149,23 +150,36 @@ export const SalesPage: React.FC = () => {
         <div className="col-12 col-lg-7">
           <SectionCard icon="bi-receipt" title="1. Resumen de Cuenta de Mesa">
             <div className="mb-4">
-              <label className="form-label fw-bold" htmlFor="mesaLiquidar">Mesa a liquidar</label>
-              <select
-                id="mesaLiquidar"
-                className="form-select"
-                style={{ borderRadius: 8, fontWeight: 700 }}
-                value={selectedOrderId}
-                onChange={e => setSelectedOrderId(e.target.value)}
-              >
-                <option value="" disabled>Seleccione una mesa con pedido activo…</option>
-                {orders
-                  .filter(o => o.status !== 'cerrado' && o.status !== 'cancelado')
-                  .map(o => (
-                    <option key={o.id} value={o.id}>
-                      Mesa #{o.tableNumber} ({o.areaName}) — {o.waiterName} · {o.items.length} platos
-                    </option>
-                  ))}
-              </select>
+              <label id="mesaLiquidarLabel" className="form-label fw-bold">Mesa a liquidar</label>
+              {(() => {
+                const activeOrders = orders.filter(o => o.status !== 'cerrado' && o.status !== 'cancelado');
+                const statusColorMap: Record<string, string> = {
+                  en_preparacion: 'warning',
+                  listo: 'success',
+                  pendiente: 'secondary',
+                };
+                const tableOptions = activeOrders.map(o => ({
+                  value: o.id,
+                  label: `Mesa #${o.tableNumber} — ${o.areaName}`,
+                  description: `${o.waiterName} · ${o.items.length} plato${o.items.length !== 1 ? 's' : ''} · Estado: ${o.status.replace('_',' ')}`,
+                  icon: 'bi-table',
+                  colorVariant: statusColorMap[o.status] ?? 'primary',
+                }));
+                return (
+                  <CustomDropdownSelect
+                    id="mesaLiquidar"
+                    labelId="mesaLiquidarLabel"
+                    value={selectedOrderId}
+                    onChange={setSelectedOrderId}
+                    placeholder="Seleccione una mesa con pedido activo…"
+                    options={[
+                      { value: '', label: 'Seleccione una mesa con pedido activo…', disabled: true },
+                      ...tableOptions,
+                    ]}
+                    size="lg"
+                  />
+                );
+              })()}
               {orders.filter(o => o.status !== 'cerrado' && o.status !== 'cancelado').length === 0 && (
                 <small className="d-block mt-2" style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
                   <i className="bi bi-info-circle me-1"></i>No hay mesas con pedidos activos por cobrar.
@@ -200,27 +214,30 @@ export const SalesPage: React.FC = () => {
                   </table>
                 </div>
 
-                {/* Promo Selector RF-57 */}
+                {/* Promo Selector */}
                 <div className="p-3 rounded-3 mb-3" style={{ background: 'var(--color-brand-light)', border: '1px solid var(--color-brand-subtle)' }}>
-                  <label className="form-label fw-bold" style={{ color: 'var(--color-brand)' }} htmlFor="promoSelect">
+                  <label id="promoSelectLabel" className="form-label fw-bold" style={{ color: 'var(--color-brand)' }}>
                     <i className="bi bi-tag-fill me-1"></i>
                     Aplicar Promoción Vigente
                   </label>
-                  <select
+                  <CustomDropdownSelect
                     id="promoSelect"
-                    className="form-select"
-                    style={{ borderRadius: 8 }}
+                    labelId="promoSelectLabel"
                     value={selectedPromoId}
-                    onChange={e => setSelectedPromoId(e.target.value)}
+                    onChange={setSelectedPromoId}
+                    placeholder="Sin promoción aplicada"
                     disabled={promotions.filter(p => p.active).length === 0}
-                  >
-                    <option value="">Sin promoción aplicada</option>
-                    {promotions.filter(p => p.active).map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} — {p.discountPercentage}% OFF (Código: {p.code})
-                      </option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: '', label: 'Sin promoción aplicada', icon: 'bi-x-circle', colorVariant: 'secondary' },
+                      ...promotions.filter(p => p.active).map(p => ({
+                        value: p.id,
+                        label: `${p.name} — ${p.discountPercentage}% OFF`,
+                        description: `Código: ${p.code}`,
+                        icon: 'bi-ticket-perforated-fill',
+                        colorVariant: 'success',
+                      }))
+                    ]}
+                  />
                   {promotions.filter(p => p.active).length === 0 && (
                     <small className="d-block mt-2" style={{ color: 'var(--color-brand)', fontSize: '0.75rem', opacity: 0.8 }}>
                       No hay promociones vigentes en este momento.

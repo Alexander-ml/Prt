@@ -7,6 +7,7 @@ import { SectionCard } from '../components/common/SectionCard';
 import { StatCard } from '../components/common/StatCard';
 import { Modal } from '../components/common/Modal';
 import { ConfirmModal } from '../components/common/ConfirmModal';
+import { CustomDropdownSelect } from '../components/common/CustomDropdownSelect';
 
 export const TablesPage: React.FC = () => {
   const {
@@ -137,7 +138,41 @@ export const TablesPage: React.FC = () => {
 
   const availableCount = tables.filter(t => t.status === 'disponible').length;
   const occupiedCount = tables.filter(t => t.status === 'ocupada').length;
-  const reservedCount = tables.filter(t => t.status === 'reservada').length;
+  const reservedCount = tables.filter(t => t.status === 'reservada').length;  
+  
+  const statusColorMap: Record<
+    string,
+    { label: string; icon: string; colorVariant: 'success' | 'warning' | 'danger' | 'info'; badge: string; border: string }
+  > = {
+    disponible: {
+      label: 'Disponible',
+      icon: 'bi-check-circle-fill',
+      colorVariant: 'success',
+      badge: 'bg-success-subtle text-success-emphasis',
+      border: 'border-success',
+    },
+    ocupada: {
+      label: 'Ocupada',
+      icon: 'bi-people-fill',
+      colorVariant: 'danger',
+      badge: 'bg-danger-subtle text-danger-emphasis',
+      border: 'border-danger',
+    },
+    reservada: {
+      label: 'Reservada',
+      icon: 'bi-bookmark-star-fill',
+      colorVariant: 'warning',
+      badge: 'bg-warning-subtle text-warning-emphasis',
+      border: 'border-warning',
+    },
+    limpieza: {
+      label: 'En Limpieza',
+      icon: 'bi-droplet-fill',
+      colorVariant: 'info',
+      badge: 'bg-info-subtle text-info-emphasis',
+      border: 'border-info',
+    },
+  };
 
   return (
     <div className="container-fluid p-0">
@@ -231,22 +266,29 @@ export const TablesPage: React.FC = () => {
                   </button>
                 ))}
               </div>
-              <div className="col-12 col-md-4 d-flex justify-content-md-end gap-2 align-items-center">
-                <label htmlFor="statusFilterSelect" className="small text-muted fw-semibold mb-0 text-nowrap">
-                  Estado:
-                </label>
-                <select
-                  id="statusFilterSelect"
-                  className="form-select form-select-sm w-auto fw-semibold rounded-3"
-                  value={selectedStatusFilter}
-                  onChange={e => setSelectedStatusFilter(e.target.value)}
-                >
-                  <option value="todos">Todos los Estados</option>
-                  <option value="disponible">Disponibles</option>
-                  <option value="ocupada">Ocupadas</option>
-                  <option value="reservada">Reservadas</option>
-                  <option value="limpieza">En Limpieza</option>
-                </select>
+              <div className="col-12 col-md-4">
+                <div className="d-flex justify-content-md-end align-items-center gap-2">
+                  <span id="statusFilterLabel" className="small text-muted fw-semibold text-nowrap">
+                    Estado:
+                  </span>
+                  <div style={{ minWidth: 200 }}>
+                    {/* Select de estado: colores semánticos por disponibilidad */}
+                    <CustomDropdownSelect
+                      value={selectedStatusFilter}
+                      onChange={setSelectedStatusFilter}
+                      size="sm"
+                      options={[
+                        { value: 'todos', label: 'Todos los Estados', icon: 'bi-grid-fill', colorVariant: 'secondary' },
+                        ...Object.entries(statusColorMap).map(([status, cfg]) => ({
+                          value: status,
+                          label: cfg.label + 's',
+                          icon: cfg.icon,
+                          colorVariant: cfg.colorVariant,
+                        })),
+                      ]}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </SectionCard>
@@ -257,35 +299,7 @@ export const TablesPage: React.FC = () => {
               const activeOrder = orders.find(
                 o => o.id === table.currentOrderId || (o.tableId === table.id && o.status !== 'cerrado')
               );
-
-              const statusConfig: Record<string, { label: string; badge: string; border: string; icon: string }> = {
-                disponible: {
-                  label: 'Disponible',
-                  badge: 'bg-success-subtle text-success-emphasis',
-                  border: 'border-success',
-                  icon: 'bi-check-circle-fill',
-                },
-                ocupada: {
-                  label: 'Ocupada',
-                  badge: 'bg-danger-subtle text-danger-emphasis',
-                  border: 'border-danger',
-                  icon: 'bi-people-fill',
-                },
-                reservada: {
-                  label: 'Reservada',
-                  badge: 'bg-warning-subtle text-warning-emphasis',
-                  border: 'border-warning',
-                  icon: 'bi-bookmark-star-fill',
-                },
-                limpieza: {
-                  label: 'En Limpieza',
-                  badge: 'bg-info-subtle text-info-emphasis',
-                  border: 'border-info',
-                  icon: 'bi-droplet-fill',
-                },
-              };
-              const cfg = statusConfig[table.status] ?? statusConfig.disponible;
-
+              const cfg = statusColorMap[table.status] ?? statusColorMap.disponible;
               return (
                 <div key={table.id} className="col-6 col-md-4 col-xl-3">
                   <div
@@ -314,21 +328,18 @@ export const TablesPage: React.FC = () => {
                           {table.capacity} pers.
                         </span>
                       </div>
-
                       {table.joinedWith && table.joinedWith.length > 0 && (
                         <div className="badge bg-primary-subtle text-primary-emphasis mb-2 text-truncate">
                           <i className="bi bi-link-45deg me-1" aria-hidden="true"></i>
                           Unida con: {table.joinedWith.join(', ')}
                         </div>
                       )}
-
                       {table.status === 'reservada' && (
                         <div className="p-2 rounded-3 bg-warning-subtle text-warning-emphasis small mb-2">
                           <i className="bi bi-bookmark-star-fill me-1" aria-hidden="true"></i>
                           <strong>{table.reservationName}</strong> ({table.reservationTime})
                         </div>
                       )}
-
                       {table.status === 'ocupada' && activeOrder && (
                         <div className="p-2 rounded-3 border bg-light small mb-2">
                           <div className="d-flex justify-content-between fw-bold text-dark">
@@ -338,7 +349,6 @@ export const TablesPage: React.FC = () => {
                           <small className="text-muted">{activeOrder.waiterName}</small>
                         </div>
                       )}
-
                       <div className="pt-2 border-top mt-auto d-flex justify-content-between align-items-center">
                         <small className="text-muted" style={{ fontSize: '0.72rem' }}>
                           Clic para opciones
@@ -682,29 +692,30 @@ export const TablesPage: React.FC = () => {
       >
         <form onSubmit={handleJoinSubmit}>
           <div className="mb-4">
-            <label htmlFor="joinTableSelect" className="form-label">Seleccionar Mesa para Agrupar *</label>
-            <select
-              id="joinTableSelect"
-              className="form-select rounded-3"
-              required
+            <label className="form-label d-block">Seleccionar Mesa para Agrupar *</label>
+            {/* Select de estado: colores por disponibilidad, para elegir con qué mesa unir */}
+            <CustomDropdownSelect
               value={targetJoinTableId}
-              onChange={e => setTargetJoinTableId(e.target.value)}
-            >
-              <option value="">Seleccione mesa...</option>
-              {tables
+              onChange={setTargetJoinTableId}
+              placeholder="Seleccione mesa..."
+              options={tables
                 .filter(t => t.id !== selectedTableForAction?.id)
-                .map(t => (
-                  <option key={t.id} value={t.id}>
-                    Mesa #{t.number} ({t.areaName} - Capacidad: {t.capacity})
-                  </option>
-                ))}
-            </select>
+                .map(t => {
+                  const cfg = statusColorMap[t.status] ?? statusColorMap.disponible;
+                  return {
+                    value: t.id,
+                    label: `Mesa #${t.number} / ${t.areaName} - ${t.capacity} pers. (${cfg.label})`,
+                    icon: cfg.icon,
+                    colorVariant: cfg.colorVariant,
+                  };
+                })}
+            />
           </div>
           <div className="d-flex justify-content-end gap-2 border-top pt-3">
             <button type="button" className="btn btn-outline-secondary rounded-3" onClick={() => setIsJoinModalOpen(false)}>
               Cancelar
             </button>
-            <button type="submit" className="btn-brand btn fw-semibold rounded-3">
+            <button type="submit" className="btn-brand btn fw-semibold rounded-3" disabled={!targetJoinTableId}>
               Unir Mesas
             </button>
           </div>
@@ -719,29 +730,32 @@ export const TablesPage: React.FC = () => {
       >
         <form onSubmit={handleTransferSubmit}>
           <div className="mb-4">
-            <label htmlFor="transferTableSelect" className="form-label">Mesa de Destino (Disponible) *</label>
-            <select
-              id="transferTableSelect"
-              className="form-select rounded-3"
-              required
+            <label className="form-label d-block">Mesa de Destino (Disponible) *</label>
+            {/* Todas las opciones ya están filtradas a 'disponible': refuerzo visual en verde */}
+            <CustomDropdownSelect
               value={targetTransferTableId}
-              onChange={e => setTargetTransferTableId(e.target.value)}
-            >
-              <option value="">Seleccione mesa destino...</option>
-              {tables
+              onChange={setTargetTransferTableId}
+              placeholder="Seleccione mesa destino..."
+              options={tables
                 .filter(t => t.id !== selectedTableForAction?.id && t.status === 'disponible')
-                .map(t => (
-                  <option key={t.id} value={t.id}>
-                    Mesa #{t.number} ({t.areaName} - Capacidad: {t.capacity})
-                  </option>
-                ))}
-            </select>
+                .map(t => ({
+                  value: t.id,
+                  label: `Mesa #${t.number} — ${t.areaName} · ${t.capacity} pers.`,
+                  icon: 'bi-check-circle-fill',
+                  colorVariant: 'success' as const,
+                }))}
+            />
+            {tables.filter(t => t.id !== selectedTableForAction?.id && t.status === 'disponible').length === 0 && (
+              <div className="form-text text-danger mt-1">
+                No hay mesas disponibles en este momento para trasladar el pedido.
+              </div>
+            )}
           </div>
           <div className="d-flex justify-content-end gap-2 border-top pt-3">
             <button type="button" className="btn btn-outline-secondary rounded-3" onClick={() => setIsTransferModalOpen(false)}>
               Cancelar
             </button>
-            <button type="submit" className="btn-brand btn fw-semibold rounded-3">
+            <button type="submit" className="btn-brand btn fw-semibold rounded-3" disabled={!targetTransferTableId}>
               Confirmar Traslado
             </button>
           </div>
@@ -835,25 +849,25 @@ export const TablesPage: React.FC = () => {
             </div>
           </div>
           <div className="mb-4">
-            <label htmlFor="tableAreaSelect" className="form-label">Área Asignada *</label>
-            <select
-              id="tableAreaSelect"
-              className="form-select rounded-3"
-              required
+            <label className="form-label d-block">Área Asignada *</label>
+            {/* Select de categorización: colores neutros, sin semántica de alerta */}
+            <CustomDropdownSelect
               value={tableFormData.areaId}
-              onChange={e => setTableFormData({ ...tableFormData, areaId: e.target.value })}
-            >
-              <option value="" disabled>Seleccione área...</option>
-              {areas.map(a => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
+              onChange={value => setTableFormData({ ...tableFormData, areaId: value })}
+              placeholder="Seleccione área..."
+              options={areas.map(a => ({
+                value: a.id,
+                label: a.name,
+                icon: 'bi-geo-alt-fill',
+                colorVariant: 'primary' as const,
+              }))}
+            />
           </div>
           <div className="d-flex justify-content-end gap-2 border-top pt-3">
             <button type="button" className="btn btn-outline-secondary rounded-3" onClick={() => setIsTableModalOpen(false)}>
               Cancelar
             </button>
-            <button type="submit" className="btn-brand btn fw-semibold rounded-3">
+            <button type="submit" className="btn-brand btn fw-semibold rounded-3" disabled={!tableFormData.areaId}>
               Guardar Mesa
             </button>
           </div>

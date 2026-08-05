@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import type { Order, Dish } from '../types';
+import type { Dish, ServiceType } from '../types';
 import { PageHeader } from '../components/common/PageHeader';
 import { OrderTakeView } from '../components/orders/OrderTakeView';
 import { OrderHistoryView } from '../components/orders/OrderHistoryView';
+import { OrdersStatsRow } from '../components/orders/OrdersStatsRow';
 import { ObservationModal, AdditionalItemsModal, CancelOrderModal } from '../components/orders/OrderModals';
 
 export const OrdersPage: React.FC = () => {
@@ -13,6 +14,7 @@ export const OrdersPage: React.FC = () => {
     dishes,
     categories,
     orders,
+    users,
     createOrder,
     sendOrderToKitchen,
     addItemsToExistingOrder,
@@ -26,14 +28,46 @@ export const OrdersPage: React.FC = () => {
   // Active view: 'take_order' (active order builder / comanda) vs 'history' (supervision / history RF-48)
   const [activeTab, setActiveTab] = useState<'take_order' | 'history'>('take_order');
 
-  // Selected Order for detail / editing / additional items
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  // Selected Order: se guarda solo el ID y el objeto completo se deriva de
+  // `orders` en cada render (ver `selectedOrder` más abajo). Esto evita una
+  // segunda fuente de verdad: si Cocina cancela un ítem o marca prioridad,
+  // el cambio ya viene en `orders` (mismo Context) y este detalle se
+  // actualiza solo, sin recargar la página ni duplicar estado.
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(() => {
+    if (location.state?.focusTableId) {
+      const found = orders.find(o => o.tableId === location.state.focusTableId && o.status !== 'cerrado');
+      return found?.id ?? null;
+    }
+    return null;
+  });
+  const selectedOrder = selectedOrderId ? orders.find(o => o.id === selectedOrderId) ?? null : null;
 
   // New Order Form Builder State (RF-39, RF-40)
-  const [selectedTableId, setSelectedTableId] = useState<string>('');
+  // Estado inicial calculado de forma perezosa (lazy initial state) a partir
+  // de la navegación desde Mesas (createForTableId) o, en su defecto, la
+  // primera mesa ocupada / disponible. Reemplaza los dos useEffect previos
+  // que hacían setState de forma síncrona al montar (react-hooks/set-state-in-effect):
+  // como la navegación hacia "/pedidos" siempre monta esta página de nuevo
+  // (es una ruta distinta), calcularlo una sola vez al inicializar el
+  // estado logra exactamente el mismo resultado sin el render en cascada
+  // que provoca un efecto.
+  const [selectedTableId, setSelectedTableId] = useState<string>(() => {
+    if (location.state?.createForTableId) return location.state.createForTableId;
+    const occupied = tables.find(t => t.status === 'ocupada');
+    if (occupied) return occupied.id;
+    return tables[0]?.id ?? '';
+  });
   const [cartItems, setCartItems] = useState<{ dish: Dish; quantity: number; observation: string }[]>([]);
   const [selectedDishCategory, setSelectedDishCategory] = useState<string>('todas');
   const [dishSearchQuery, setDishSearchQuery] = useState('');
+
+  // Tipo de servicio de la comanda en construcción (mesa / para_llevar / delivery).
+  const [selectedServiceType, setSelectedServiceType] = useState<ServiceType>('mesa');
+
+  // Mesero que atiende la comanda. Se resuelve desde `users` (rol 'Mesero',
+  // activo) en vez de un string fijo — ver `resolvedWaiter` más abajo. Solo
+  // se expone un selector si hay más de un mesero activo en el turno.
+  const [selectedWaiterId, setSelectedWaiterId] = useState<string>('');
 
   // Observation Modal state (RF-43)
   const [isObsModalOpen, setIsObsModalOpen] = useState(false);
@@ -48,24 +82,16 @@ export const OrdersPage: React.FC = () => {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
 
-  // Handle location state passed from Tables Page
-  useEffect(() => {
-    if (location.state?.createForTableId) {
-      setSelectedTableId(location.state.createForTableId);
-    } else if (location.state?.focusTableId) {
-      const found = orders.find(o => o.tableId === location.state.focusTableId && o.status !== 'cerrado');
-      if (found) setSelectedOrder(found);
-    }
-  }, [location.state, orders]);
-
-  // Set default selected table if available
-  useEffect(() => {
-    if (!selectedTableId && tables.length > 0) {
-      const occupied = tables.find(t => t.status === 'ocupada');
-      if (occupied) setSelectedTableId(occupied.id);
-      else setSelectedTableId(tables[0].id);
-    }
-  }, [tables, selectedTableId]);
+  // Meseros activos — reemplaza el waiterId/waiterName hardcodeado
+  // ('usr-2' / 'Juan Pérez') por una resolución real desde el módulo de
+  // Usuarios, siguiendo el mismo patrón que `cashierName` en
+  // processSaleBilling (AppContext.tsx).
+  const activeWaiters = users.filter(u => u.role === 'Mesero' && u.active);
+  const resolvedWaiterId =
+    selectedWaiterId && activeWaiters.some(w => w.id === selectedWaiterId)
+      ? selectedWaiterId
+      : activeWaiters[0]?.id ?? '';
+  const resolvedWaiter = activeWaiters.find(w => w.id === resolvedWaiterId);
 
   // Filtered dishes for menu selection
   const filteredDishes = dishes.filter(d => {
@@ -136,11 +162,17 @@ export const OrdersPage: React.FC = () => {
       quantity: c.quantity,
       observation: c.observation
     }));
-    const orderId = createOrder(selectedTableId, 'usr-2', 'Juan Pérez', itemsToSubmit);
+    // Mesero real de turno en vez del string fijo anterior. Si por algún
+    // motivo no hay ningún Mesero activo registrado (turno mal configurado),
+    // se recurre al mismo patrón de respaldo que usa `cashierName` en Ventas:
+    // el usuario activo con el rol de la sesión actual.
+    const fallbackUser = users.find(u => u.role === currentRole && u.active);
+    const waiterId = resolvedWaiter?.id ?? fallbackUser?.id ?? currentRole;
+    const waiterName = resolvedWaiter?.name ?? fallbackUser?.name ?? currentRole;
+    const orderId = createOrder(selectedTableId, waiterId, waiterName, itemsToSubmit, selectedServiceType);
     sendOrderToKitchen(orderId);
     setCartItems([]);
-    const created = orders.find(o => o.id === orderId);
-    if (created) setSelectedOrder(created);
+    setSelectedOrderId(orderId);
   };
 
   // Additional items cart operations
@@ -183,7 +215,7 @@ export const OrdersPage: React.FC = () => {
     if (!selectedOrder || !cancelReason.trim()) return;
     cancelOrder(selectedOrder.id, cancelReason);
     setIsCancelModalOpen(false);
-    setSelectedOrder(null);
+    setSelectedOrderId(null);
   };
 
   // Opens the cancellation modal for the currently selected order.
@@ -215,6 +247,13 @@ export const OrdersPage: React.FC = () => {
     acc[t.status].push(t);
     return acc;
   }, {});
+
+  // Métricas para la fila de stats — mismo patrón que KitchenStatsRow (Cocina)
+  // y la fila de StatCard de Catálogo (paridad visual entre los 3 módulos).
+  const occupiedTablesCount = tables.filter(t => t.status === 'ocupada').length;
+  const activeOrdersCount = orders.filter(o => o.status !== 'cerrado' && o.status !== 'cancelado').length;
+  const ordersInKitchenCount = orders.filter(o => o.status === 'en_preparacion').length;
+  const ordersReadyCount = orders.filter(o => o.status === 'listo').length;
 
   return (
     <div className="container-fluid p-0">
@@ -272,6 +311,13 @@ export const OrdersPage: React.FC = () => {
         }
       />
 
+      <OrdersStatsRow
+        occupiedTables={occupiedTablesCount}
+        activeOrders={activeOrdersCount}
+        ordersInKitchen={ordersInKitchenCount}
+        ordersReady={ordersReadyCount}
+      />
+
       {activeTab === 'take_order' ? (
         <OrderTakeView
           dishes={dishes}
@@ -293,12 +339,17 @@ export const OrdersPage: React.FC = () => {
           groupedTables={groupedTables}
           cartSubtotal={cartSubtotal}
           handleConfirmAndSendOrder={handleConfirmAndSendOrder}
+          selectedServiceType={selectedServiceType}
+          setSelectedServiceType={setSelectedServiceType}
+          activeWaiters={activeWaiters}
+          resolvedWaiterId={resolvedWaiterId}
+          setSelectedWaiterId={setSelectedWaiterId}
         />
       ) : (
         <OrderHistoryView
           orders={orders}
           selectedOrder={selectedOrder}
-          setSelectedOrder={setSelectedOrder}
+          setSelectedOrder={order => setSelectedOrderId(order.id)}
           isAdmin={isAdmin}
           navigate={navigate}
           onOpenAddItems={handleOpenAddItemsModal}

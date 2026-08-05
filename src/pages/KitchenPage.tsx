@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { PageHeader } from '../components/common/PageHeader';
-import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { EmptyState } from '../components/common/EmptyState';
-import { StatCard } from '../components/common/StatCard';
 import { CustomDropdownSelect } from '../components/common/CustomDropdownSelect';
+import { KitchenStatsRow } from '../components/kitchen/KitchenStatsRow';
+import { KitchenToolbar, type KitchenViewMode } from '../components/kitchen/KitchenToolbar';
+import { KitchenOrderCard } from '../components/kitchen/KitchenOrderCard';
+import { KitchenStationBoard } from '../components/kitchen/KitchenStationBoard';
+import { useNowTick } from '../hooks/useNowTick';
+import { useKitchenAlertSound } from '../hooks/useKitchenAlertSound';
+import { getElapsedMinutes, getExpectedMinutes, getTimeStatus } from '../components/kitchen/kitchenMeta';
 
 export const KitchenPage: React.FC = () => {
   const {
@@ -14,80 +19,163 @@ export const KitchenPage: React.FC = () => {
     updateOrderItemStatus,
     markOrderReady,
     notifyDishIndisponibility,
-    currentRole,
+    cancelOrderItem,
+    toggleOrderPriority,
   } = useApp();
 
-  // Modal for notifying dish unavailability during service (RF-55)
+  // Fuerza un re-render periódico para que los cronómetros de cada ticket
+  // avancen "en vivo" sin depender de otra acción del usuario (RF-50).
+  useNowTick(15000);
+
+  const {
+    enabled: soundEnabled,
+    setEnabled: setSoundEnabled,
+    playNewOrderBeep,
+    playUrgentBeep,
+  } = useKitchenAlertSound();
+
+  // --- Estado de la barra de herramientas ---
+  const [viewMode, setViewMode] = useState<KitchenViewMode>('mesa');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [hideReady, setHideReady] = useState(false);
+
+  // --- Modal: Notificar Agotado (RF-55) ---
   const [isIndisponibleModalOpen, setIsIndisponibleModalOpen] = useState(false);
-  const [selectedDishToMark, setSelectedDishToMark] = useState<string>('');
+  const [selectedDishToMark, setSelectedDishToMark] = useState('');
+  const [indisponibleNote, setIndisponibleNote] = useState('');
 
-  // Active Kitchen Tickets (status: en_preparacion or listo) (RF-50)
-  const kitchenOrders = orders
-    .filter(o => o.status === 'en_preparacion' || o.status === 'listo')
-    .sort((a, b) => (a.sentToKitchenAt || '').localeCompare(b.sentToKitchenAt || ''));
+  // --- Modal: cancelar un ítem puntual ya comisionado a cocina ---
+  const [cancelItemTarget, setCancelItemTarget] = useState<{
+    orderId: string;
+    itemId: string;
+    dishName: string;
+  } | null>(null);
+  const [cancelItemReason, setCancelItemReason] = useState('');
 
-  const handleIndisponibleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedDishToMark) return;
-    notifyDishIndisponibility(selectedDishToMark);
-    setIsIndisponibleModalOpen(false);
-  };
+  // Tickets activos de cocina: en_preparacion o listo (RF-50)
+  const kitchenOrders = useMemo(
+    () =>
+      orders
+        .filter(o => o.status === 'en_preparacion' || o.status === 'listo')
+        .sort((a, b) => (a.sentToKitchenAt || '').localeCompare(b.sentToKitchenAt || '')),
+    [orders]
+  );
 
-  // Summary stats
+  // --- Alertas sonoras: comanda nueva / comanda que cruza a "urgente" ---
+  // Se guardan en refs (no en estado) porque no deben disparar un re-render
+  // por sí mismas; solo necesitan sobrevivir entre renders.
+  const knownOrderIdsRef = useRef<Set<string> | null>(null);
+  const urgentAlertedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const currentIds = new Set(kitchenOrders.map(o => o.id));
+
+    // Primera carga de la pantalla: solo se registra el estado inicial sin
+    // sonar, para no disparar una ronda de beeps por comandas que ya
+    // estaban activas antes de que el chef abriera el KDS.
+    if (knownOrderIdsRef.current === null) {
+      knownOrderIdsRef.current = currentIds;
+      kitchenOrders.forEach(order => {
+        if (order.status === 'listo') return;
+        const status = getTimeStatus(getElapsedMinutes(order.sentToKitchenAt), getExpectedMinutes(order, dishes));
+        if (status === 'urgent') urgentAlertedRef.current.add(order.id);
+      });
+      return;
+    }
+
+    kitchenOrders.forEach(order => {
+      if (!knownOrderIdsRef.current!.has(order.id)) {
+        playNewOrderBeep();
+      }
+      if (order.status !== 'listo') {
+        const status = getTimeStatus(getElapsedMinutes(order.sentToKitchenAt), getExpectedMinutes(order, dishes));
+        if (status === 'urgent' && !urgentAlertedRef.current.has(order.id)) {
+          playUrgentBeep();
+          urgentAlertedRef.current.add(order.id);
+        }
+      }
+    });
+
+    // Limpia el registro de "ya alertado" para comandas que salieron del KDS.
+    urgentAlertedRef.current.forEach(id => {
+      if (!currentIds.has(id)) urgentAlertedRef.current.delete(id);
+    });
+    knownOrderIdsRef.current = currentIds;
+  }, [kitchenOrders, dishes, playNewOrderBeep, playUrgentBeep]);
+
+  // --- Búsqueda + ocultar listos + comandas prioritarias primero ---
+  const filteredOrders = useMemo(() => {
+    let list = kitchenOrders;
+    if (hideReady) list = list.filter(o => o.status !== 'listo');
+
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        o =>
+          String(o.tableNumber).includes(q) ||
+          o.waiterName.toLowerCase().includes(q) ||
+          o.areaName.toLowerCase().includes(q)
+      );
+    }
+
+    // Array.prototype.sort es estable: esto solo antepone las prioritarias
+    // sin alterar el orden cronológico ya aplicado en kitchenOrders.
+    return [...list].sort((a, b) => Number(!!b.priority) - Number(!!a.priority));
+  }, [kitchenOrders, hideReady, searchQuery]);
+
+  // --- Resumen (siempre sobre el total real, no sobre lo filtrado) ---
   const activeCommandas = kitchenOrders.filter(o => o.status === 'en_preparacion').length;
   const itemsListos = kitchenOrders.reduce(
-    (acc, o) => acc + o.items.filter(i => i.status === 'listo').length,
+    (acc, o) => acc + o.items.filter(i => i.status === 'listo' || i.status === 'entregado').length,
     0
   );
   const itemsPendientes = kitchenOrders.reduce(
     (acc, o) => acc + o.items.filter(i => i.status === 'pendiente' || i.status === 'preparando').length,
     0
   );
-
-  /**
-   * Parse a time string (e.g. "10:35 AM" or "10:35") and compute elapsed minutes
-   * relative to the current time. Returns null when parsing fails.
-   */
-  const getElapsedMinutes = (sentAt: string | undefined): number | null => {
-    if (!sentAt) return null;
-    try {
-      const now = new Date();
-      // Build a full date string using today's date so Date can parse it
-      const parsed = new Date(`${now.toDateString()} ${sentAt}`);
-      if (isNaN(parsed.getTime())) return null;
-      return Math.floor((now.getTime() - parsed.getTime()) / 60000);
-    } catch {
-      return null;
-    }
-  };
-
-  const getTimeColorClass = (minutes: number | null): string => {
-    if (minutes === null) return 'text-secondary';
-    if (minutes < 10) return 'text-success';
-    if (minutes <= 20) return 'text-warning';
-    return 'text-danger';
-  };
-
-  /**
-   * Traduce un porcentaje de progreso a la clase utilitaria de ancho nativa
-   * de Bootstrap más cercana (redondeando hacia abajo), evitando así el uso
-   * de estilos inline para dimensionar la barra de progreso.
-   */
-  const getProgressWidthClass = (pct: number): string => {
-    if (pct >= 100) return 'w-100';
-    if (pct >= 75) return 'w-75';
-    if (pct >= 50) return 'w-50';
-    if (pct >= 25) return 'w-25';
-    return '';
-  };
-
-  // Derivado solo de presentación: cuántos pedidos activos superan los 20
-  // minutos de espera. No altera la lógica de negocio ni el estado.
   const urgentOrdersCount = kitchenOrders.filter(o => {
     if (o.status === 'listo') return false;
-    const minutes = getElapsedMinutes(o.sentToKitchenAt);
-    return minutes !== null && minutes > 20;
+    return getTimeStatus(getElapsedMinutes(o.sentToKitchenAt), getExpectedMinutes(o, dishes)) === 'urgent';
   }).length;
+
+  // --- Handlers ---
+  const handleStartAllPending = (orderId: string) => {
+    const order = kitchenOrders.find(o => o.id === orderId);
+    if (!order) return;
+    order.items
+      .filter(i => i.status === 'pendiente')
+      .forEach(i => updateOrderItemStatus(orderId, i.id, 'preparando'));
+  };
+
+  const handleRequestCancelItem = (orderId: string, itemId: string, dishName: string) => {
+    setCancelItemTarget({ orderId, itemId, dishName });
+    setCancelItemReason('');
+  };
+
+  const handleConfirmCancelItem = () => {
+    if (!cancelItemTarget || !cancelItemReason.trim()) return;
+    cancelOrderItem(cancelItemTarget.orderId, cancelItemTarget.itemId, cancelItemReason.trim());
+    setCancelItemTarget(null);
+    setCancelItemReason('');
+  };
+
+  const handleIndisponibleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDishToMark) return;
+    notifyDishIndisponibility(selectedDishToMark, indisponibleNote.trim() || undefined);
+    setIsIndisponibleModalOpen(false);
+    setSelectedDishToMark('');
+    setIndisponibleNote('');
+  };
+
+  // Mesas ya afectadas por el plato seleccionado en el modal de "Agotado",
+  // mostrado en vivo antes de confirmar el cambio (RF-55 ampliado).
+  const impactedOrdersForSelectedDish = useMemo(() => {
+    if (!selectedDishToMark) return [];
+    return kitchenOrders.filter(o =>
+      o.items.some(i => i.dishId === selectedDishToMark && (i.status === 'pendiente' || i.status === 'preparando'))
+    );
+  }, [kitchenOrders, selectedDishToMark]);
 
   return (
     <div className="container-fluid p-0">
@@ -109,227 +197,60 @@ export const KitchenPage: React.FC = () => {
       />
 
       {/* Summary Stats Row */}
-      <div className="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3 mb-4">
-        <div className="col">
-          <StatCard
-            title="Comandas Activas"
-            value={activeCommandas}
-            icon="bi-receipt"
-            colorTheme="indigo"
-          />
-        </div>
-        <div className="col">
-          <StatCard
-            title="Items Listos"
-            value={itemsListos}
-            icon="bi-check-circle-fill"
-            colorTheme="emerald"
-          />
-        </div>
-        <div className="col">
-          <StatCard
-            title="Items Pendientes"
-            value={itemsPendientes}
-            icon="bi-clock"
-            colorTheme="amber"
-          />
-        </div>
-        <div className="col">
-          <StatCard
-            title="Pedidos Urgentes"
-            value={urgentOrdersCount}
-            icon="bi-alarm-fill"
-            colorTheme="rose"
-          />
-        </div>
-      </div>
+      <KitchenStatsRow
+        activeCommandas={activeCommandas}
+        itemsListos={itemsListos}
+        itemsPendientes={itemsPendientes}
+        urgentOrdersCount={urgentOrdersCount}
+      />
 
-      {/* Tickets Grid */}
+      {/* Toolbar: vista por mesa/estación, búsqueda, ocultar listos, sonido */}
+      <KitchenToolbar
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        hideReady={hideReady}
+        onToggleHideReady={() => setHideReady(v => !v)}
+        soundEnabled={soundEnabled}
+        onToggleSound={() => setSoundEnabled(!soundEnabled)}
+      />
+
+      {/* Tickets */}
       {kitchenOrders.length === 0 ? (
         <EmptyState
           icon="bi-check-circle-fill"
           title="¡Cocina al Día!"
           description="No hay pedidos pendientes en la comanda. Todos los platos han sido despachados."
         />
+      ) : filteredOrders.length === 0 ? (
+        <EmptyState
+          icon="bi-search"
+          title="Sin resultados"
+          description="Ningún ticket activo coincide con la búsqueda o los filtros aplicados."
+        />
+      ) : viewMode === 'estacion' ? (
+        <KitchenStationBoard
+          orders={filteredOrders}
+          dishes={dishes}
+          onSetItemStatus={updateOrderItemStatus}
+          onRequestCancelItem={handleRequestCancelItem}
+        />
       ) : (
         <div className="row g-4 mb-4">
-          {kitchenOrders.map(order => {
-            const isReady = order.status === 'listo';
-            const elapsedMinutes = getElapsedMinutes(order.sentToKitchenAt);
-            const timeLabel =
-              elapsedMinutes !== null
-                ? `${elapsedMinutes} min`
-                : order.sentToKitchenAt || '—';
-
-            // Derivados solo de presentación (no alteran la lógica de negocio)
-            const isUrgent = !isReady && elapsedMinutes !== null && elapsedMinutes > 20;
-            const timeBadgeBg =
-              elapsedMinutes === null
-                ? 'bg-secondary-subtle text-secondary-emphasis'
-                : elapsedMinutes < 10
-                ? 'bg-success-subtle text-success-emphasis'
-                : elapsedMinutes <= 20
-                ? 'bg-warning-subtle text-warning-emphasis'
-                : 'bg-danger-subtle text-danger-emphasis';
-            const cardBorderClass = isReady
-              ? 'border-success'
-              : isUrgent
-              ? 'border-danger border-3'
-              : 'border-warning';
-            const headerBgClass = isReady
-              ? 'bg-success-subtle'
-              : isUrgent
-              ? 'bg-danger-subtle'
-              : 'bg-warning-subtle';
-            const totalItems = order.items.length;
-            const readyItemsCount = order.items.filter(i => i.status === 'listo').length;
-            const progressPct = totalItems > 0 ? Math.round((readyItemsCount / totalItems) * 100) : 0;
-            const progressWidthClass = getProgressWidthClass(progressPct);
-
-            return (
-              <div key={order.id} className="col-12 col-md-6 col-xl-4 col-xxl-3">
-                <div className={`card h-100 shadow-sm rounded-4 overflow-hidden border d-flex flex-column ${cardBorderClass}`}>
-                  {/* Ticket Header */}
-                  <div
-                    className={`card-header border-bottom px-3 py-2 d-flex align-items-start justify-content-between gap-2 ${headerBgClass}`}
-                  >
-                    <div className="text-truncate">
-                      <h5 className="fw-bold mb-0 fs-2 text-dark lh-1">Mesa #{order.tableNumber}</h5>
-                      <small className="text-muted text-truncate d-block mt-1">
-                        <i className="bi bi-geo-alt-fill me-1" aria-hidden="true"></i>
-                        {order.areaName}
-                        <span className="mx-1">•</span>
-                        <i className="bi bi-person-badge-fill me-1" aria-hidden="true"></i>
-                        {order.waiterName}
-                      </small>
-                    </div>
-                    <div className="text-end flex-shrink-0 d-flex flex-column align-items-end gap-1">
-                      <Badge
-                        status={isReady ? 'LISTO' : 'EN PREPARACIÓN'}
-                        variant={isReady ? 'success' : 'warning'}
-                      />
-                      <span className={`badge rounded-pill fw-bold ${timeBadgeBg}`}>
-                        <i className="bi bi-stopwatch me-1" aria-hidden="true"></i>
-                        {timeLabel}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Alerta de urgencia — comanda con más de 20 min en espera */}
-                  {isUrgent && (
-                    <div
-                      className="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mb-0 rounded-0 border-0 border-bottom"
-                      role="alert"
-                    >
-                      <i className="bi bi-exclamation-triangle-fill fs-5" aria-hidden="true"></i>
-                      <span className="fw-bold text-uppercase small mb-0">
-                        Pedido urgente — requiere atención inmediata
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Progreso de preparación */}
-                  <div className="px-3 pt-3">
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <small className="text-muted fw-semibold text-uppercase">Progreso</small>
-                      <small className="text-muted fw-bold">
-                        {readyItemsCount}/{totalItems} listos
-                      </small>
-                    </div>
-                    <div
-                      className="progress"
-                      role="progressbar"
-                      aria-valuenow={progressPct}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-label={`Progreso de preparación de Mesa ${order.tableNumber}: ${progressPct}%`}
-                    >
-                      <div className={`progress-bar ${isReady ? 'bg-success' : 'bg-warning'} ${progressWidthClass}`}></div>
-                    </div>
-                  </div>
-
-                  {/* Items List */}
-                  <div className="card-body p-3 d-flex flex-column gap-2">
-                    {order.items.map(item => {
-                      const itemBorderClass =
-                        item.status === 'listo'
-                          ? 'border-success bg-success-subtle bg-opacity-50'
-                          : item.status === 'preparando'
-                          ? 'border-warning bg-warning-subtle bg-opacity-50'
-                          : 'border-secondary-subtle bg-body';
-                      return (
-                        <div
-                          key={item.id}
-                          className={`border-start border-4 rounded-3 p-2 ${itemBorderClass}`}
-                        >
-                          {/* Quantity + Dish Name */}
-                          <div className="d-flex align-items-center gap-2 mb-1">
-                            <span className="badge bg-dark rounded-pill fs-5 px-2 py-1">
-                              {item.quantity}x
-                            </span>
-                            <span className="fw-bold text-dark fs-4">{item.dishName}</span>
-                          </div>
-
-                          {/* Special Observation */}
-                          {item.observation && (
-                            <div className="d-flex align-items-start gap-2 p-2 mb-2 rounded-3 bg-warning-subtle border border-warning-subtle text-warning-emphasis">
-                              <i className="bi bi-exclamation-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
-                              <small className="fw-semibold mb-0">{item.observation}</small>
-                            </div>
-                          )}
-
-                          {/* Item Status Buttons */}
-                          <div
-                            className="btn-group w-100"
-                            role="group"
-                            aria-label={`Estado de ${item.dishName}`}
-                          >
-                            <button
-                              type="button"
-                              className={`btn fw-semibold ${
-                                item.status === 'preparando' ? 'btn-warning' : 'btn-outline-secondary'
-                              }`}
-                              aria-pressed={item.status === 'preparando'}
-                              onClick={() => updateOrderItemStatus(order.id, item.id, 'preparando')}
-                            >
-                              <i className="bi bi-fire me-1" aria-hidden="true"></i>
-                              Preparando
-                            </button>
-                            <button
-                              type="button"
-                              className={`btn fw-semibold ${
-                                item.status === 'listo' ? 'btn-success' : 'btn-outline-secondary'
-                              }`}
-                              aria-pressed={item.status === 'listo'}
-                              onClick={() => updateOrderItemStatus(order.id, item.id, 'listo')}
-                            >
-                              <i className="bi bi-check-lg me-1" aria-hidden="true"></i>
-                              Listo
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Ticket Footer Action */}
-                  <div className="p-3 bg-light border-top mt-auto">
-                    <button
-                      type="button"
-                      className={`btn ${isReady ? 'btn-success' : 'btn-brand'} btn-lg w-100 fw-bold`}
-                      onClick={() => markOrderReady(order.id)}
-                    >
-                      <i
-                        className={`bi ${isReady ? 'bi-check-circle-fill' : 'bi-bell-fill'} me-2`}
-                        aria-hidden="true"
-                      ></i>
-                      {isReady ? '¡Comanda Despachada!' : 'Marcar Mesa Lista'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {filteredOrders.map(order => (
+            <div key={order.id} className="col-12 col-md-6 col-xl-4">
+              <KitchenOrderCard
+                order={order}
+                dishes={dishes}
+                onSetItemStatus={(itemId, newStatus) => updateOrderItemStatus(order.id, itemId, newStatus)}
+                onMarkReady={() => markOrderReady(order.id)}
+                onTogglePriority={() => toggleOrderPriority(order.id)}
+                onRequestCancelItem={(itemId, dishName) => handleRequestCancelItem(order.id, itemId, dishName)}
+                onStartAllPending={() => handleStartAllPending(order.id)}
+              />
+            </div>
+          ))}
         </div>
       )}
 
@@ -341,7 +262,7 @@ export const KitchenPage: React.FC = () => {
         subtitle="Informa inmediatamente a sala sobre la falta de insumos o agotado puntual durante el servicio."
       >
         <form onSubmit={handleIndisponibleSubmit}>
-          <div className="mb-4">
+          <div className="mb-3">
             <label id="dishToMarkSelectLabel" htmlFor="dishToMarkSelect" className="form-label fw-semibold text-dark">
               Seleccionar Plato Agotado *
             </label>
@@ -360,8 +281,34 @@ export const KitchenPage: React.FC = () => {
                 colorVariant: d.isAvailableToday ? 'success' : 'danger',
               }))}
             />
+          </div>
+
+          {impactedOrdersForSelectedDish.length > 0 && (
+            <div className="d-flex align-items-start gap-2 p-3 mb-3 rounded-3 bg-danger-subtle border border-danger-subtle text-danger-emphasis">
+              <i className="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+              <small className="fw-semibold mb-0">
+                Este plato ya está pedido en {impactedOrdersForSelectedDish.length > 1 ? 'las mesas' : 'la mesa'}:{' '}
+                {impactedOrdersForSelectedDish.map(o => `#${o.tableNumber}`).join(', ')}. Sala será notificada para
+                ofrecer un reemplazo.
+              </small>
+            </div>
+          )}
+
+          <div className="mb-4">
+            <label htmlFor="indisponibleNote" className="form-label fw-semibold text-dark">
+              Nota para sala (opcional)
+            </label>
+            <textarea
+              id="indisponibleNote"
+              className="form-control"
+              rows={2}
+              placeholder="Ej. Vuelve a estar disponible en 20 minutos..."
+              value={indisponibleNote}
+              onChange={e => setIndisponibleNote(e.target.value)}
+            ></textarea>
             <div id="dishToMarkHelp" className="form-text mt-2">
-              Al marcar como agotado, los meseros verán una alerta inmediata al intentar agregar este plato a nuevas comandas.
+              Al marcar como agotado, los meseros verán una alerta inmediata al intentar agregar este plato a nuevas
+              comandas.
             </div>
           </div>
           <div className="d-flex justify-content-end gap-2 border-top pt-3">
@@ -374,6 +321,43 @@ export const KitchenPage: React.FC = () => {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Cancelar ítem puntual ya comisionado a cocina */}
+      <Modal
+        isOpen={!!cancelItemTarget}
+        onClose={() => setCancelItemTarget(null)}
+        title="Cancelar Ítem de la Comanda"
+        subtitle={cancelItemTarget ? `${cancelItemTarget.dishName} — se notificará a sala.` : undefined}
+      >
+        <div className="mb-4">
+          <label className="form-label fw-semibold text-dark" htmlFor="cancelItemReason">
+            Motivo de Cancelación *
+          </label>
+          <textarea
+            id="cancelItemReason"
+            className="form-control"
+            rows={3}
+            placeholder="Ej. Se agotó el insumo a media preparación..."
+            required
+            value={cancelItemReason}
+            onChange={e => setCancelItemReason(e.target.value)}
+          ></textarea>
+        </div>
+        <div className="d-flex justify-content-end gap-2 border-top pt-3">
+          <button type="button" className="btn btn-light" onClick={() => setCancelItemTarget(null)}>
+            Volver
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger fw-semibold"
+            disabled={!cancelItemReason.trim()}
+            onClick={handleConfirmCancelItem}
+          >
+            <i className="bi bi-x-circle-fill me-2" aria-hidden="true"></i>
+            Confirmar Cancelación
+          </button>
+        </div>
       </Modal>
     </div>
   );

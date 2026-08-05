@@ -13,6 +13,7 @@ import type {
   Order,
   OrderItem,
   OrderItemStatus,
+  ServiceType,
   Sale,
   Cliente,
   CashSession,
@@ -116,7 +117,13 @@ export interface AppContextType {
 
   // Orders Module
   orders: Order[];
-  createOrder: (tableId: string, waiterId: string, waiterName: string, items: Omit<OrderItem, 'id' | 'status' | 'addedAt'>[]) => string;
+  createOrder: (
+    tableId: string,
+    waiterId: string,
+    waiterName: string,
+    items: Omit<OrderItem, 'id' | 'status' | 'addedAt'>[],
+    serviceType?: ServiceType
+  ) => string;
   updateOrderItemQuantity: (orderId: string, itemId: string, newQuantity: number) => void;
   removeOrderItem: (orderId: string, itemId: string) => void;
   addOrderItemObservation: (orderId: string, itemId: string, observation: string) => void;
@@ -127,7 +134,9 @@ export interface AppContextType {
   // Kitchen KDS Module
   updateOrderItemStatus: (orderId: string, itemId: string, newStatus: OrderItemStatus) => void;
   markOrderReady: (orderId: string) => void;
-  notifyDishIndisponibility: (dishId: string) => void;
+  notifyDishIndisponibility: (dishId: string, note?: string) => void;
+  cancelOrderItem: (orderId: string, itemId: string, reason: string) => void;
+  toggleOrderPriority: (orderId: string) => void;
 
   // Sales & Billing Module — Caja → Cobro → Comprobante
   sales: Sale[];
@@ -481,7 +490,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     tableId: string,
     waiterId: string,
     waiterName: string,
-    itemsData: Omit<OrderItem, 'id' | 'status' | 'addedAt'>[]
+    itemsData: Omit<OrderItem, 'id' | 'status' | 'addedAt'>[],
+    serviceType?: ServiceType
   ): string => {
     const table = tables.find(t => t.id === tableId);
     const orderId = `ord-${Date.now()}`;
@@ -503,7 +513,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       waiterName,
       items: orderItems,
       status: 'abierto',
-      createdAt: new Date().toLocaleString('es-ES')
+      createdAt: new Date().toLocaleString('es-ES'),
+      // Por defecto 'mesa' si el constructor de comanda no especifica otro
+      // tipo de servicio (para_llevar / delivery), consistente con el resto
+      // del sistema donde serviceType ausente se interpreta como 'mesa'.
+      serviceType: serviceType ?? 'mesa'
     };
 
     setOrders(prev => [newOrder, ...prev]);
@@ -546,13 +560,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const sendOrderToKitchen = (orderId: string) => {
-    const sentTime = new Date().toLocaleString('es-ES');
+    // Formato "HH:mm", consistente con `addedAt` en addItemsToExistingOrder,
+    // para que el cálculo de tiempo transcurrido del KDS (getElapsedMinutes)
+    // pueda parsearlo de forma confiable.
+    const sentTime = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
     setOrders(prev => prev.map(o => {
       if (o.id === orderId) {
         return {
           ...o,
           status: 'en_preparacion',
-          sentToKitchenAt: sentTime,
+          // Solo se fija la PRIMERA vez que la comanda entra a cocina. Si ya
+          // tenía un sentToKitchenAt (p.ej. se están mandando adicionales a
+          // una comanda que ya estaba en preparación), se conserva el
+          // original: de lo contrario el cronómetro del ticket completo se
+          // reiniciaría cada vez que se agrega un plato, ocultando cuánto
+          // llevan esperando los ítems que ya estaban en preparación.
+          sentToKitchenAt: o.sentToKitchenAt ?? sentTime,
           items: o.items.map(i => i.status === 'pendiente' ? { ...i, status: 'preparando' } : i)
         };
       }
@@ -616,7 +639,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return {
           ...o,
           status: 'listo',
-          items: o.items.map(i => ({ ...i, status: 'listo' }))
+          // No se sobrescriben los ítems ya 'cancelado': deben seguir
+          // mostrándose como cancelados y no contar como parte de lo servido.
+          items: o.items.map(i => i.status === 'cancelado' ? i : { ...i, status: 'listo' })
         };
       }
       return o;
@@ -624,8 +649,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('¡Pedido Listo!', 'Se ha notificado al mesero para el recojo en pase.', 'success');
   };
 
-  const notifyDishIndisponibility = (dishId: string) => {
+  // Cancela un ítem puntual de una comanda ya comisionada a cocina (p.ej. se
+  // agotó el insumo a media preparación). A diferencia de removeOrderItem
+  // (que borra el ítem porque el pedido nunca se envió), aquí se conserva el
+  // ítem con estado 'cancelado' + motivo, para que quede trazabilidad tanto
+  // en el KDS como de cara al mesero/cobro.
+  const cancelOrderItem = (orderId: string, itemId: string, reason: string) => {
+    setOrders(prev => prev.map(o => {
+      if (o.id === orderId) {
+        return {
+          ...o,
+          items: o.items.map(i => i.id === itemId ? { ...i, status: 'cancelado', cancelReason: reason } : i)
+        };
+      }
+      return o;
+    }));
+    showToast('Ítem Cancelado en Cocina', `Motivo: ${reason}`, 'warning');
+  };
+
+  // Marca/desmarca una comanda como prioritaria dentro del KDS (p.ej. un
+  // repartidor esperando o una mesa VIP), independiente del tiempo de
+  // espera automático.
+  const toggleOrderPriority = (orderId: string) => {
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, priority: !o.priority } : o));
+  };
+
+  // `note` es opcional: permite a cocina dejar un mensaje breve (p.ej. "vuelve
+  // en 20 min") que se comunica de inmediato junto con las mesas afectadas
+  // que ya tenían el plato pedido en curso.
+  const notifyDishIndisponibility = (dishId: string, note?: string) => {
+    const dish = dishes.find(d => d.id === dishId);
+    const impactedOrders = orders.filter(
+      o =>
+        (o.status === 'en_preparacion' || o.status === 'listo') &&
+        o.items.some(i => i.dishId === dishId && (i.status === 'pendiente' || i.status === 'preparando'))
+    );
     toggleDishDailyAvailability(dishId);
+    if (impactedOrders.length > 0) {
+      const tablesList = impactedOrders.map(o => `Mesa #${o.tableNumber}`).join(', ');
+      showToast(
+        'Mesas Afectadas por Agotado',
+        `${dish?.name ?? 'El plato'} ya estaba pedido en: ${tablesList}. Avisa a sala para ofrecer reemplazo.${note ? ` Nota: ${note}` : ''}`,
+        'danger'
+      );
+    } else if (note) {
+      showToast('Nota de Cocina', note, 'info');
+    }
   };
 
   // --- SALES & BILLING ACTIONS ---
@@ -960,6 +1029,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateOrderItemStatus,
         markOrderReady,
         notifyDishIndisponibility,
+        cancelOrderItem,
+        toggleOrderPriority,
         sales,
         processSaleBilling,
         cancelSale,

@@ -87,7 +87,10 @@ export const initialDishes: Dish[] = [
     description: 'Pescado del día, mariscos selectos, camote glaseado, choclo desgranado y leche de tigre rocoto.',
     image: 'https://images.unsplash.com/photo-1535399831370-7642b7450702?auto=format&fit=crop&w=600&q=80',
     active: true,
-    isAvailableToday: true
+    isAvailableToday: true,
+    station: 'frios',
+    prepTimeMinutes: 12,
+    allergens: ['Mariscos']
   },
   {
     id: 'd-2',
@@ -98,7 +101,10 @@ export const initialDishes: Dish[] = [
     description: 'Lomo de res sellado, láminas de parmesano grana padano, alcaparras y vinagreta de trufa.',
     image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80',
     active: true,
-    isAvailableToday: true
+    isAvailableToday: true,
+    station: 'frios',
+    prepTimeMinutes: 10,
+    allergens: ['Lácteos']
   },
   {
     id: 'd-3',
@@ -109,7 +115,10 @@ export const initialDishes: Dish[] = [
     description: 'Crispy tequeños rellenos con queso andino y lomo salteado, acompañados de salsa guacamole.',
     image: 'https://images.unsplash.com/photo-1541529086526-db283c563270?auto=format&fit=crop&w=600&q=80',
     active: true,
-    isAvailableToday: true
+    isAvailableToday: true,
+    station: 'plancha',
+    prepTimeMinutes: 8,
+    allergens: ['Gluten', 'Lácteos']
   },
   {
     id: 'd-4',
@@ -120,7 +129,9 @@ export const initialDishes: Dish[] = [
     description: 'Medallones de lomo salteados al wok con cebolla, tomate, ají amarillo, papas amarillas fritas y arroz con choclo.',
     image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80',
     active: true,
-    isAvailableToday: true
+    isAvailableToday: true,
+    station: 'parrilla',
+    prepTimeMinutes: 15
   },
   {
     id: 'd-5',
@@ -131,7 +142,10 @@ export const initialDishes: Dish[] = [
     description: 'Corte madurado a la parrilla con mantequilla de hierbas, puré rústico y vegetales asados.',
     image: 'https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=600&q=80',
     active: true,
-    isAvailableToday: true
+    isAvailableToday: true,
+    station: 'parrilla',
+    prepTimeMinutes: 22,
+    allergens: ['Lácteos']
   },
   {
     id: 'd-6',
@@ -142,7 +156,10 @@ export const initialDishes: Dish[] = [
     description: 'Filete de salmón fresco en salsa de maracuyá con risotto de espárragos verdes.',
     image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=600&q=80',
     active: true,
-    isAvailableToday: false
+    isAvailableToday: false,
+    station: 'parrilla',
+    prepTimeMinutes: 18,
+    allergens: ['Pescado', 'Lácteos']
   },
   {
     id: 'd-7',
@@ -153,7 +170,10 @@ export const initialDishes: Dish[] = [
     description: 'Pasta artesanal fresca bañada en cremosa salsa de trufa negra, hongos porcini y queso parmesano.',
     image: 'https://images.unsplash.com/photo-1621996346565-e3def6164284?auto=format&fit=crop&w=600&q=80',
     active: true,
-    isAvailableToday: true
+    isAvailableToday: true,
+    station: 'plancha',
+    prepTimeMinutes: 14,
+    allergens: ['Gluten', 'Lácteos']
   },
   {
     id: 'd-8',
@@ -164,7 +184,10 @@ export const initialDishes: Dish[] = [
     description: 'Arroz meloso con langostinos, calamares, conchas de abanico, flameado con pisco quebranta.',
     image: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=600&q=80',
     active: true,
-    isAvailableToday: true
+    isAvailableToday: true,
+    station: 'plancha',
+    prepTimeMinutes: 20,
+    allergens: ['Mariscos']
   },
   {
     id: 'd-9',
@@ -175,7 +198,10 @@ export const initialDishes: Dish[] = [
     description: 'Bizcocho tibio de chocolate 70% cacao con centro fluido, acompañado de helado de vainilla bourbon.',
     image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=600&q=80',
     active: true,
-    isAvailableToday: true
+    isAvailableToday: true,
+    station: 'postres',
+    prepTimeMinutes: 10,
+    allergens: ['Gluten', 'Lácteos', 'Huevo']
   },
   {
     id: 'd-10',
@@ -186,7 +212,10 @@ export const initialDishes: Dish[] = [
     description: 'Suave crema de lúcuma nativa sobre crocante galleta y reducción de frutos rojos.',
     image: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=600&q=80',
     active: true,
-    isAvailableToday: true
+    isAvailableToday: true,
+    station: 'postres',
+    prepTimeMinutes: 5,
+    allergens: ['Lácteos', 'Gluten']
   },
   {
     id: 'd-11',
@@ -197,7 +226,10 @@ export const initialDishes: Dish[] = [
     description: 'Pisco quebranta de reserva, jugo de limón fresco, jarabe de goma, clara de huevo y gotas de amargo de angostura.',
     image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=600&q=80',
     active: true,
-    isAvailableToday: true
+    isAvailableToday: true,
+    station: 'bebidas',
+    prepTimeMinutes: 4,
+    allergens: ['Huevo']
   },
   {
     id: 'd-12',
@@ -208,7 +240,9 @@ export const initialDishes: Dish[] = [
     description: 'Refrescante limonada natural infusionada con hierba luisa y un toque sutil de jengibre.',
     image: 'https://images.unsplash.com/photo-1523371054106-bbf80586c38c?auto=format&fit=crop&w=600&q=80',
     active: true,
-    isAvailableToday: true
+    isAvailableToday: true,
+    station: 'bebidas',
+    prepTimeMinutes: 3
   }
 ];
 
@@ -274,12 +308,22 @@ export const initialTables: Table[] = [
 
   { id: 'tbl-11', number: 11, areaId: 'area-3', areaName: 'Barra & Lounge', capacity: 2, status: 'disponible' },
   { id: 'tbl-12', number: 12, areaId: 'area-3', areaName: 'Barra & Lounge', capacity: 2, status: 'disponible' },
-  { id: 'tbl-13', number: 13, areaId: 'area-3', areaName: 'Barra & Lounge', capacity: 4, status: 'limpieza' },
+  { id: 'tbl-13', number: 13, areaId: 'area-3', areaName: 'Barra & Lounge', capacity: 4, status: 'ocupada', currentOrderId: 'ord-4' },
 
   { id: 'tbl-14', number: 14, areaId: 'area-4', areaName: 'Jardín Exterior', capacity: 6, status: 'disponible' },
   { id: 'tbl-15', number: 15, areaId: 'area-4', areaName: 'Jardín Exterior', capacity: 4, status: 'disponible' },
   { id: 'tbl-16', number: 16, areaId: 'area-4', areaName: 'Jardín Exterior', capacity: 4, status: 'disponible' }
 ];
+
+// Las comandas de ejemplo del KDS se anclan a la hora ACTUAL (no a una fecha
+// fija) para que la demo se vea siempre correcta sin importar cuándo la abra
+// el cliente: "hace 6 minutos", "hace 24 minutos", etc. en lugar de horas
+// fijas que podían quedar en el pasado o el futuro según el reloj real.
+const kitchenDemoNow = new Date();
+const minutesAgoLabel = (mins: number): string => {
+  const d = new Date(kitchenDemoNow.getTime() - mins * 60000);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
 
 export const initialOrders: Order[] = [
   {
@@ -291,11 +335,14 @@ export const initialOrders: Order[] = [
     waiterName: 'Juan Pérez',
     status: 'en_preparacion',
     createdAt: '2026-07-27 20:30',
-    sentToKitchenAt: '2026-07-27 20:34',
+    sentToKitchenAt: minutesAgoLabel(9),
+    serviceType: 'mesa',
     items: [
-      { id: 'oi-1', dishId: 'd-1', dishName: 'Ceviche Mixto Tradicional', price: 48.00, quantity: 1, observation: 'Sin picante en la leche de tigre', status: 'listo', addedAt: '20:30' },
-      { id: 'oi-2', dishId: 'd-4', dishName: 'Lomo Saltado Gourmet', price: 68.00, quantity: 2, observation: 'Término medio para la carne', status: 'preparando', addedAt: '20:30' },
-      { id: 'oi-3', dishId: 'd-11', dishName: 'Pisco Sour Catedral', price: 32.00, quantity: 2, status: 'listo', addedAt: '20:30' }
+      { id: 'oi-1', dishId: 'd-1', dishName: 'Ceviche Mixto Tradicional', price: 48.00, quantity: 1, observation: 'Sin picante en la leche de tigre', status: 'listo', addedAt: minutesAgoLabel(9) },
+      { id: 'oi-2', dishId: 'd-4', dishName: 'Lomo Saltado Gourmet', price: 68.00, quantity: 2, observation: 'Término medio para la carne', status: 'preparando', addedAt: minutesAgoLabel(9) },
+      { id: 'oi-3', dishId: 'd-11', dishName: 'Pisco Sour Catedral', price: 32.00, quantity: 2, status: 'listo', addedAt: minutesAgoLabel(9) },
+      // Ítem agregado después del envío original — debe verse marcado "NUEVO".
+      { id: 'oi-3b', dishId: 'd-10', dishName: 'Cheesecake de Lucuma', price: 26.00, quantity: 1, status: 'pendiente', addedAt: minutesAgoLabel(1) }
     ]
   },
   {
@@ -307,11 +354,12 @@ export const initialOrders: Order[] = [
     waiterName: 'María García',
     status: 'en_preparacion',
     createdAt: '2026-07-27 20:45',
-    sentToKitchenAt: '2026-07-27 20:48',
+    sentToKitchenAt: minutesAgoLabel(16),
+    serviceType: 'mesa',
     items: [
-      { id: 'oi-4', dishId: 'd-2', dishName: 'Carpaccio de Lomo Fino', price: 42.00, quantity: 1, observation: 'Extra alcaparras', status: 'preparando', addedAt: '20:45' },
-      { id: 'oi-5', dishId: 'd-7', dishName: 'Fettuccine en Salsa de Trufa Negra', price: 58.00, quantity: 1, status: 'pendiente', addedAt: '20:45' },
-      { id: 'oi-6', dishId: 'd-12', dishName: 'Limonada de Hierba Luisa y Jengibre', price: 16.00, quantity: 2, status: 'listo', addedAt: '20:45' }
+      { id: 'oi-4', dishId: 'd-2', dishName: 'Carpaccio de Lomo Fino', price: 42.00, quantity: 1, observation: 'Extra alcaparras', status: 'preparando', addedAt: minutesAgoLabel(16) },
+      { id: 'oi-5', dishId: 'd-7', dishName: 'Fettuccine en Salsa de Trufa Negra', price: 58.00, quantity: 1, status: 'pendiente', addedAt: minutesAgoLabel(16) },
+      { id: 'oi-6', dishId: 'd-12', dishName: 'Limonada de Hierba Luisa y Jengibre', price: 16.00, quantity: 2, status: 'listo', addedAt: minutesAgoLabel(16) }
     ]
   },
   {
@@ -323,11 +371,29 @@ export const initialOrders: Order[] = [
     waiterName: 'Juan Pérez',
     status: 'listo',
     createdAt: '2026-07-27 20:10',
-    sentToKitchenAt: '2026-07-27 20:12',
+    sentToKitchenAt: minutesAgoLabel(28),
+    serviceType: 'mesa',
     items: [
-      { id: 'oi-7', dishId: 'd-5', dishName: 'Bife de Ancho Angus (400g)', price: 95.00, quantity: 2, observation: 'Término 3/4 con chimichurri', status: 'listo', addedAt: '20:10' },
-      { id: 'oi-8', dishId: 'd-8', dishName: 'Arroz con Mariscos al Pisco', price: 64.00, quantity: 1, status: 'listo', addedAt: '20:10' },
-      { id: 'oi-9', dishId: 'd-9', dishName: 'Volcán de Chocolate con Helado', price: 28.00, quantity: 2, status: 'listo', addedAt: '20:10' }
+      { id: 'oi-7', dishId: 'd-5', dishName: 'Bife de Ancho Angus (400g)', price: 95.00, quantity: 2, observation: 'Término 3/4 con chimichurri', status: 'listo', addedAt: minutesAgoLabel(28) },
+      { id: 'oi-8', dishId: 'd-8', dishName: 'Arroz con Mariscos al Pisco', price: 64.00, quantity: 1, status: 'listo', addedAt: minutesAgoLabel(28) },
+      { id: 'oi-9', dishId: 'd-9', dishName: 'Volcán de Chocolate con Helado', price: 28.00, quantity: 2, status: 'listo', addedAt: minutesAgoLabel(28) }
+    ]
+  },
+  {
+    id: 'ord-4',
+    tableId: 'tbl-13',
+    tableNumber: 13,
+    areaName: 'Barra & Lounge',
+    waiterId: 'usr-3',
+    waiterName: 'María García',
+    status: 'en_preparacion',
+    createdAt: '2026-07-27 20:02',
+    sentToKitchenAt: minutesAgoLabel(24),
+    serviceType: 'para_llevar',
+    priority: true,
+    items: [
+      { id: 'oi-10', dishId: 'd-8', dishName: 'Arroz con Mariscos al Pisco', price: 64.00, quantity: 1, status: 'preparando', addedAt: minutesAgoLabel(24) },
+      { id: 'oi-11', dishId: 'd-3', dishName: 'Tequeños de Queso Andino y Lomo', price: 32.00, quantity: 1, status: 'pendiente', addedAt: minutesAgoLabel(24) }
     ]
   }
 ];

@@ -83,14 +83,21 @@ export const AdditionalItemsModal: React.FC<AdditionalItemsModalProps> = ({
           <label className="form-label fw-bold">Seleccionar Plato para Añadir</label>
           <div className="d-flex flex-column gap-2" style={{ maxHeight: 300, overflowY: 'auto' }}>
             {dishes.filter(d => d.active && d.isAvailableToday).map(d => (
-              <div key={d.id} className="p-2 border rounded-3 bg-white d-flex justify-content-between align-items-center">
-                <div>
+              <div key={d.id} className="p-2 border rounded-3 bg-white d-flex justify-content-between align-items-start">
+                <div style={{ minWidth: 0 }}>
                   <div className="fw-bold" style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>{d.name}</div>
                   <small style={{ color: 'var(--color-brand)', fontWeight: 700 }}>S/ {d.price.toFixed(2)}</small>
+                  {/* Alérgenos — mismo badge/tono que Catálogo, Pedidos y Cocina */}
+                  {d.allergens && d.allergens.length > 0 && (
+                    <div className="kds-allergen-badge" style={{ marginTop: '0.4rem', marginBottom: 0 }}>
+                      <i className="bi bi-exclamation-octagon-fill flex-shrink-0" aria-hidden="true"></i>
+                      <span>Contiene: {d.allergens.join(', ')}</span>
+                    </div>
+                  )}
                 </div>
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-primary flex-shrink-0"
+                  className="btn btn-sm btn-outline-primary flex-shrink-0 ms-2"
                   style={{ borderRadius: 6 }}
                   onClick={() => onAddDish(d)}
                 >

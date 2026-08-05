@@ -40,6 +40,8 @@ const COLOR_MAP: Record<string, { bg: string; text: string; border: string; dot:
   violet:    { bg: '#ede9fe', text: '#4c1d95', border: '#c4b5fd', dot: '#7c3aed' },
   amber:     { bg: '#fef3c7', text: '#92400e', border: '#fcd34d', dot: '#d97706' },
   sky:       { bg: '#e0f2fe', text: '#075985', border: '#7dd3fc', dot: '#0284c7' },
+  rose:      { bg: '#ffe4e6', text: '#9f1239', border: '#fda4af', dot: '#e11d48' },
+  emerald:   { bg: '#d1fae5', text: '#065f46', border: '#6ee7b7', dot: '#059669' },
 };
 
 function getColors(colorVariant?: string) {

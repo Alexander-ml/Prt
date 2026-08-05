@@ -1,10 +1,11 @@
 import React from 'react';
-import type { Dish, Category, Table } from '../../types';
+import type { Dish, Category, Table, ServiceType, UserAccount } from '../../types';
 import { SectionCard } from '../common/SectionCard';
 import { Badge } from '../common/Badge';
 import { SearchBar } from '../common/SearchBar';
 import { EmptyState } from '../common/EmptyState';
 import { CustomDropdownSelect } from '../common/CustomDropdownSelect';
+import { SERVICE_TYPE_META } from '../kitchen/kitchenMeta';
 
 type CartLine = { dish: Dish; quantity: number; observation: string };
 
@@ -36,6 +37,17 @@ interface OrderTakeViewProps {
 
   cartSubtotal: number;
   handleConfirmAndSendOrder: () => void;
+
+  // Tipo de servicio de la comanda (mesa / para_llevar / delivery). La mesa
+  // se sigue seleccionando igual para los 3 tipos en esta iteración (ver
+  // nota de alcance en el resumen final).
+  selectedServiceType: ServiceType;
+  setSelectedServiceType: (val: ServiceType) => void;
+
+  // Mesero que atiende — el selector solo se muestra si hay más de uno activo.
+  activeWaiters: UserAccount[];
+  resolvedWaiterId: string;
+  setSelectedWaiterId: (val: string) => void;
 }
 
 /**
@@ -63,6 +75,11 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
   groupedTables,
   cartSubtotal,
   handleConfirmAndSendOrder,
+  selectedServiceType,
+  setSelectedServiceType,
+  activeWaiters,
+  resolvedWaiterId,
+  setSelectedWaiterId,
 }) => {
   const totalActiveDishes = dishes.filter(d => d.active).length;
 
@@ -125,19 +142,33 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
                 {filteredDishes.map(dish => (
                   <div key={dish.id} className="col-12 col-md-6">
                     <div
-                      className="p-2 border rounded-3 bg-white d-flex justify-content-between align-items-center h-100"
+                      className="p-2 border rounded-3 bg-white d-flex justify-content-between align-items-start h-100"
                       style={{ opacity: dish.isAvailableToday ? 1 : 0.6 }}
                     >
-                      <div>
+                      <div style={{ minWidth: 0 }}>
                         <div className="fw-bold d-flex align-items-center gap-2" style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                           {dish.name}
                           {!dish.isAvailableToday && <Badge status="AGOTADO" variant="danger" />}
                         </div>
-                        <small style={{ color: 'var(--color-brand)', fontWeight: 700 }}>S/ {dish.price.toFixed(2)}</small>
+                        <div className="d-flex align-items-center gap-2 mb-1">
+                          <small style={{ color: 'var(--color-brand)', fontWeight: 700 }}>S/ {dish.price.toFixed(2)}</small>
+                          {/* Tiempo de prep. discreto: informa al mesero sin competir con el precio */}
+                          <small className="text-muted" style={{ fontSize: '0.7rem' }}>
+                            <i className="bi bi-stopwatch me-1" aria-hidden="true"></i>
+                            {dish.prepTimeMinutes} min
+                          </small>
+                        </div>
+                        {/* Alérgenos — mismo badge/tono que Catálogo y Cocina */}
+                        {dish.allergens && dish.allergens.length > 0 && (
+                          <div className="kds-allergen-badge" style={{ marginBottom: 0 }}>
+                            <i className="bi bi-exclamation-octagon-fill flex-shrink-0" aria-hidden="true"></i>
+                            <span>Contiene: {dish.allergens.join(', ')}</span>
+                          </div>
+                        )}
                       </div>
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline-primary flex-shrink-0"
+                        className="btn btn-sm btn-outline-primary flex-shrink-0 ms-2"
                         style={{ borderRadius: 6 }}
                         disabled={!dish.isAvailableToday}
                         onClick={() => handleAddToCart(dish)}
@@ -167,6 +198,53 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
             ) : undefined
           }
         >
+          {/* Tipo de servicio + mesero de turno. La mesa se sigue pidiendo para
+              los 3 tipos de servicio en esta iteración (ver nota de alcance). */}
+          <div className="border-bottom pb-3 mb-3">
+            <div className="row g-3">
+              <div className={activeWaiters.length > 1 ? 'col-12 col-sm-6' : 'col-12'}>
+                <label className="form-label fw-bold mb-1" id="serviceTypeSelectLabel">
+                  Tipo de Servicio
+                </label>
+                <CustomDropdownSelect
+                  id="serviceTypeSelect"
+                  labelId="serviceTypeSelectLabel"
+                  value={selectedServiceType}
+                  onChange={val => setSelectedServiceType(val as ServiceType)}
+                  size="sm"
+                  options={(Object.keys(SERVICE_TYPE_META) as ServiceType[]).map(type => ({
+                    value: type,
+                    label: SERVICE_TYPE_META[type].label,
+                    icon: SERVICE_TYPE_META[type].icon,
+                    colorVariant: 'primary' as const,
+                  }))}
+                />
+              </div>
+              {/* Solo se muestra si hay más de un mesero activo en el turno;
+                  con uno solo, se resuelve automáticamente sin pedir nada. */}
+              {activeWaiters.length > 1 && (
+                <div className="col-12 col-sm-6">
+                  <label className="form-label fw-bold mb-1" id="waiterSelectLabel">
+                    Atendido por
+                  </label>
+                  <CustomDropdownSelect
+                    id="waiterSelect"
+                    labelId="waiterSelectLabel"
+                    value={resolvedWaiterId}
+                    onChange={setSelectedWaiterId}
+                    size="sm"
+                    options={activeWaiters.map(w => ({
+                      value: w.id,
+                      label: w.name,
+                      icon: 'bi-person-badge-fill',
+                      colorVariant: 'secondary' as const,
+                    }))}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="border-bottom pb-3 mb-3">
             <div className="d-flex align-items-center justify-content-between mb-1">
               <label className="form-label fw-bold mb-0" id="mesaSelectLabel">

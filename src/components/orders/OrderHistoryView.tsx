@@ -4,6 +4,7 @@ import type { Order } from '../../types';
 import { SectionCard } from '../common/SectionCard';
 import { Badge } from '../common/Badge';
 import { EmptyState } from '../common/EmptyState';
+import { SERVICE_TYPE_META } from '../kitchen/kitchenMeta';
 
 interface OrderHistoryViewProps {
   orders: Order[];
@@ -132,6 +133,26 @@ export const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
               </div>
             }
           >
+            {/* Prioridad / tipo de servicio — mismo badge que ya muestra Cocina
+                (kds-priority-badge / kds-service-badge), para que el mesero/admin
+                vea en Pedidos exactamente lo que Cocina está viendo. */}
+            {(selectedOrder.priority || (selectedOrder.serviceType && selectedOrder.serviceType !== 'mesa')) && (
+              <div className="d-flex align-items-center flex-wrap gap-2 mb-3">
+                {selectedOrder.serviceType && selectedOrder.serviceType !== 'mesa' && (
+                  <span className="kds-service-badge">
+                    <i className={`bi ${SERVICE_TYPE_META[selectedOrder.serviceType].icon} me-1`} aria-hidden="true"></i>
+                    {SERVICE_TYPE_META[selectedOrder.serviceType].label}
+                  </span>
+                )}
+                {selectedOrder.priority && (
+                  <span className="kds-priority-badge" title="Comanda marcada como prioritaria en Cocina">
+                    <i className="bi bi-star-fill me-1" aria-hidden="true"></i>
+                    Prioridad
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Items Preparation Tracking Table */}
             <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
               Estado de Preparación por Ítem
@@ -148,32 +169,50 @@ export const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedOrder.items.map(item => (
-                    <tr key={item.id}>
-                      <td><span className="fw-bold" style={{ color: 'var(--text-primary)' }}>{item.dishName}</span></td>
-                      <td><span className="fw-bold">{item.quantity}</span></td>
-                      <td>S/ {item.price.toFixed(2)}</td>
-                      <td>
-                        {item.observation ? (
-                          <Badge status={item.observation} variant="warning" />
-                        ) : (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>-</span>
-                        )}
-                      </td>
-                      <td>
-                        <Badge
-                          status={item.status.toUpperCase()}
-                          variant={
-                            item.status === 'listo'
-                              ? 'success'
-                              : item.status === 'preparando'
-                              ? 'warning'
-                              : 'secondary'
-                          }
-                        />
-                      </td>
-                    </tr>
-                  ))}
+                  {selectedOrder.items.map(item => {
+                    const isCancelled = item.status === 'cancelado';
+                    return (
+                      <tr key={item.id} style={isCancelled ? { background: 'var(--surface-muted)' } : undefined}>
+                        <td>
+                          <span
+                            className="fw-bold"
+                            style={{
+                              color: isCancelled ? 'var(--text-muted)' : 'var(--text-primary)',
+                              textDecoration: isCancelled ? 'line-through' : 'none',
+                            }}
+                          >
+                            {item.dishName}
+                          </span>
+                        </td>
+                        <td><span className="fw-bold">{item.quantity}</span></td>
+                        <td>S/ {item.price.toFixed(2)}</td>
+                        <td>
+                          {isCancelled ? (
+                            <span className="d-flex align-items-center gap-1" style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                              <i className="bi bi-slash-circle-fill flex-shrink-0" aria-hidden="true"></i>
+                              Cancelado{item.cancelReason ? ` — ${item.cancelReason}` : ''}
+                            </span>
+                          ) : item.observation ? (
+                            <Badge status={item.observation} variant="warning" />
+                          ) : (
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>-</span>
+                          )}
+                        </td>
+                        <td>
+                          <Badge
+                            status={item.status.toUpperCase()}
+                            variant={
+                              item.status === 'listo'
+                                ? 'success'
+                                : item.status === 'preparando'
+                                ? 'warning'
+                                : 'secondary'
+                            }
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

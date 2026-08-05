@@ -10,6 +10,8 @@ import { Modal } from '../components/common/Modal';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { EmptyState } from '../components/common/EmptyState';
 import { CustomDropdownSelect } from '../components/common/CustomDropdownSelect';
+import { KITCHEN_STATION_META, KITCHEN_STATION_ORDER } from '../components/kitchen/kitchenMeta';
+import type { KitchenStation } from '../types';
 
 export const CatalogPage: React.FC = () => {
   const {
@@ -30,6 +32,9 @@ export const CatalogPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('todas');
   const [selectedAvailability, setSelectedAvailability] = useState<string>('todos');
+  // Filtro por estación de cocina (KDS) — permite al admin responder
+  // "¿qué platos tiene asignados Parrilla?" sin revisar plato por plato.
+  const [selectedStation, setSelectedStation] = useState<string>('todas');
 
   // Category Tab / Manage state
   const [activeTab, setActiveTab] = useState<'platos' | 'categorias'>('platos');
@@ -44,7 +49,13 @@ export const CatalogPage: React.FC = () => {
     description: '',
     image: '',
     active: true,
-    isAvailableToday: true
+    isAvailableToday: true,
+    // Estación de cocina y tiempo estimado alimentan directamente el KDS
+    // (agrupación "Por Estación" y el umbral de urgencia real por plato).
+    station: 'plancha' as KitchenStation,
+    prepTimeMinutes: 15,
+    // Se captura como texto separado por comas y se convierte a array al guardar.
+    allergensText: ''
   });
 
   // Category Modal state (RF-08, RF-09)
@@ -68,14 +79,20 @@ export const CatalogPage: React.FC = () => {
                            (selectedAvailability === 'activos' && dish.active) ||
                            (selectedAvailability === 'inactivos' && !dish.active) ||
                            (selectedAvailability === 'disponibles_hoy' && dish.isAvailableToday);
-      return matchesSearch && matchesCat && matchesAvail;
+      const matchesStation = selectedStation === 'todas' || dish.station === selectedStation;
+      return matchesSearch && matchesCat && matchesAvail && matchesStation;
     });
-  }, [dishes, searchQuery, selectedCategory, selectedAvailability]);
+  }, [dishes, searchQuery, selectedCategory, selectedAvailability, selectedStation]);
 
   // Handle Dish submission
   const handleDishSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!dishFormData.name.trim() || !dishFormData.categoryId) return;
+
+    const allergens = dishFormData.allergensText
+      .split(',')
+      .map(a => a.trim())
+      .filter(Boolean);
 
     if (editingDish) {
       updateDish(editingDish.id, {
@@ -85,7 +102,10 @@ export const CatalogPage: React.FC = () => {
         description: dishFormData.description,
         image: dishFormData.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
         active: dishFormData.active,
-        isAvailableToday: dishFormData.isAvailableToday
+        isAvailableToday: dishFormData.isAvailableToday,
+        station: dishFormData.station,
+        prepTimeMinutes: Number(dishFormData.prepTimeMinutes),
+        allergens: allergens.length > 0 ? allergens : undefined
       });
     } else {
       addDish({
@@ -95,7 +115,10 @@ export const CatalogPage: React.FC = () => {
         description: dishFormData.description,
         image: dishFormData.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
         active: true,
-        isAvailableToday: true
+        isAvailableToday: true,
+        station: dishFormData.station,
+        prepTimeMinutes: Number(dishFormData.prepTimeMinutes),
+        allergens: allergens.length > 0 ? allergens : undefined
       });
     }
     setIsDishModalOpen(false);
@@ -112,7 +135,10 @@ export const CatalogPage: React.FC = () => {
         description: dish.description,
         image: dish.image,
         active: dish.active,
-        isAvailableToday: dish.isAvailableToday
+        isAvailableToday: dish.isAvailableToday,
+        station: dish.station,
+        prepTimeMinutes: dish.prepTimeMinutes,
+        allergensText: dish.allergens?.join(', ') ?? ''
       });
     } else {
       setEditingDish(null);
@@ -123,7 +149,10 @@ export const CatalogPage: React.FC = () => {
         description: '',
         image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
         active: true,
-        isAvailableToday: true
+        isAvailableToday: true,
+        station: 'plancha',
+        prepTimeMinutes: 15,
+        allergensText: ''
       });
     }
     setIsDishModalOpen(true);
@@ -249,14 +278,14 @@ export const CatalogPage: React.FC = () => {
           {/* Filters SectionCard */}
           <SectionCard icon="bi-funnel" title="Filtros del Catálogo" className="mb-4">
             <div className="row g-3 align-items-center">
-              <div className="col-12 col-md-5">
+              <div className="col-12">
                 <SearchBar
                   value={searchQuery}
                   onChange={setSearchQuery}
                   placeholder="Buscar plato por nombre o descripción..."
                 />
               </div>
-              <div className="col-12 col-sm-6 col-md-3">
+              <div className="col-12 col-sm-6 col-md-4">
                 {/* Select de categorización: colores neutros, sin semántica de alerta */}
                 <CustomDropdownSelect
                   value={selectedCategory}
@@ -284,6 +313,24 @@ export const CatalogPage: React.FC = () => {
                     { value: 'activos', label: 'Activos en Menú', icon: 'bi-check-circle-fill', colorVariant: 'success' },
                     { value: 'disponibles_hoy', label: 'Disponibles Hoy (Cocina)', icon: 'bi-fire', colorVariant: 'warning' },
                     { value: 'inactivos', label: 'Desactivados del Menú', icon: 'bi-slash-circle-fill', colorVariant: 'danger' },
+                  ]}
+                />
+              </div>
+              <div className="col-12 col-sm-12 col-md-4">
+                {/* Select de estación de cocina (KDS): mismos colores/íconos que Cocina */}
+                <CustomDropdownSelect
+                  value={selectedStation}
+                  onChange={setSelectedStation}
+                  size="sm"
+                  placeholder="Estación de cocina..."
+                  options={[
+                    { value: 'todas', label: 'Todas las Estaciones', icon: 'bi-grid-3x3-gap-fill', colorVariant: 'secondary' },
+                    ...KITCHEN_STATION_ORDER.map(station => ({
+                      value: station,
+                      label: KITCHEN_STATION_META[station].label,
+                      icon: KITCHEN_STATION_META[station].icon,
+                      colorVariant: KITCHEN_STATION_META[station].colorTheme,
+                    })),
                   ]}
                 />
               </div>
@@ -355,6 +402,34 @@ export const CatalogPage: React.FC = () => {
                       >
                         {dish.description}
                       </p>
+
+                      {/* Datos de cocina (KDS): estación + tiempo de prep., para que el
+                          admin pueda verificar visualmente lo que configuró sin abrir
+                          el modal de edición de cada plato. */}
+                      <div className="d-flex align-items-center flex-wrap gap-2 mb-2">
+                        {KITCHEN_STATION_META[dish.station] ? (
+                          <span className={`station-pill kds-station-header-${KITCHEN_STATION_META[dish.station].colorTheme}`}>
+                            <i className={`bi ${KITCHEN_STATION_META[dish.station].icon}`} aria-hidden="true"></i>
+                            {KITCHEN_STATION_META[dish.station].label}
+                          </span>
+                        ) : (
+                          <Badge status="Sin Estación" variant="warning" icon="bi-exclamation-triangle-fill" />
+                        )}
+                        <small className="text-muted fw-semibold" style={{ fontSize: '0.72rem' }}>
+                          <i className="bi bi-stopwatch me-1" aria-hidden="true"></i>
+                          {dish.prepTimeMinutes} min
+                        </small>
+                      </div>
+
+                      {/* Alérgenos — mismo tono/ícono que Cocina, para no depender del
+                          modal de edición para verificar qué se configuró. */}
+                      {dish.allergens && dish.allergens.length > 0 && (
+                        <div className="kds-allergen-badge" style={{ marginBottom: '0.75rem' }}>
+                          <i className="bi bi-exclamation-octagon-fill flex-shrink-0" aria-hidden="true"></i>
+                          <span>Contiene: {dish.allergens.join(', ')}</span>
+                        </div>
+                      )}
+
                       <div className="d-flex align-items-center justify-content-between pt-2 border-top mt-auto">
                         <div>
                           {dish.isAvailableToday && (
@@ -526,6 +601,51 @@ export const CatalogPage: React.FC = () => {
               onChange={e => setDishFormData({ ...dishFormData, description: e.target.value })}
             ></textarea>
           </div>
+
+          {/* Datos que alimentan directamente el Kitchen Display System (KDS):
+              estación responsable, tiempo estimado y alérgenos. */}
+          <div className="row g-3 mb-4">
+            <div className="col-12 col-md-5">
+              <label className="form-label d-block">Estación de Cocina (KDS) *</label>
+              <CustomDropdownSelect
+                value={dishFormData.station}
+                onChange={value => setDishFormData({ ...dishFormData, station: value as KitchenStation })}
+                placeholder="Seleccione estación..."
+                options={KITCHEN_STATION_ORDER.map(station => ({
+                  value: station,
+                  label: KITCHEN_STATION_META[station].label,
+                  icon: KITCHEN_STATION_META[station].icon,
+                  colorVariant: KITCHEN_STATION_META[station].colorTheme,
+                }))}
+              />
+            </div>
+            <div className="col-12 col-md-3">
+              <label htmlFor="dishPrepTimeInput" className="form-label">Tiempo Prep. (min) *</label>
+              <input
+                id="dishPrepTimeInput"
+                type="number"
+                min="1"
+                step="1"
+                className="form-control rounded-3"
+                required
+                value={dishFormData.prepTimeMinutes}
+                onChange={e => setDishFormData({ ...dishFormData, prepTimeMinutes: parseInt(e.target.value, 10) || 0 })}
+              />
+            </div>
+            <div className="col-12 col-md-4">
+              <label htmlFor="dishAllergensInput" className="form-label">Alérgenos</label>
+              <input
+                id="dishAllergensInput"
+                type="text"
+                className="form-control rounded-3"
+                placeholder="Ej. Gluten, Lácteos"
+                value={dishFormData.allergensText}
+                onChange={e => setDishFormData({ ...dishFormData, allergensText: e.target.value })}
+              />
+              <div className="form-text">Separados por comas. Se muestran fijos en el ticket de cocina.</div>
+            </div>
+          </div>
+
           <div className="d-flex justify-content-end gap-2 pt-3 border-top">
             <button type="button" className="btn btn-outline-secondary rounded-3" onClick={() => setIsDishModalOpen(false)}>
               Cancelar

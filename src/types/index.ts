@@ -21,6 +21,9 @@ export interface Category {
   dishesCount: number;
 }
 
+// Estación de cocina responsable de preparar el plato (KDS — vista "Por Estación").
+export type KitchenStation = 'frios' | 'plancha' | 'parrilla' | 'postres' | 'bebidas';
+
 export interface Dish {
   id: string;
   name: string;
@@ -31,6 +34,9 @@ export interface Dish {
   image: string;
   active: boolean; // Permanent availability in menu (RF-13)
   isAvailableToday: boolean; // Momentary service availability (RF-55)
+  station: KitchenStation; // Estación de cocina que prepara el plato (KDS)
+  prepTimeMinutes: number; // Tiempo estimado de preparación, usado para calcular urgencia real en el KDS
+  allergens?: string[]; // Alérgenos relevantes a mostrar siempre en cocina, sin depender de la observación libre
 }
 
 // RF-17 - RF-24: Configuration
@@ -99,9 +105,13 @@ export interface OrderItem {
   observation?: string;
   status: OrderItemStatus;
   addedAt: string;
+  cancelReason?: string; // Motivo registrado por cocina cuando status === 'cancelado'
 }
 
 export type OrderStatus = 'abierto' | 'en_preparacion' | 'listo' | 'cerrado' | 'cancelado';
+
+// Tipo de servicio de la comanda — afecta cómo cocina prioriza (RF-5x KDS).
+export type ServiceType = 'mesa' | 'para_llevar' | 'delivery';
 
 export interface Order {
   id: string;
@@ -115,6 +125,8 @@ export interface Order {
   createdAt: string;
   sentToKitchenAt?: string;
   cancellationReason?: string;
+  serviceType?: ServiceType; // Por defecto se asume 'mesa' cuando no se especifica
+  priority?: boolean; // Marcado manual de prioridad (KDS) por cocina o sala
 }
 
 // RF-56 - RF-65: Sales & Billing (v2 — flujo Caja → Cobro → Comprobante)

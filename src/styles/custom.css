@@ -697,6 +697,13 @@ html, body {
 .btn-icon.btn-icon-danger:hover  { border-color: #fca5a5; color: var(--color-rose); background: var(--color-rose-bg); }
 .btn-icon.btn-icon-success:hover { border-color: #6ee7b7; color: var(--color-emerald); background: var(--color-emerald-bg); }
 
+/* Estado activado persistente (no solo :hover), p.ej. toggle de prioridad KDS */
+.btn-icon.btn-icon-primary[aria-pressed="true"] {
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+  background: var(--color-brand-light);
+}
+
 /* ───────────────────────────────────────────
    14. BADGES / PILLS DE ESTADO
    ─────────────────────────────────────────── */
@@ -841,6 +848,12 @@ html, body {
   border-color: #93c5fd;
 }
 
+.kds-item.item-cancelled {
+  background: var(--surface-muted);
+  border-color: var(--border-color);
+  opacity: 0.65;
+}
+
 .kds-status-btn {
   font-size: 0.775rem;
   font-weight: 600;
@@ -850,6 +863,178 @@ html, body {
   cursor: pointer;
   transition: var(--transition-fast);
   line-height: 1.2;
+}
+
+/* Badges de cabecera del ticket (tipo de servicio / prioridad manual) */
+.kds-service-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  background: var(--color-sky-bg);
+  color: var(--color-sky-text);
+  border: 1px solid #7dd3fc;
+  white-space: nowrap;
+}
+
+.kds-priority-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  background: var(--color-violet-bg);
+  color: var(--color-violet-text);
+  border: 1px solid #c4b5fd;
+  white-space: nowrap;
+}
+
+/* Badge "NUEVO" — ítem agregado después del envío original a cocina */
+.kds-new-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-full);
+  background: var(--color-amber);
+  color: #ffffff;
+  animation: pulse-ring 1.6s ease-in-out infinite;
+  white-space: nowrap;
+}
+
+/* Alérgenos — dato fijo del catálogo, siempre visible en el ítem */
+.kds-allergen-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-rose-bg);
+  color: var(--color-rose-text);
+  border: 1px solid #fca5a5;
+}
+
+/* Barra de "deshacer" tras marcar un ítem como Listo por error */
+.kds-undo-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px dashed var(--color-brand);
+  background: var(--color-brand-light);
+  color: var(--color-brand-dark);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.kds-undo-bar:hover {
+  background: var(--color-brand-subtle);
+}
+
+/* Vista "Por Estación" — columnas agrupadas por estación de cocina */
+.kds-station-column {
+  background: var(--surface-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.kds-station-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.kds-station-count {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.kds-station-header-indigo  { background: var(--color-brand-light); color: var(--color-brand-dark); }
+.kds-station-header-emerald { background: var(--color-emerald-bg);  color: var(--color-emerald-text); }
+.kds-station-header-amber   { background: var(--color-amber-bg);    color: var(--color-amber-text); }
+.kds-station-header-rose    { background: var(--color-rose-bg);     color: var(--color-rose-text); }
+.kds-station-header-sky     { background: var(--color-sky-bg);      color: var(--color-sky-text); }
+.kds-station-header-violet  { background: var(--color-violet-bg);   color: var(--color-violet-text); }
+
+/* Pill compacto de estación — reutiliza los mismos pares bg/color de
+   .kds-station-header-* (arriba) pero con el tamaño de un badge inline,
+   para mostrar la estación de un plato fuera del tablero del KDS
+   (tarjeta de Catálogo, selección de platos en Pedidos). */
+.station-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.kds-station-body {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.kds-station-item-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.kds-station-item-table {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Grid de 5 columnas para las estaciones en pantallas grandes (monitor KDS) */
+@media (min-width: 1400px) {
+  .col-xxl-20p {
+    flex: 0 0 auto;
+    width: 20%;
+  }
 }
 
 /* ───────────────────────────────────────────

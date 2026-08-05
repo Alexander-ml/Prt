@@ -14,12 +14,18 @@ import type {
   OrderItem,
   OrderItemStatus,
   Sale,
-  PaymentMethod,
-  GuestBillSplit,
+  Cliente,
+  CashSession,
+  CashMovement,
+  TipoComprobante,
+  ProcessSaleBillingParams,
+  UpdateSalePaymentParams,
   Insumo,
   LedgerEntry,
   FinancialSummary
 } from '../types';
+import { resolvePaymentCategory } from '../utils/payments';
+import { round2, roundToNearestDime, sumMoney } from '../utils/money';
 
 import {
   initialUsers,
@@ -32,10 +38,20 @@ import {
   initialTables,
   initialOrders,
   initialSales,
+  initialClientes,
+  initialCashSession,
+  initialCashSessionHistory,
+  initialComprobanteCounters,
   initialInsumos,
   initialLedger,
   initialFinancialSummary
 } from '../mock/initialData';
+
+const COMPROBANTE_SERIES: Record<TipoComprobante, string> = {
+  ticket: 'T001',
+  boleta: 'B001',
+  factura: 'F001'
+};
 
 export interface ToastMessage {
   id: string;
@@ -113,15 +129,24 @@ export interface AppContextType {
   markOrderReady: (orderId: string) => void;
   notifyDishIndisponibility: (dishId: string) => void;
 
-  // Sales & Billing Module
+  // Sales & Billing Module — Caja → Cobro → Comprobante
   sales: Sale[];
-  processSaleBilling: (
-    orderId: string,
-    paymentMethod: PaymentMethod,
-    appliedPromoId?: string,
-    splitBills?: GuestBillSplit[]
-  ) => void;
+  processSaleBilling: (params: ProcessSaleBillingParams) => Sale;
   cancelSale: (saleId: string, reason: string) => void;
+  updateSalePayment: (saleId: string, params: UpdateSalePaymentParams) => void;
+
+  clientes: Cliente[];
+  addCliente: (cliente: Omit<Cliente, 'id'>) => Cliente;
+
+  cashSession: CashSession | null;
+  cashSessionHistory: CashSession[];
+  openCashSession: (initialAmount: number, openedBy: string) => void;
+  closeCashSession: (countedCash: number, closedBy: string) => void;
+  registerManualCashMovement: (
+    type: 'ingreso_manual' | 'retiro_manual',
+    amount: number,
+    description: string
+  ) => void;
 
   // Inventory Module
   insumos: Insumo[];
@@ -164,6 +189,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [tables, setTables] = useState<Table[]>(initialTables);
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [sales, setSales] = useState<Sale[]>(initialSales);
+  const [clientes, setClientes] = useState<Cliente[]>(initialClientes);
+  const [cashSession, setCashSession] = useState<CashSession | null>(initialCashSession);
+  const [cashSessionHistory, setCashSessionHistory] = useState<CashSession[]>(initialCashSessionHistory);
+  const [comprobanteCounters, setComprobanteCounters] = useState(initialComprobanteCounters);
   const [insumos, setInsumos] = useState<Insumo[]>(initialInsumos);
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>(initialLedger);
   const [financialSummary, setFinancialSummary] = useState<FinancialSummary>(initialFinancialSummary);
@@ -600,43 +629,77 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // --- SALES & BILLING ACTIONS ---
-  const processSaleBilling = (
-    orderId: string,
-    paymentMethod: PaymentMethod,
-    appliedPromoId?: string,
-    splitBills?: GuestBillSplit[]
-  ) => {
+  // processSaleBilling recibe un único payload (en vez de varios parámetros
+  // sueltos) porque ahora un cobro involucra bastante más que "mesa + forma
+  // de pago": tipo de comprobante, cliente, propina y el desglose real de
+  // pago (1 o varios métodos). Ese payload lo arma BillingView.
+  const processSaleBilling = (params: ProcessSaleBillingParams): Sale => {
+    const { orderId, comprobanteTipo, cliente, appliedPromoId, discountLabel, tipAmount, paymentBreakdown, cashDetail, splitMode, splitBills } = params;
     const order = orders.find(o => o.id === orderId);
-    if (!order) return;
+    if (!order) {
+      // processSaleBilling está tipado para devolver siempre un Sale (BillingView
+      // depende de eso para abrir el comprobante inmediatamente tras cobrar), así
+      // que un pedido inexistente es un error de programación, no un caso de UI a
+      // silenciar. Si esto se dispara, hay una desincronización entre lo que
+      // BillingView ofrece cobrar y las órdenes reales en memoria.
+      showToast('Error al Cobrar', 'El pedido seleccionado ya no existe o fue modificado.', 'danger');
+      throw new Error(`processSaleBilling: no existe la orden con id "${orderId}"`);
+    }
 
-    const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     let discountAmount = 0;
+    let resolvedDiscountLabel = discountLabel;
     if (appliedPromoId) {
       const promo = promotions.find(p => p.id === appliedPromoId);
       if (promo) {
-        discountAmount = (subtotal * promo.discountPercentage) / 100;
+        discountAmount = round2((subtotal * promo.discountPercentage) / 100);
+        resolvedDiscountLabel = resolvedDiscountLabel ?? `${promo.name} (${promo.discountPercentage}%)`;
       }
     }
 
     const activeIgv = taxes.find(t => t.active && t.name.includes('IGV'));
     const igvPercent = activeIgv ? activeIgv.percentage : 18;
-    const taxAmount = ((subtotal - discountAmount) * igvPercent) / 100;
-    const total = (subtotal - discountAmount) + taxAmount;
+    const taxAmount = round2(((subtotal - discountAmount) * igvPercent) / 100);
+    // Redondeo comercial al S/ 0.10 más cercano — se muestra siempre en el
+    // resumen (aunque casi siempre sea S/ 0.00) para que nunca sea invisible.
+    const { rounded: total, adjustment: roundingAdjustment } = roundToNearestDime(
+      subtotal - discountAmount + taxAmount + tipAmount
+    );
+
+    const paymentMethod = resolvePaymentCategory(paymentBreakdown.map(p => p.method));
+    const serie = COMPROBANTE_SERIES[comprobanteTipo];
+    const correlativo = comprobanteCounters[comprobanteTipo];
+    setComprobanteCounters(prev => ({ ...prev, [comprobanteTipo]: prev[comprobanteTipo] + 1 }));
+    const cashierName = users.find(u => u.role === currentRole && u.active)?.name ?? currentRole;
 
     const newSale: Sale = {
       id: `ven-${Math.floor(1000 + Math.random() * 9000)}`,
+      serie,
+      correlativo,
+      comprobanteTipo,
       orderId,
       tableNumber: order.tableNumber,
       waiterName: order.waiterName,
+      cashierName,
+      cajaSesionId: cashSession?.id,
+      cliente,
       items: order.items,
       subtotal,
-      taxAmount,
       discountAmount,
+      discountLabel: discountAmount > 0 ? resolvedDiscountLabel : undefined,
+      taxAmount,
+      igvPercent,
+      tipAmount,
+      roundingAdjustment,
       total,
       paymentMethod,
-      closedAt: new Date().toLocaleString('es-ES'),
+      paymentBreakdown,
+      cashDetail,
+      estadoPago: comprobanteTipo === 'factura' ? 'facturada' : 'pagada',
+      closedAt: new Date().toLocaleString('es-PE'),
       isCancelled: false,
+      splitMode,
       splitBills
     };
 
@@ -644,12 +707,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'cerrado' } : o));
     setTables(prev => prev.map(t => t.id === order.tableId ? { ...t, status: 'limpieza', currentOrderId: undefined } : t));
 
+    // Caja: cada línea del desglose de pago queda como movimiento del turno
+    // actual (para el arqueo) y solo la porción en efectivo mueve el
+    // efectivo esperado en el cajón — tarjetas/billeteras solo se registran
+    // para conciliación, no afectan el conteo físico de efectivo.
+    if (cashSession && cashSession.status === 'abierta') {
+      const now = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+      const newMovements = paymentBreakdown.map<CashMovement>((p, idx) => ({
+        id: `cm-${Date.now()}-${idx}`,
+        type: p.method === 'efectivo' ? 'venta_efectivo' : 'venta_no_efectivo',
+        amount: p.amount,
+        method: p.method,
+        description: `Venta ${serie}-${correlativo} · Mesa #${order.tableNumber}`,
+        time: now,
+        reference: newSale.id
+      }));
+      const cashDelta = sumMoney(paymentBreakdown.filter(p => p.method === 'efectivo').map(p => p.amount));
+      setCashSession(prev => prev ? {
+        ...prev,
+        expectedCash: round2(prev.expectedCash + cashDelta),
+        movements: [...prev.movements, ...newMovements]
+      } : prev);
+    }
+
     const newLedger: LedgerEntry = {
       id: `led-${Date.now()}`,
       date: new Date().toISOString().split('T')[0],
       type: 'ingreso',
       category: 'Ventas Restobar',
-      description: `Cobro Venta ${newSale.id} - Mesa #${order.tableNumber}`,
+      description: `Cobro ${serie}-${correlativo} - Mesa #${order.tableNumber}`,
       amount: total,
       reference: newSale.id
     };
@@ -662,12 +748,105 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       transactionsCount: prev.transactionsCount + 1
     }));
 
-    showToast('Cobro Realizado', `Venta ${newSale.id} por S/ ${total.toFixed(2)} procesada exitosamente con ${paymentMethod.toUpperCase()}.`);
+    showToast('Cobro Realizado', `Comprobante ${serie}-${correlativo} por S/ ${total.toFixed(2)} emitido correctamente.`);
+    return newSale;
   };
 
   const cancelSale = (saleId: string, reason: string) => {
-    setSales(prev => prev.map(s => s.id === saleId ? { ...s, isCancelled: true, cancellationReason: reason } : s));
+    setSales(prev => prev.map(s => s.id === saleId ? { ...s, isCancelled: true, estadoPago: 'anulada', cancellationReason: reason } : s));
     showToast('Venta Anulada', `La venta ${saleId} fue cancelada. Motivo: ${reason}`, 'warning');
+  };
+
+  // Reapertura de venta (RF-61): corrige forma de pago / comprobante de una
+  // venta ya cerrada dejando trazabilidad (motivo + fecha de edición). No
+  // reemplaza el flujo formal de una nota de crédito ante SUNAT para
+  // Boleta/Factura ya emitidas — ese caso queda fuera del alcance de este
+  // prototipo y debería resolverse con un módulo de notas de crédito.
+  const updateSalePayment = (saleId: string, params: UpdateSalePaymentParams) => {
+    const sale = sales.find(s => s.id === saleId);
+    if (!sale) return;
+    const { comprobanteTipo, cliente, paymentBreakdown, cashDetail, reason } = params;
+    const paymentMethod = resolvePaymentCategory(paymentBreakdown.map(p => p.method));
+    setSales(prev => prev.map(s => s.id === saleId ? {
+      ...s,
+      comprobanteTipo,
+      cliente,
+      paymentMethod,
+      paymentBreakdown,
+      cashDetail,
+      estadoPago: comprobanteTipo === 'factura' ? 'facturada' : 'pagada',
+      editedAt: new Date().toLocaleString('es-PE'),
+      editReason: reason
+    } : s));
+    showToast('Venta Corregida', `Se actualizó el pago de ${sale.serie}-${sale.correlativo}. Motivo: ${reason}`, 'info');
+  };
+
+  // --- CLIENTES (facturación) ---
+  const addCliente = (data: Omit<Cliente, 'id'>): Cliente => {
+    const nuevo: Cliente = { ...data, id: `cli-${Date.now()}` };
+    setClientes(prev => [nuevo, ...prev]);
+    showToast('Cliente Registrado', `${nuevo.nombreORazonSocial} quedó disponible para facturación.`, 'info');
+    return nuevo;
+  };
+
+  // --- CAJA ---
+  const openCashSession = (initialAmount: number, openedBy: string) => {
+    if (cashSession && cashSession.status === 'abierta') {
+      showToast('Caja ya Abierta', 'Ya existe un turno de caja abierto. Ciérrelo antes de abrir uno nuevo.', 'warning');
+      return;
+    }
+    const now = new Date().toLocaleString('es-PE');
+    const newSession: CashSession = {
+      id: `caja-${Date.now()}`,
+      openedAt: now,
+      openedBy,
+      initialAmount,
+      expectedCash: initialAmount,
+      status: 'abierta',
+      movements: [{ id: `cm-${Date.now()}`, type: 'apertura', amount: initialAmount, description: 'Apertura de caja', time: now }]
+    };
+    setCashSession(newSession);
+    showToast('Caja Abierta', `Turno iniciado con un fondo de S/ ${initialAmount.toFixed(2)}.`);
+  };
+
+  const closeCashSession = (countedCash: number, closedBy: string) => {
+    if (!cashSession || cashSession.status !== 'abierta') return;
+    const closedAt = new Date().toLocaleString('es-PE');
+    const difference = round2(countedCash - cashSession.expectedCash);
+    const closedSession: CashSession = { ...cashSession, closedAt, closedBy, countedCash, difference, status: 'cerrada' };
+    setCashSessionHistory(prev => [closedSession, ...prev]);
+    setCashSession(null);
+    showToast(
+      'Caja Cerrada',
+      difference === 0
+        ? 'El arqueo cuadra exactamente con lo esperado.'
+        : `Diferencia de arqueo: ${difference > 0 ? 'sobrante' : 'faltante'} de S/ ${Math.abs(difference).toFixed(2)}.`,
+      difference === 0 ? 'success' : 'warning'
+    );
+  };
+
+  const registerManualCashMovement = (type: 'ingreso_manual' | 'retiro_manual', amount: number, description: string) => {
+    if (!cashSession || cashSession.status !== 'abierta') {
+      showToast('Caja Cerrada', 'Debe abrir un turno de caja antes de registrar movimientos.', 'danger');
+      return;
+    }
+    const movement: CashMovement = {
+      id: `cm-${Date.now()}`,
+      type,
+      amount,
+      description,
+      time: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
+    };
+    setCashSession(prev => prev ? {
+      ...prev,
+      expectedCash: round2(prev.expectedCash + (type === 'ingreso_manual' ? amount : -amount)),
+      movements: [...prev.movements, movement]
+    } : prev);
+    showToast(
+      type === 'ingreso_manual' ? 'Ingreso Registrado' : 'Retiro Registrado',
+      `${description} — S/ ${amount.toFixed(2)}`,
+      'info'
+    );
   };
 
   // --- INVENTORY ACTIONS ---
@@ -784,6 +963,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sales,
         processSaleBilling,
         cancelSale,
+        updateSalePayment,
+        clientes,
+        addCliente,
+        cashSession,
+        cashSessionHistory,
+        openCashSession,
+        closeCashSession,
+        registerManualCashMovement,
         insumos,
         addInsumo,
         updateInsumo,

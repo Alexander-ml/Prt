@@ -9,6 +9,8 @@ import type {
   Table,
   Order,
   Sale,
+  Cliente,
+  CashSession,
   Insumo,
   LedgerEntry,
   FinancialSummary
@@ -26,7 +28,7 @@ export const initialUsers: UserAccount[] = [
     lastLogin: '2026-07-27 20:15'
   },
   {
-    id: 'usr-2',
+    id: 'usr-2', 
     name: 'Juan Pérez',
     email: 'juan.perez@gourmetos.com',
     role: 'Mesero',
@@ -330,17 +332,71 @@ export const initialOrders: Order[] = [
   }
 ];
 
+// Clientes registrados para facturación (RF-61 — Boleta/Factura piden datos,
+// Ticket no pide nada por lo que no requiere un Cliente asociado).
+export const initialClientes: Cliente[] = [
+  {
+    id: 'cli-1',
+    tipoDocumento: 'RUC',
+    numeroDocumento: '20601234567',
+    nombreORazonSocial: 'Inversiones Alameda SAC',
+    direccion: 'Av. Larco 345, Miraflores, Lima',
+    correo: 'facturacion@alameda.pe'
+  },
+  {
+    id: 'cli-2',
+    tipoDocumento: 'RUC',
+    numeroDocumento: '20512345678',
+    nombreORazonSocial: 'TechCorp Perú SAC',
+    direccion: 'Calle Amador Merino Reyna 267, San Isidro',
+    correo: 'compras@techcorp.pe'
+  },
+  {
+    id: 'cli-3',
+    tipoDocumento: 'DNI',
+    numeroDocumento: '71234567',
+    nombreORazonSocial: 'Rodrigo Salazar Vega',
+    correo: 'rsalazar@gmail.com'
+  }
+];
+
+// Contador de correlativo por tipo de comprobante — el próximo comprobante
+// de cada serie continúa desde aquí (los 3 de ejemplo abajo ya usan el 1).
+export const initialComprobanteCounters: Record<'ticket' | 'boleta' | 'factura', number> = {
+  ticket: 2,
+  boleta: 2,
+  factura: 2
+};
+
 export const initialSales: Sale[] = [
   {
     id: 'ven-1001',
+    serie: 'F001',
+    correlativo: 1,
+    comprobanteTipo: 'factura',
     orderId: 'ord-prev-1',
     tableNumber: 4,
     waiterName: 'Juan Pérez',
+    cashierName: 'Carlos Mendoza',
+    cajaSesionId: 'caja-2026-07-27-N',
+    cliente: {
+      id: 'cli-2',
+      tipoDocumento: 'RUC',
+      numeroDocumento: '20512345678',
+      nombreORazonSocial: 'TechCorp Perú SAC',
+      direccion: 'Calle Amador Merino Reyna 267, San Isidro',
+      correo: 'compras@techcorp.pe'
+    },
     subtotal: 210.00,
-    taxAmount: 37.80,
     discountAmount: 0,
+    taxAmount: 37.80,
+    igvPercent: 18,
+    tipAmount: 0,
+    roundingAdjustment: 0,
     total: 247.80,
     paymentMethod: 'tarjeta',
+    paymentBreakdown: [{ id: 'pg-1', method: 'visa', amount: 247.80 }],
+    estadoPago: 'facturada',
     closedAt: '2026-07-27 19:40',
     isCancelled: false,
     items: [
@@ -351,14 +407,26 @@ export const initialSales: Sale[] = [
   },
   {
     id: 'ven-1002',
+    serie: 'B001',
+    correlativo: 1,
+    comprobanteTipo: 'boleta',
     orderId: 'ord-prev-2',
     tableNumber: 8,
     waiterName: 'María García',
+    cashierName: 'Carlos Mendoza',
+    cajaSesionId: 'caja-2026-07-27-N',
     subtotal: 154.00,
-    taxAmount: 27.72,
     discountAmount: 15.40,
+    discountLabel: 'Descuento Ejecutivo 10%',
+    taxAmount: 27.72,
+    igvPercent: 18,
+    tipAmount: 0,
+    roundingAdjustment: 0,
     total: 166.32,
     paymentMethod: 'efectivo',
+    paymentBreakdown: [{ id: 'pg-2', method: 'efectivo', amount: 166.32 }],
+    cashDetail: { amountReceived: 170.00, changeGiven: 3.68 },
+    estadoPago: 'pagada',
     closedAt: '2026-07-27 20:05',
     isCancelled: false,
     items: [
@@ -368,19 +436,72 @@ export const initialSales: Sale[] = [
   },
   {
     id: 'ven-1003',
+    serie: 'T001',
+    correlativo: 1,
+    comprobanteTipo: 'ticket',
     orderId: 'ord-prev-3',
     tableNumber: 12,
     waiterName: 'Juan Pérez',
+    cashierName: 'Carlos Mendoza',
+    cajaSesionId: 'caja-2026-07-27-N',
     subtotal: 96.00,
-    taxAmount: 17.28,
     discountAmount: 0,
+    taxAmount: 17.28,
+    igvPercent: 18,
+    tipAmount: 0,
+    roundingAdjustment: 0,
     total: 113.28,
     paymentMethod: 'mixto',
+    paymentBreakdown: [
+      { id: 'pg-3', method: 'efectivo', amount: 60.00 },
+      { id: 'pg-4', method: 'yape', amount: 53.28 }
+    ],
+    cashDetail: { amountReceived: 60.00, changeGiven: 0 },
+    estadoPago: 'pagada',
     closedAt: '2026-07-27 20:25',
     isCancelled: false,
     items: [
       { id: 's-6', dishId: 'd-3', dishName: 'Tequeños de Queso Andino y Lomo', price: 32.00, quantity: 2, status: 'entregado', addedAt: '19:30' },
       { id: 's-7', dishId: 'd-11', dishName: 'Pisco Sour Catedral', price: 32.00, quantity: 1, status: 'entregado', addedAt: '19:30' }
+    ]
+  }
+];
+
+// Turno de caja actualmente abierto — arrastra el efectivo esperado a partir
+// del fondo inicial + la porción en efectivo de cada venta ya registrada.
+export const initialCashSession: CashSession = {
+  id: 'caja-2026-07-27-N',
+  openedAt: '2026-07-27 18:00',
+  openedBy: 'Carlos Mendoza',
+  initialAmount: 200.00,
+  expectedCash: 426.32,
+  status: 'abierta',
+  movements: [
+    { id: 'cm-1', type: 'apertura', amount: 200.00, description: 'Apertura de caja — Turno Noche', time: '18:00' },
+    { id: 'cm-2', type: 'venta_no_efectivo', amount: 247.80, method: 'visa', description: 'Venta F001-1 · Mesa #4', time: '19:40', reference: 'ven-1001' },
+    { id: 'cm-3', type: 'venta_efectivo', amount: 166.32, method: 'efectivo', description: 'Venta B001-1 · Mesa #8', time: '20:05', reference: 'ven-1002' },
+    { id: 'cm-4', type: 'venta_efectivo', amount: 60.00, method: 'efectivo', description: 'Venta T001-1 · Mesa #12 (pago mixto)', time: '20:25', reference: 'ven-1003' },
+    { id: 'cm-5', type: 'venta_no_efectivo', amount: 53.28, method: 'yape', description: 'Venta T001-1 · Mesa #12 (pago mixto)', time: '20:25', reference: 'ven-1003' }
+  ]
+};
+
+// Turno anterior ya cerrado, con su arqueo — alimenta el historial de caja.
+export const initialCashSessionHistory: CashSession[] = [
+  {
+    id: 'caja-2026-07-27-A',
+    openedAt: '2026-07-27 12:00',
+    closedAt: '2026-07-27 17:30',
+    openedBy: 'Carlos Mendoza',
+    closedBy: 'Carlos Mendoza',
+    initialAmount: 150.00,
+    countedCash: 1180.00,
+    expectedCash: 1175.50,
+    difference: 4.50,
+    status: 'cerrada',
+    movements: [
+      { id: 'cm-h1', type: 'apertura', amount: 150.00, description: 'Apertura de caja — Turno Almuerzo', time: '12:00' },
+      { id: 'cm-h2', type: 'venta_efectivo', amount: 1025.50, method: 'efectivo', description: 'Ventas en efectivo del turno', time: '17:15' },
+      { id: 'cm-h3', type: 'venta_no_efectivo', amount: 2270.00, method: 'visa', description: 'Ventas con tarjeta/billeteras del turno', time: '17:15' }
     ]
   }
 ];

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { ToastContainer } from '../components/common/ToastContainer';
@@ -12,6 +12,25 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   const openSidebar  = useCallback(() => setSidebarOpen(true), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+
+  // Mientras el sidebar (drawer) está abierto en mobile:
+  // - bloquea el scroll del body para que no se mueva el fondo detrás del overlay
+  // - permite cerrarlo con la tecla Escape
+  useEffect(() => {
+    if (!sidebarOpen) return;
+
+    document.body.classList.add('sidebar-locked');
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeSidebar();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.classList.remove('sidebar-locked');
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [sidebarOpen, closeSidebar]);
 
   return (
     <div className="app-container">

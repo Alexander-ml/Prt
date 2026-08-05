@@ -6,7 +6,7 @@ import { Badge } from '../components/common/Badge';
 import { PageHeader } from '../components/common/PageHeader';
 
 export const DashboardPage: React.FC = () => {
-  const { tables, orders, sales, insumos, currentRole, setCurrentRole } = useApp();
+  const { tables, orders, sales, insumos, currentRole } = useApp();
   const navigate = useNavigate();
 
   // Metrics
@@ -14,9 +14,18 @@ export const DashboardPage: React.FC = () => {
   const occupiedTables  = tables.filter(t => t.status === 'ocupada').length;
   const reservedTables  = tables.filter(t => t.status === 'reservada').length;
   const availableTables = tables.filter(t => t.status === 'disponible').length;
+  
   const activeOrders    = orders.filter(o => o.status !== 'cerrado' && o.status !== 'cancelado');
+  const openOrders = activeOrders.filter(order => order.status === 'abierto').length;
+  const preparingOrders = activeOrders.filter(order => order.status === 'en_preparacion').length;
+  const readyOrders = activeOrders.filter(order => order.status === 'listo').length;
+
   const todaySalesTotal = sales.filter(s => !s.isCancelled).reduce((sum, s) => sum + s.total, 0);
-  const lowStockInsumos = insumos.filter(i => i.currentStock <= i.minStock);
+
+  const lowStockInsumos = insumos.filter(insumo => insumo.currentStock <= insumo.minStock);
+  const criticalStockInsumos = insumos.filter(insumo => insumo.currentStock <= insumo.minStock * 0.5);
+  const lowStockCount =lowStockInsumos.length - criticalStockInsumos.length;
+
   const occupancyPct    = totalTables > 0 ? Math.round((occupiedTables / totalTables) * 100) : 0;
 
   return (
@@ -28,66 +37,88 @@ export const DashboardPage: React.FC = () => {
         title="Panel de Control"
         subtitle="Visión en tiempo real de la operación, sala, cocina y situación financiera del restaurante."
         actions={
-          <>
+          <div className="d-flex gap-2 w-100">
             <button
-              className="btn btn-sm btn-outline-primary fw-semibold"
-              style={{ borderRadius: 8 }}
+              className="btn-brand btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1"
+              style={{
+                borderRadius: 8,
+                minHeight: 44,
+                fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)',
+              }}
               onClick={() => navigate('/mesas')}
             >
-              <i className="bi bi-diagram-3 me-1"></i>
-              Ir a Mesas
+              <i
+                className="bi bi-grid-3x3-gap-fill"
+                aria-hidden="true"
+              ></i>
+              <span>Ir a Mesas</span>
             </button>
+
             <button
-              className="btn-brand btn btn-sm fw-semibold"
-              style={{ borderRadius: 8 }}
+              className="btn-brand btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1"
+              style={{
+                borderRadius: 8,
+                minHeight: 44,
+                fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)',
+              }}
               onClick={() => navigate('/pedidos')}
             >
-              <i className="bi bi-plus-lg me-1"></i>
-              Nuevo Pedido
+              <i
+                className="bi-receipt"
+                aria-hidden="true"
+              ></i>
+              <span>Nuevo Pedido</span>
             </button>
-          </>
+          </div>
         }
       />
 
       {/* KPI Cards */}
       <div className="row g-3 mb-4 stagger-children">
-        <div className="col-12 col-sm-6 col-xl-3">
+        <div className="col-12 col-md-6 col-lg-3">
           <StatCard
             title="Mesas Ocupadas"
             value={`${occupiedTables} / ${totalTables}`}
-            subtitle={`${reservedTables} reservadas · ${availableTables} disponibles`}
+            subtitle={`${occupiedTables} ocupadas · ${reservedTables} reservadas · ${availableTables} disponibles`}
             icon="bi-table"
             colorTheme="emerald"
             trend={{ value: `${occupancyPct}% ocupación`, positive: occupancyPct < 90 }}
+            progress={{
+              segments: [
+                { count: occupiedTables, color: '#ef4444' },   // ocupadas : rojo
+                { count: reservedTables, color: '#f59e0b' },   // reservadas : ámbar
+                { count: availableTables, color: '#10b981' },  // disponibles : verde
+              ],
+              total: totalTables,
+            }}
             onClick={() => navigate('/mesas')}
           />
         </div>
-        <div className="col-12 col-sm-6 col-xl-3">
+        <div className="col-12 col-md-6 col-lg-3">
           <StatCard
             title="Pedidos Activos"
             value={activeOrders.length}
-            subtitle={`${activeOrders.filter(o => o.status === 'en_preparacion').length} en cocina ahora`}
+            subtitle={`${preparingOrders} en cocina · ${readyOrders} listos · ${openOrders} abiertos`}
             icon="bi-receipt"
             colorTheme="indigo"
             onClick={() => navigate('/pedidos')}
           />
         </div>
-        <div className="col-12 col-sm-6 col-xl-3">
+        <div className="col-12 col-md-6 col-lg-3">
           <StatCard
             title="Ventas del Día"
             value={`S/ ${todaySalesTotal.toFixed(2)}`}
             subtitle={`${sales.filter(s => !s.isCancelled).length} comprobantes emitidos`}
             icon="bi-cash-stack"
             colorTheme="sky"
-            trend={{ value: '+12%', positive: true }}
             onClick={() => navigate('/ventas')}
           />
         </div>
-        <div className="col-12 col-sm-6 col-xl-3">
+        <div className="col-12 col-md-6 col-lg-3">
           <StatCard
             title="Alertas de Stock"
             value={lowStockInsumos.length}
-            subtitle={lowStockInsumos.length > 0 ? 'Insumos bajo mínimo' : 'Todos los insumos OK'}
+            subtitle={lowStockInsumos.length > 0? `${criticalStockInsumos.length} críticos · ${lowStockCount} bajo mínimo`: 'Todos los insumos dentro del mínimo'}
             icon="bi-box-seam-fill"
             colorTheme={lowStockInsumos.length > 0 ? 'rose' : 'emerald'}
             onClick={() => navigate('/inventario')}
@@ -95,58 +126,14 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Occupancy progress */}
-      <div className="section-card mb-4">
-        <div className="section-card-body py-3">
-          <div className="d-flex align-items-center justify-content-between mb-2">
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-              Ocupación actual del restaurante
-            </span>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {occupancyPct}%
-            </span>
-          </div>
-          <div className="progress" style={{ height: 8, borderRadius: 99 }}>
-            <div
-              className="progress-bar"
-              role="progressbar"
-              style={{
-                width: `${occupancyPct}%`,
-                background: occupancyPct > 80
-                  ? 'linear-gradient(90deg, #ef4444, #f87171)'
-                  : occupancyPct > 50
-                  ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
-                  : 'linear-gradient(90deg, #10b981, #34d399)',
-                borderRadius: 99,
-                transition: 'width 0.6s ease',
-              }}
-              aria-valuenow={occupancyPct}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            ></div>
-          </div>
-          <div className="d-flex justify-content-between mt-2">
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              <span style={{ color: '#10b981', fontWeight: 700 }}>●</span> {availableTables} disponibles
-            </span>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              <span style={{ color: '#ef4444', fontWeight: 700 }}>●</span> {occupiedTables} ocupadas
-            </span>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              <span style={{ color: '#f59e0b', fontWeight: 700 }}>●</span> {reservedTables} reservadas
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* Main Grid */}
       <div className="row g-4">
-        {/* Left: Floorplan Mini */}
-        <div className="col-12 col-lg-7">
+        {/* Left: Floorplan Mini — segunda prioridad visual en móvil */}
+        <div className="col-12 col-lg-7 order-2 order-lg-1">
           <div className="section-card h-100">
-            <div className="section-card-header">
+            <div className="section-card-header flex-wrap gap-2">
               <h2 className="section-card-title">
-                <i className="bi bi-grid-fill"></i>
+                <i className="bi bi-grid-fill" aria-hidden="true"></i>
                 Estado de Mesas en Sala
               </h2>
               <button
@@ -155,13 +142,13 @@ export const DashboardPage: React.FC = () => {
                 onClick={() => navigate('/mesas')}
               >
                 Ver plano completo
-                <i className="bi bi-arrow-right ms-1"></i>
+                <i className="bi bi-arrow-right ms-1" aria-hidden="true"></i>
               </button>
             </div>
             <div className="section-card-body">
-              <div className="row g-3">
+              <div className="row g-2">
                 {tables.slice(0, 8).map(table => (
-                  <div key={table.id} className="col-6 col-sm-4 col-md-3">
+                  <div key={table.id} className="col-12 col-md-6">
                     <div
                       className={`table-card status-${table.status}`}
                       onClick={() => navigate('/mesas')}
@@ -169,19 +156,41 @@ export const DashboardPage: React.FC = () => {
                       aria-label={`Mesa ${table.number}, estado: ${table.status}`}
                       tabIndex={0}
                       onKeyDown={e => e.key === 'Enter' && navigate('/mesas')}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 12,
+                        minHeight: 68,
+                      }}
                     >
-                      <div className="d-flex align-items-center justify-content-between mb-auto">
-                        <span style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
-                          #{table.number}
-                        </span>
-                        <span className="table-status-pill">{table.status}</span>
+                      <div
+                        className="d-flex align-items-center justify-content-center flex-shrink-0"
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 10,
+                          background: 'rgba(0,0,0,0.04)',
+                          fontWeight: 800,
+                          fontSize: '0.9rem',
+                          color: 'var(--text-primary)',
+                        }}
+                        aria-hidden="true"
+                      >
+                        #{table.number}
                       </div>
-                      <div style={{ marginTop: 8 }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                          {table.areaName}
+                      <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                        <div className="d-flex align-items-center justify-content-between gap-2">
+                          <span
+                            className="text-truncate"
+                            style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}
+                          >
+                            {table.areaName}
+                          </span>
+                          <span className="table-status-pill flex-shrink-0">{table.status}</span>
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-subtle)', marginTop: 2 }}>
-                          <i className="bi bi-people me-1"></i>
+                        <div className="text-truncate" style={{ fontSize: '0.72rem', color: 'var(--text-subtle)', marginTop: 2 }}>
+                          <i className="bi bi-people me-1" aria-hidden="true"></i>
                           {table.capacity} personas
                         </div>
                       </div>
@@ -194,7 +203,7 @@ export const DashboardPage: React.FC = () => {
                   className="text-center mt-3 pt-3 border-top"
                   style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}
                 >
-                  <i className="bi bi-grid me-1"></i>
+                  <i className="bi bi-grid me-1" aria-hidden="true"></i>
                   {tables.length - 8} mesas más en el plano completo
                 </div>
               )}
@@ -202,15 +211,15 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Kitchen + Stock */}
-        <div className="col-12 col-lg-5">
+        {/* Right: Kitchen + Stock — primera prioridad visual en móvil (accionable/urgente) */}
+        <div className="col-12 col-lg-5 order-1 order-lg-2">
           <div className="d-flex flex-column gap-4 h-100">
 
             {/* Kitchen Feed */}
             <div className="section-card flex-shrink-0">
-              <div className="section-card-header">
+              <div className="section-card-header flex-wrap gap-2">
                 <h2 className="section-card-title">
-                  <i className="bi bi-fire" style={{ color: '#d97706' }}></i>
+                  <i className="bi bi-fire" style={{ color: '#d97706' }} aria-hidden="true"></i>
                   Pedidos en Preparación
                 </h2>
                 <button
@@ -218,13 +227,13 @@ export const DashboardPage: React.FC = () => {
                   style={{ borderRadius: 8, fontSize: '0.75rem' }}
                   onClick={() => navigate('/cocina')}
                 >
-                  Ver KDS <i className="bi bi-arrow-right ms-1"></i>
+                  Ver KDS <i className="bi bi-arrow-right ms-1" aria-hidden="true"></i>
                 </button>
               </div>
               <div className="section-card-body p-3">
                 {activeOrders.filter(o => o.status === 'en_preparacion').length === 0 ? (
                   <div className="text-center py-3" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    <i className="bi bi-check-circle d-block mb-2" style={{ fontSize: '1.75rem', color: '#10b981' }}></i>
+                    <i className="bi bi-check-circle d-block mb-2" style={{ fontSize: '1.75rem', color: '#10b981' }} aria-hidden="true"></i>
                     Sin pedidos pendientes en cocina.
                   </div>
                 ) : (
@@ -235,21 +244,23 @@ export const DashboardPage: React.FC = () => {
                       .map(ord => (
                         <div
                           key={ord.id}
-                          className="d-flex align-items-center justify-content-between p-2 rounded-3"
+                          className="d-flex align-items-center justify-content-between gap-2 p-2 rounded-3"
                           style={{ background: 'var(--color-amber-bg)', border: '1px solid #fcd34d' }}
                         >
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div className="text-truncate" style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                               Mesa #{ord.tableNumber}
                               <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
                                 {' '}— {ord.waiterName}
                               </span>
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                            <div className="text-truncate" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
                               {ord.items.length} platos · {ord.sentToKitchenAt || 'en proceso'}
                             </div>
                           </div>
-                          <Badge status="Preparando" variant="warning" icon="bi-arrow-repeat" />
+                          <div className="flex-shrink-0">
+                            <Badge status="Preparando" variant="warning" icon="bi-arrow-repeat" />
+                          </div>
                         </div>
                       ))
                     }
@@ -260,9 +271,9 @@ export const DashboardPage: React.FC = () => {
 
             {/* Stock Alerts */}
             <div className="section-card flex-grow-1">
-              <div className="section-card-header">
+              <div className="section-card-header flex-wrap gap-2">
                 <h2 className="section-card-title">
-                  <i className="bi bi-exclamation-triangle-fill" style={{ color: '#e11d48' }}></i>
+                  <i className="bi bi-exclamation-triangle-fill" style={{ color: '#e11d48' }} aria-hidden="true"></i>
                   Alertas de Insumos
                 </h2>
                 {currentRole === 'Administrador' && (
@@ -271,14 +282,14 @@ export const DashboardPage: React.FC = () => {
                     style={{ borderRadius: 8, fontSize: '0.75rem' }}
                     onClick={() => navigate('/inventario')}
                   >
-                    Gestionar <i className="bi bi-arrow-right ms-1"></i>
+                    Gestionar <i className="bi bi-arrow-right ms-1" aria-hidden="true"></i>
                   </button>
                 )}
               </div>
               <div className="section-card-body p-3">
                 {lowStockInsumos.length === 0 ? (
                   <div className="text-center py-3" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    <i className="bi bi-shield-check d-block mb-2" style={{ fontSize: '1.75rem', color: '#10b981' }}></i>
+                    <i className="bi bi-shield-check d-block mb-2" style={{ fontSize: '1.75rem', color: '#10b981' }} aria-hidden="true"></i>
                     Todos los insumos con stock suficiente.
                   </div>
                 ) : (
@@ -287,11 +298,13 @@ export const DashboardPage: React.FC = () => {
                       const pct = Math.min(100, Math.round((ins.currentStock / ins.minStock) * 100));
                       return (
                         <div key={ins.id} className="p-2 rounded-3" style={{ background: '#fff7f7', border: '1px solid #fca5a5' }}>
-                          <div className="d-flex align-items-center justify-content-between mb-1">
-                            <span style={{ fontWeight: 700, fontSize: '0.83rem', color: 'var(--text-primary)' }}>
+                          <div className="d-flex align-items-center justify-content-between gap-2 mb-1">
+                            <span className="text-truncate" style={{ fontWeight: 700, fontSize: '0.83rem', color: 'var(--text-primary)', minWidth: 0 }}>
                               {ins.name}
                             </span>
-                            <Badge status="Stock Bajo" variant="danger" />
+                            <div className="flex-shrink-0">
+                              <Badge status="Stock Bajo" variant="danger" />
+                            </div>
                           </div>
                           <div style={{ fontSize: '0.73rem', color: '#e11d48', marginBottom: 4 }}>
                             {ins.currentStock} {ins.unit} disponibles (mín: {ins.minStock} {ins.unit})

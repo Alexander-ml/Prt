@@ -8,19 +8,25 @@ interface DishCardProps {
   isAdmin: boolean;
   onEdit: (dish: Dish) => void;
   onToggleActive: (dishId: string) => void;
+  /** true si algún insumo de la receta tiene menos stock del que necesita
+   *  una porción. Solo informativo — no cambia `isAvailableToday` (ver
+   *  diagnóstico de Inventario, sección 4.3 y sección 8). */
+  insufficientStock?: boolean;
 }
 
 /**
  * DishCard — Tarjeta visual de un plato del catálogo (RF-16).
  * Componente presentacional puro: no lee `useApp()`, no conoce categorías
  * ni maneja estado propio, solo recibe el `dish` a mostrar y los
- * manejadores que ya decidió `DishesView`.
+ * manejadores que ya decidió `DishesView`. El cálculo de "Insumos
+ * Insuficientes" vive en `DishesView` (vía `hasInsufficientStock`); esta
+ * tarjeta solo recibe el resultado ya calculado.
  *
  * El efecto hover se resuelve de forma declarativa con la clase CSS
  * `.dish-card:hover` (ver custom.css), en vez de mutar `style` a mano con
  * `onMouseEnter`/`onMouseLeave` como hacía la versión anterior.
  */
-export const DishCard: React.FC<DishCardProps> = ({ dish, isAdmin, onEdit, onToggleActive }) => {
+export const DishCard: React.FC<DishCardProps> = ({ dish, isAdmin, onEdit, onToggleActive, insufficientStock }) => {
   return (
     <div className="dish-card card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
       <div className="position-relative" style={{ height: 150, overflow: 'hidden', background: '#f8fafc' }}>
@@ -79,6 +85,27 @@ export const DishCard: React.FC<DishCardProps> = ({ dish, isAdmin, onEdit, onTog
           <div className="kds-allergen-badge" style={{ marginBottom: '0.75rem' }}>
             <i className="bi bi-exclamation-octagon-fill flex-shrink-0" aria-hidden="true"></i>
             <span>Contiene: {dish.allergens.join(', ')}</span>
+          </div>
+        )}
+
+        {/* Insumos Insuficientes — solo visibilidad (ver diagnóstico de
+            Inventario, sección 4.3): no apaga `isAvailableToday`, solo
+            avisa que la receta configurada ya no alcanza con el stock
+            actual de Inventario. */}
+        {insufficientStock && (
+          <div
+            className="d-flex align-items-start gap-2 fw-semibold"
+            style={{
+              fontSize: '0.75rem',
+              padding: '0.4rem 0.6rem',
+              marginBottom: '0.75rem',
+              borderRadius: 'var(--radius-sm, 8px)',
+              background: 'var(--color-amber-bg)',
+              color: 'var(--color-amber-text)',
+            }}
+          >
+            <i className="bi bi-box-seam flex-shrink-0" aria-hidden="true"></i>
+            <span>Insumos Insuficientes en Inventario</span>
           </div>
         )}
 

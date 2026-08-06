@@ -22,6 +22,8 @@ import type {
   ProcessSaleBillingParams,
   UpdateSalePaymentParams,
   Insumo,
+  InsumoCategory,
+  DishRecipeItem,
   LedgerEntry,
   FinancialSummary
 } from '../types';
@@ -44,6 +46,7 @@ import {
   initialCashSessionHistory,
   initialComprobanteCounters,
   initialInsumos,
+  initialInsumoCategories,
   initialLedger,
   initialFinancialSummary
 } from '../mock/initialData';
@@ -84,10 +87,13 @@ export interface AppContextType {
   addCategory: (name: string, description: string) => void;
   updateCategory: (id: string, name: string, description: string) => void;
   deleteCategory: (id: string) => boolean;
-  addDish: (dish: Omit<Dish, 'id' | 'categoryName'>) => void;
+  addDish: (dish: Omit<Dish, 'id' | 'categoryName'>) => string;
   updateDish: (id: string, data: Partial<Dish>) => void;
   toggleDishActive: (id: string) => void;
   toggleDishDailyAvailability: (id: string) => void;
+  // Persiste la receta (bill of materials) de un plato ya existente —
+  // vínculo Catálogo↔Inventario (ver diagnóstico Inventario, sección 4.1).
+  updateDishRecipe: (dishId: string, recipe: DishRecipeItem[]) => void;
 
   // Config Module
   restaurantInfo: RestaurantInfo;
@@ -159,9 +165,13 @@ export interface AppContextType {
 
   // Inventory Module
   insumos: Insumo[];
-  addInsumo: (insumo: Omit<Insumo, 'id' | 'lastRestockDate'>) => void;
+  insumoCategories: InsumoCategory[];
+  addInsumo: (insumo: Omit<Insumo, 'id' | 'lastRestockDate' | 'categoryName'>) => void;
   updateInsumo: (id: string, data: Partial<Insumo>) => void;
   registerInsumoMovement: (id: string, quantityDelta: number, isRestock: boolean) => void;
+  addInsumoCategory: (name: string, description: string) => void;
+  updateInsumoCategory: (id: string, name: string, description: string) => void;
+  deleteInsumoCategory: (id: string) => boolean;
 
   // Accounting Module
   ledgerEntries: LedgerEntry[];
@@ -203,6 +213,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [cashSessionHistory, setCashSessionHistory] = useState<CashSession[]>(initialCashSessionHistory);
   const [comprobanteCounters, setComprobanteCounters] = useState(initialComprobanteCounters);
   const [insumos, setInsumos] = useState<Insumo[]>(initialInsumos);
+  const [insumoCategories, setInsumoCategories] = useState<InsumoCategory[]>(initialInsumoCategories);
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>(initialLedger);
   const [financialSummary, setFinancialSummary] = useState<FinancialSummary>(initialFinancialSummary);
 
@@ -272,7 +283,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   };
 
-  const addDish = (dishData: Omit<Dish, 'id' | 'categoryName'>) => {
+  const addDish = (dishData: Omit<Dish, 'id' | 'categoryName'>): string => {
     const cat = categories.find(c => c.id === dishData.categoryId);
     const newDish: Dish = {
       ...dishData,
@@ -284,6 +295,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCategories(prev => prev.map(c => c.id === cat.id ? { ...c, dishesCount: c.dishesCount + 1 } : c));
     }
     showToast('Plato Registrado', `"${newDish.name}" fue agregado al catálogo.`);
+    return newDish.id;
   };
 
   const updateDish = (id: string, data: Partial<Dish>) => {
@@ -325,6 +337,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return d;
     }));
+  };
+
+  // Persiste la receta (insumos + cantidad por porción) de un plato ya
+  // existente. Es el único lugar que escribe `Dish.recipe` — DishesView no
+  // necesita conocer cómo se guarda, solo que existe (Dependency Inversion).
+  const updateDishRecipe = (dishId: string, recipe: DishRecipeItem[]) => {
+    setDishes(prev => prev.map(d => (d.id === dishId ? { ...d, recipe } : d)));
+    showToast('Receta Actualizada', 'Los insumos utilizados por el plato fueron guardados.');
   };
 
   // --- CONFIG ACTIONS ---
@@ -617,7 +637,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // --- KITCHEN ACTIONS ---
+
+  // Único punto que sabe "cómo" se descuenta/restaura un insumo por una
+  // venta (Dependency Inversion — ver diagnóstico Inventario, sección 4.3).
+  // Cocina y Pedidos solo disparan la transición de estado del ítem; nunca
+  // calculan el descuento ellos mismos. Un plato sin `recipe` configurada
+  // no afecta stock — retrocompatible con todo el catálogo existente.
+  // Reusa el mismo clamp a 0 que ya usa `registerInsumoMovement`.
+  const consumeRecipeForItem = (item: OrderItem, dish?: Dish) => {
+    if (!dish?.recipe?.length) return;
+    setInsumos(prev => prev.map(ins => {
+      const line = dish.recipe!.find(r => r.insumoId === ins.id);
+      if (!line) return ins;
+      return { ...ins, currentStock: Math.max(0, ins.currentStock - line.quantityPerServing * item.quantity) };
+    }));
+  };
+
+  const restoreRecipeForItem = (item: OrderItem, dish?: Dish) => {
+    if (!dish?.recipe?.length) return;
+    setInsumos(prev => prev.map(ins => {
+      const line = dish.recipe!.find(r => r.insumoId === ins.id);
+      if (!line) return ins;
+      return { ...ins, currentStock: ins.currentStock + line.quantityPerServing * item.quantity };
+    }));
+  };
+
   const updateOrderItemStatus = (orderId: string, itemId: string, newStatus: OrderItemStatus) => {
+    const order = orders.find(o => o.id === orderId);
+    const item = order?.items.find(i => i.id === itemId);
+    const previousStatus = item?.status;
+
     setOrders(prev => prev.map(o => {
       if (o.id === orderId) {
         const updatedItems = o.items.map(i => i.id === itemId ? { ...i, status: newStatus } : i);
@@ -630,10 +679,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return o;
     }));
+
+    // Descuento automático de stock (RF-66+): el consumo físico ocurre
+    // exactamente en la transición hacia 'listo'. Si Cocina usa el
+    // "deshacer" de 5 segundos (vuelve a 'preparando'), se restaura.
+    if (item) {
+      const dish = dishes.find(d => d.id === item.dishId);
+      if (newStatus === 'listo' && previousStatus !== 'listo') {
+        consumeRecipeForItem(item, dish);
+      } else if (previousStatus === 'listo' && newStatus !== 'listo') {
+        restoreRecipeForItem(item, dish);
+      }
+    }
+
     showToast('Estado de Cocina', `Ítem actualizado a: ${newStatus.toUpperCase()}`);
   };
 
   const markOrderReady = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      // Solo se descuenta por ítems que aún no estaban 'listo' (ni
+      // 'entregado' ni 'cancelado'), para no descontar dos veces un ítem
+      // que ya se había marcado individualmente antes de "Marcar todo listo".
+      order.items
+        .filter(i => i.status !== 'listo' && i.status !== 'entregado' && i.status !== 'cancelado')
+        .forEach(i => consumeRecipeForItem(i, dishes.find(d => d.id === i.dishId)));
+    }
+
     setOrders(prev => prev.map(o => {
       if (o.id === orderId) {
         return {
@@ -918,19 +990,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  // --- INVENTORY CATEGORY ACTIONS ---
+  // Réplica exacta de addArea/updateArea/deleteArea — mismo patrón que
+  // Categorías (Catálogo) y Áreas (Mesas), incluido el bloqueo de borrado
+  // con insumos asignados. Resuelve de raíz el bug de categorías
+  // hardcodeadas: una categoría nueva es una fila más, no un cambio de código.
+  const addInsumoCategory = (name: string, description: string) => {
+    const newCat: InsumoCategory = { id: `inscat-${Date.now()}`, name, description, insumoCount: 0 };
+    setInsumoCategories(prev => [...prev, newCat]);
+    showToast('Categoría de Insumo Creada', `Categoría "${name}" agregada exitosamente.`);
+  };
+
+  const updateInsumoCategory = (id: string, name: string, description: string) => {
+    setInsumoCategories(prev => prev.map(c => (c.id === id ? { ...c, name, description } : c)));
+    setInsumos(prev => prev.map(i => i.categoryId === id ? { ...i, categoryName: name } : i));
+    showToast('Categoría de Insumo Actualizada', 'Se actualizaron los datos de la categoría.');
+  };
+
+  const deleteInsumoCategory = (id: string): boolean => {
+    const count = insumos.filter(i => i.categoryId === id).length;
+    if (count > 0) {
+      showToast('No se puede eliminar', `La categoría tiene ${count} insumos asociados. Reasigne o elimine los insumos primero.`, 'danger');
+      return false;
+    }
+    setInsumoCategories(prev => prev.filter(c => c.id !== id));
+    showToast('Categoría de Insumo Eliminada', 'La categoría fue eliminada correctamente.', 'info');
+    return true;
+  };
+
   // --- INVENTORY ACTIONS ---
-  const addInsumo = (insumoData: Omit<Insumo, 'id' | 'lastRestockDate'>) => {
+  const addInsumo = (insumoData: Omit<Insumo, 'id' | 'lastRestockDate' | 'categoryName'>) => {
+    const cat = insumoCategories.find(c => c.id === insumoData.categoryId);
     const newInsumo: Insumo = {
       ...insumoData,
       id: `ins-${Date.now()}`,
+      categoryName: cat ? cat.name : 'General',
       lastRestockDate: new Date().toISOString().split('T')[0]
     };
     setInsumos(prev => [...prev, newInsumo]);
+    if (cat) {
+      setInsumoCategories(prev => prev.map(c => c.id === cat.id ? { ...c, insumoCount: c.insumoCount + 1 } : c));
+    }
     showToast('Insumo Registrado', `Insumo "${newInsumo.name}" ingresado al sistema.`);
   };
 
   const updateInsumo = (id: string, data: Partial<Insumo>) => {
-    setInsumos(prev => prev.map(i => (i.id === id ? { ...i, ...data } : i)));
+    setInsumos(prev => prev.map(i => {
+      if (i.id === id) {
+        let catName = i.categoryName;
+        if (data.categoryId) {
+          const found = insumoCategories.find(c => c.id === data.categoryId);
+          if (found) catName = found.name;
+        }
+        return { ...i, ...data, categoryName: catName };
+      }
+      return i;
+    }));
     showToast('Insumo Actualizado', 'Los datos del insumo han sido guardados.');
   };
 
@@ -996,6 +1111,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateDish,
         toggleDishActive,
         toggleDishDailyAvailability,
+        updateDishRecipe,
         restaurantInfo,
         updateRestaurantInfo,
         taxes,
@@ -1043,9 +1159,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         closeCashSession,
         registerManualCashMovement,
         insumos,
+        insumoCategories,
         addInsumo,
         updateInsumo,
         registerInsumoMovement,
+        addInsumoCategory,
+        updateInsumoCategory,
+        deleteInsumoCategory,
         ledgerEntries,
         financialSummary,
         addLedgerEntry

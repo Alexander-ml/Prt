@@ -12,6 +12,7 @@ import type {
   Cliente,
   CashSession,
   Insumo,
+  InsumoCategory,
   LedgerEntry,
   FinancialSummary
 } from '../types';
@@ -90,7 +91,11 @@ export const initialDishes: Dish[] = [
     isAvailableToday: true,
     station: 'frios',
     prepTimeMinutes: 12,
-    allergens: ['Mariscos']
+    allergens: ['Mariscos'],
+    recipe: [
+      { insumoId: 'ins-2', insumoName: 'Pescado Corvina Fresco', quantityPerServing: 0.35 },
+      { insumoId: 'ins-7', insumoName: 'Limón Sutil Seleccionado', quantityPerServing: 0.15 }
+    ]
   },
   {
     id: 'd-2',
@@ -104,7 +109,11 @@ export const initialDishes: Dish[] = [
     isAvailableToday: true,
     station: 'frios',
     prepTimeMinutes: 10,
-    allergens: ['Lácteos']
+    allergens: ['Lácteos'],
+    recipe: [
+      { insumoId: 'ins-1', insumoName: 'Lomo Fino de Res Premium', quantityPerServing: 0.12 },
+      { insumoId: 'ins-5', insumoName: 'Queso Parmesano Grana Padano', quantityPerServing: 0.05 }
+    ]
   },
   {
     id: 'd-3',
@@ -131,7 +140,11 @@ export const initialDishes: Dish[] = [
     active: true,
     isAvailableToday: true,
     station: 'parrilla',
-    prepTimeMinutes: 15
+    prepTimeMinutes: 15,
+    recipe: [
+      { insumoId: 'ins-1', insumoName: 'Lomo Fino de Res Premium', quantityPerServing: 0.25 },
+      { insumoId: 'ins-4', insumoName: 'Arroz Extra Superior', quantityPerServing: 0.2 }
+    ]
   },
   {
     id: 'd-5',
@@ -145,7 +158,10 @@ export const initialDishes: Dish[] = [
     isAvailableToday: true,
     station: 'parrilla',
     prepTimeMinutes: 22,
-    allergens: ['Lácteos']
+    allergens: ['Lácteos'],
+    recipe: [
+      { insumoId: 'ins-1', insumoName: 'Lomo Fino de Res Premium', quantityPerServing: 0.4 }
+    ]
   },
   {
     id: 'd-6',
@@ -173,7 +189,11 @@ export const initialDishes: Dish[] = [
     isAvailableToday: true,
     station: 'plancha',
     prepTimeMinutes: 14,
-    allergens: ['Gluten', 'Lácteos']
+    allergens: ['Gluten', 'Lácteos'],
+    recipe: [
+      { insumoId: 'ins-6', insumoName: 'Aceite de Trufa Negra 250ml', quantityPerServing: 0.02 },
+      { insumoId: 'ins-5', insumoName: 'Queso Parmesano Grana Padano', quantityPerServing: 0.08 }
+    ]
   },
   {
     id: 'd-8',
@@ -187,7 +207,11 @@ export const initialDishes: Dish[] = [
     isAvailableToday: true,
     station: 'plancha',
     prepTimeMinutes: 20,
-    allergens: ['Mariscos']
+    allergens: ['Mariscos'],
+    recipe: [
+      { insumoId: 'ins-4', insumoName: 'Arroz Extra Superior', quantityPerServing: 0.3 },
+      { insumoId: 'ins-3', insumoName: 'Pisco Quebranta 750ml', quantityPerServing: 0.05 }
+    ]
   },
   {
     id: 'd-9',
@@ -201,7 +225,10 @@ export const initialDishes: Dish[] = [
     isAvailableToday: true,
     station: 'postres',
     prepTimeMinutes: 10,
-    allergens: ['Gluten', 'Lácteos', 'Huevo']
+    allergens: ['Gluten', 'Lácteos', 'Huevo'],
+    recipe: [
+      { insumoId: 'ins-8', insumoName: 'Chocolate 70% Cacao Bitter', quantityPerServing: 0.09 }
+    ]
   },
   {
     id: 'd-10',
@@ -229,7 +256,11 @@ export const initialDishes: Dish[] = [
     isAvailableToday: true,
     station: 'bebidas',
     prepTimeMinutes: 4,
-    allergens: ['Huevo']
+    allergens: ['Huevo'],
+    recipe: [
+      { insumoId: 'ins-3', insumoName: 'Pisco Quebranta 750ml', quantityPerServing: 0.08 },
+      { insumoId: 'ins-7', insumoName: 'Limón Sutil Seleccionado', quantityPerServing: 0.06 }
+    ]
   },
   {
     id: 'd-12',
@@ -572,15 +603,29 @@ export const initialCashSessionHistory: CashSession[] = [
   }
 ];
 
+// Categorías de insumo como entidad real (RF-66+) — antes un array de texto
+// hardcodeado en InventoryPage.tsx, lo que ya rompía datos reales: los
+// insumos 'Especiales' y 'Repostería' no existían en esa lista fija.
+export const initialInsumoCategories: InsumoCategory[] = [
+  { id: 'inscat-1', name: 'Carnes', description: 'Cortes de res, cerdo y aves para platos de fondo', insumoCount: 1 },
+  { id: 'inscat-2', name: 'Mariscos', description: 'Pescados y mariscos frescos de mar', insumoCount: 1 },
+  { id: 'inscat-3', name: 'Licores', description: 'Bebidas alcohólicas para coctelería y maridaje', insumoCount: 1 },
+  { id: 'inscat-4', name: 'Abarrotes', description: 'Insumos secos y de despensa de larga duración', insumoCount: 1 },
+  { id: 'inscat-5', name: 'Lácteos', description: 'Quesos, cremas y derivados lácteos', insumoCount: 1 },
+  { id: 'inscat-6', name: 'Especiales', description: 'Insumos gourmet de alto costo y bajo volumen', insumoCount: 1 },
+  { id: 'inscat-7', name: 'Verduras', description: 'Vegetales y hortalizas frescas', insumoCount: 1 },
+  { id: 'inscat-8', name: 'Repostería', description: 'Insumos para postres y preparaciones dulces', insumoCount: 1 }
+];
+
 export const initialInsumos: Insumo[] = [
-  { id: 'ins-1', name: 'Lomo Fino de Res Premium', unit: 'Kg', currentStock: 8.5, minStock: 10.0, costPerUnit: 45.00, category: 'Carnes', lastRestockDate: '2026-07-25' },
-  { id: 'ins-2', name: 'Pescado Corvina Fresco', unit: 'Kg', currentStock: 14.0, minStock: 8.0, costPerUnit: 38.00, category: 'Mariscos', lastRestockDate: '2026-07-27' },
-  { id: 'ins-3', name: 'Pisco Quebranta 750ml', unit: 'Botella', currentStock: 4.0, minStock: 6.0, costPerUnit: 42.00, category: 'Licores', lastRestockDate: '2026-07-20' },
-  { id: 'ins-4', name: 'Arroz Extra Superior', unit: 'Kg', currentStock: 45.0, minStock: 20.0, costPerUnit: 4.20, category: 'Abarrotes', lastRestockDate: '2026-07-22' },
-  { id: 'ins-5', name: 'Queso Parmesano Grana Padano', unit: 'Kg', currentStock: 2.1, minStock: 3.0, costPerUnit: 85.00, category: 'Lácteos', lastRestockDate: '2026-07-18' },
-  { id: 'ins-6', name: 'Aceite de Trufa Negra 250ml', unit: 'Botella', currentStock: 1.5, minStock: 2.0, costPerUnit: 120.00, category: 'Especiales', lastRestockDate: '2026-07-10' },
-  { id: 'ins-7', name: 'Limón Sutil Seleccionado', unit: 'Kg', currentStock: 25.0, minStock: 12.0, costPerUnit: 3.50, category: 'Verduras', lastRestockDate: '2026-07-27' },
-  { id: 'ins-8', name: 'Chocolate 70% Cacao Bitter', unit: 'Kg', currentStock: 5.0, minStock: 4.0, costPerUnit: 34.00, category: 'Repostería', lastRestockDate: '2026-07-24' }
+  { id: 'ins-1', name: 'Lomo Fino de Res Premium', unit: 'Kg', currentStock: 8.5, minStock: 10.0, costPerUnit: 45.00, categoryId: 'inscat-1', categoryName: 'Carnes', lastRestockDate: '2026-07-25' },
+  { id: 'ins-2', name: 'Pescado Corvina Fresco', unit: 'Kg', currentStock: 14.0, minStock: 8.0, costPerUnit: 38.00, categoryId: 'inscat-2', categoryName: 'Mariscos', lastRestockDate: '2026-07-27' },
+  { id: 'ins-3', name: 'Pisco Quebranta 750ml', unit: 'Botella', currentStock: 4.0, minStock: 6.0, costPerUnit: 42.00, categoryId: 'inscat-3', categoryName: 'Licores', lastRestockDate: '2026-07-20' },
+  { id: 'ins-4', name: 'Arroz Extra Superior', unit: 'Kg', currentStock: 45.0, minStock: 20.0, costPerUnit: 4.20, categoryId: 'inscat-4', categoryName: 'Abarrotes', lastRestockDate: '2026-07-22' },
+  { id: 'ins-5', name: 'Queso Parmesano Grana Padano', unit: 'Kg', currentStock: 2.1, minStock: 3.0, costPerUnit: 85.00, categoryId: 'inscat-5', categoryName: 'Lácteos', lastRestockDate: '2026-07-18' },
+  { id: 'ins-6', name: 'Aceite de Trufa Negra 250ml', unit: 'Botella', currentStock: 1.5, minStock: 2.0, costPerUnit: 120.00, categoryId: 'inscat-6', categoryName: 'Especiales', lastRestockDate: '2026-07-10' },
+  { id: 'ins-7', name: 'Limón Sutil Seleccionado', unit: 'Kg', currentStock: 25.0, minStock: 12.0, costPerUnit: 3.50, categoryId: 'inscat-7', categoryName: 'Verduras', lastRestockDate: '2026-07-27' },
+  { id: 'ins-8', name: 'Chocolate 70% Cacao Bitter', unit: 'Kg', currentStock: 5.0, minStock: 4.0, costPerUnit: 34.00, categoryId: 'inscat-8', categoryName: 'Repostería', lastRestockDate: '2026-07-24' }
 ];
 
 export const initialLedger: LedgerEntry[] = [

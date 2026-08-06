@@ -24,6 +24,15 @@ export interface Category {
 // Estación de cocina responsable de preparar el plato (KDS — vista "Por Estación").
 export type KitchenStation = 'frios' | 'plancha' | 'parrilla' | 'postres' | 'bebidas';
 
+// Una línea de la "receta" (bill of materials) de un plato — cuánto insumo
+// consume UNA unidad servida del plato. Denormaliza `insumoName` con el
+// mismo criterio que `categoryName`/`areaName` en el resto del proyecto.
+export interface DishRecipeItem {
+  insumoId: string;
+  insumoName: string;
+  quantityPerServing: number; // cantidad (en insumo.unit) que consume 1 unidad del plato
+}
+
 export interface Dish {
   id: string;
   name: string;
@@ -37,6 +46,10 @@ export interface Dish {
   station: KitchenStation; // Estación de cocina que prepara el plato (KDS)
   prepTimeMinutes: number; // Tiempo estimado de preparación, usado para calcular urgencia real en el KDS
   allergens?: string[]; // Alérgenos relevantes a mostrar siempre en cocina, sin depender de la observación libre
+  // OPCIONAL y retrocompatible: un plato sin receta configurada sigue
+  // funcionando exactamente igual que antes en Cocina y Pedidos (no afecta
+  // stock). Es el vínculo Catálogo↔Inventario que antes no existía.
+  recipe?: DishRecipeItem[];
 }
 
 // RF-17 - RF-24: Configuration
@@ -293,6 +306,15 @@ export interface CashSession {
 }
 
 // RF-66 - RF-72: Inventory
+// Categoría de insumo como entidad real (antes era un array de texto
+// hardcodeado en InventoryPage.tsx) — mismo patrón que `Area`.
+export interface InsumoCategory {
+  id: string;
+  name: string;
+  description: string;
+  insumoCount: number; // denormalizado, igual que Area.tableCount
+}
+
 export interface Insumo {
   id: string;
   name: string;
@@ -300,7 +322,8 @@ export interface Insumo {
   currentStock: number;
   minStock: number;
   costPerUnit: number;
-  category: string;
+  categoryId: string;
+  categoryName: string;
   lastRestockDate: string;
 }
 

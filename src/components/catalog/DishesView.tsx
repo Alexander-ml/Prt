@@ -6,6 +6,7 @@ import { DishFilterBar } from './DishFilterBar';
 import { DishCard } from './DishCard';
 import { DishFormModal, type DishFormData } from './DishFormModal';
 import { DEFAULT_DISH_IMAGE } from './catalogMeta';
+import { hasInsufficientStock } from '../inventory/inventoryMeta';
 
 const EMPTY_DISH_FORM: DishFormData = {
   name: '',
@@ -18,6 +19,7 @@ const EMPTY_DISH_FORM: DishFormData = {
   station: 'plancha',
   prepTimeMinutes: 15,
   allergensText: '',
+  recipe: [],
 };
 
 /**
@@ -27,7 +29,7 @@ const EMPTY_DISH_FORM: DishFormData = {
  * en el módulo de Mesas. `CatalogPage` solo decide si esta vista se muestra.
  */
 export const DishesView: React.FC = () => {
-  const { categories, dishes, addDish, updateDish, toggleDishActive, currentRole } = useApp();
+  const { categories, dishes, insumos, addDish, updateDish, updateDishRecipe, toggleDishActive, currentRole } = useApp();
   const isAdmin = currentRole === 'Administrador';
 
   // Search & Filter state (RF-14, RF-15)
@@ -85,8 +87,11 @@ export const DishesView: React.FC = () => {
         prepTimeMinutes: Number(dishFormData.prepTimeMinutes),
         allergens: allergens.length > 0 ? allergens : undefined
       });
+      // Se persiste siempre en edición (incluso vacía) para permitir
+      // limpiar una receta que ya existía.
+      updateDishRecipe(editingDish.id, dishFormData.recipe);
     } else {
-      addDish({
+      const newDishId = addDish({
         name: dishFormData.name,
         categoryId: dishFormData.categoryId,
         price: Number(dishFormData.price),
@@ -98,6 +103,9 @@ export const DishesView: React.FC = () => {
         prepTimeMinutes: Number(dishFormData.prepTimeMinutes),
         allergens: allergens.length > 0 ? allergens : undefined
       });
+      if (dishFormData.recipe.length > 0) {
+        updateDishRecipe(newDishId, dishFormData.recipe);
+      }
     }
     setIsDishModalOpen(false);
   };
@@ -116,7 +124,8 @@ export const DishesView: React.FC = () => {
         isAvailableToday: dish.isAvailableToday,
         station: dish.station,
         prepTimeMinutes: dish.prepTimeMinutes,
-        allergensText: dish.allergens?.join(', ') ?? ''
+        allergensText: dish.allergens?.join(', ') ?? '',
+        recipe: dish.recipe ?? []
       });
     } else {
       setEditingDish(null);
@@ -167,7 +176,13 @@ export const DishesView: React.FC = () => {
         <div className="row g-3 mb-4">
           {filteredDishes.map(dish => (
             <div key={dish.id} className="col-12 col-sm-6 col-lg-4 col-xl-3">
-              <DishCard dish={dish} isAdmin={isAdmin} onEdit={handleOpenDishModal} onToggleActive={toggleDishActive} />
+              <DishCard
+                dish={dish}
+                isAdmin={isAdmin}
+                onEdit={handleOpenDishModal}
+                onToggleActive={toggleDishActive}
+                insufficientStock={hasInsufficientStock(dish, insumos)}
+              />
             </div>
           ))}
         </div>
@@ -181,6 +196,7 @@ export const DishesView: React.FC = () => {
         formData={dishFormData}
         onChange={handleDishFormChange}
         categories={categories}
+        insumos={insumos}
       />
     </>
   );

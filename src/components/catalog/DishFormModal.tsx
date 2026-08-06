@@ -1,8 +1,9 @@
 import React from 'react';
-import type { Category, KitchenStation } from '../../types';
+import type { Category, DishRecipeItem, Insumo, KitchenStation } from '../../types';
 import { Modal } from '../common/Modal';
 import { CustomDropdownSelect } from '../common/CustomDropdownSelect';
 import { KITCHEN_STATION_META, KITCHEN_STATION_ORDER } from '../kitchen/kitchenMeta';
+import { DishRecipeEditor } from './DishRecipeEditor';
 
 /** Forma controlada del formulario de plato. La dueña del estado es `DishesView`. */
 export interface DishFormData {
@@ -19,6 +20,10 @@ export interface DishFormData {
   prepTimeMinutes: number;
   // Se captura como texto separado por comas y se convierte a array al guardar.
   allergensText: string;
+  // Vínculo Catálogo↔Inventario (RF-66+): insumos que consume una unidad
+  // servida del plato. OPCIONAL — un plato sin líneas de receta sigue
+  // funcionando exactamente igual que antes en Cocina y Pedidos.
+  recipe: DishRecipeItem[];
 }
 
 interface DishFormModalProps {
@@ -29,6 +34,8 @@ interface DishFormModalProps {
   formData: DishFormData;
   onChange: (patch: Partial<DishFormData>) => void;
   categories: Category[];
+  /** Insumos disponibles para vincular en la receta (sección "Insumos Utilizados"). */
+  insumos: Insumo[];
 }
 
 /**
@@ -46,6 +53,7 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
   formData,
   onChange,
   categories,
+  insumos,
 }) => {
   return (
     <Modal
@@ -166,6 +174,20 @@ export const DishFormModal: React.FC<DishFormModalProps> = ({
             />
             <div className="form-text">Separados por comas. Se muestran fijos en el ticket de cocina.</div>
           </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="form-label d-block mb-1">Insumos Utilizados (Receta) — Opcional</label>
+          <p className="form-text mt-0 mb-2">
+            Vincula los insumos y la cantidad por porción que consume este plato. Si configuras esto, el sistema
+            descontará stock real de Inventario automáticamente cada vez que Cocina marque una unidad del plato
+            como "Listo".
+          </p>
+          <DishRecipeEditor
+            insumos={insumos}
+            recipe={formData.recipe}
+            onChange={recipe => onChange({ recipe })}
+          />
         </div>
 
         <div className="d-flex justify-content-end gap-2 pt-3 border-top">

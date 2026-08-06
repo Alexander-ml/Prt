@@ -1221,3 +1221,20 @@ html, body {
 .toast-item.toast-danger  .toast-item-icon { background: var(--color-rose-bg);    color: var(--color-rose); }
 .toast-item.toast-warning .toast-item-icon { background: var(--color-amber-bg);   color: var(--color-amber); }
 .toast-item.toast-info    .toast-item-icon { background: var(--color-sky-bg);     color: var(--color-sky); }
+
+/* ───────────────────────────────────────────
+   26. CATÁLOGO — TARJETA DE PLATO
+   ─────────────────────────────────────────── */
+/* Antes este hover se manejaba mutando `style` a mano vía
+   onMouseEnter/onMouseLeave en CatalogPage.tsx. Se resuelve aquí de forma
+   declarativa, igual que .table-card:hover y .kds-ticket:hover, para que
+   DishCard sea un componente presentacional puro sin efectos secundarios
+   sobre el DOM. */
+.dish-card {
+  transition: var(--transition-base);
+}
+
+.dish-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.12);
+}

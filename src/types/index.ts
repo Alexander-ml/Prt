@@ -328,22 +328,41 @@ export interface Insumo {
 }
 
 // RF-73 - RF-75: Accounting
-export interface FinancialSummary {
-  period: string;
-  totalRevenue: number;
-  totalExpenses: number;
-  netProfit: number;
-  taxCollected: number;
-  averageTicket: number;
-  transactionsCount: number;
+// Categoría contable como entidad real (antes un <input> de texto libre en
+// AccountingPage.tsx) — mismo patrón que `InsumoCategory`/`Area`. `kind`
+// determina si aparece como opción al registrar un Ingreso, un Egreso, o
+// ambos, en el selector de LedgerEntryFormModal.
+export interface LedgerCategory {
+  id: string;
+  name: string;
+  kind: 'ingreso' | 'egreso' | 'ambos';
+  description: string;
+  entryCount: number; // denormalizado, igual que InsumoCategory.insumoCount
 }
 
 export interface LedgerEntry {
   id: string;
   date: string;
   type: 'ingreso' | 'egreso';
-  category: string;
+  categoryId: string;
+  categoryName: string;
   description: string;
   amount: number;
   reference: string;
+}
+
+// FinancialSummary ya NO es un estado que haya que mantener sincronizado a
+// mano (ver context/AppContext.tsx): es el tipo de retorno de
+// `computeFinancialSummary()` en components/accounting/accountingMeta.ts,
+// siempre derivado en vivo de `ledgerEntries` + `sales` para un período
+// dado. `period`, `averageTicket` y `transactionsCount` salieron de aquí:
+// el período ahora lo describe `PeriodRange.label` (accountingMeta.ts) y
+// el ticket promedio/conteo de transacciones ya es responsabilidad de
+// Ventas (SalesPage ya los calcula en vivo) — mantenerlos acá era una
+// segunda fuente de verdad sin uso real en Contabilidad.
+export interface FinancialSummary {
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+  taxCollected: number;
 }

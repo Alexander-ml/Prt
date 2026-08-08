@@ -25,7 +25,7 @@ import type {
   InsumoCategory,
   DishRecipeItem,
   LedgerEntry,
-  FinancialSummary
+  LedgerCategory
 } from '../types';
 import { resolvePaymentCategory } from '../utils/payments';
 import { round2, roundToNearestDime, sumMoney } from '../utils/money';
@@ -48,7 +48,7 @@ import {
   initialInsumos,
   initialInsumoCategories,
   initialLedger,
-  initialFinancialSummary
+  initialLedgerCategories
 } from '../mock/initialData';
 
 const COMPROBANTE_SERIES: Record<TipoComprobante, string> = {
@@ -174,9 +174,17 @@ export interface AppContextType {
   deleteInsumoCategory: (id: string) => boolean;
 
   // Accounting Module
+  // financialSummary YA NO vive acá como estado: es un valor siempre
+  // derivado de ledgerEntries + sales (ver computeFinancialSummary en
+  // components/accounting/accountingMeta.ts), así que ningún componente
+  // necesita "acordarse" de mantenerlo sincronizado — una venta anulada se
+  // refleja sola en los totales, sin ningún cambio adicional acá.
   ledgerEntries: LedgerEntry[];
-  financialSummary: FinancialSummary;
+  ledgerCategories: LedgerCategory[];
   addLedgerEntry: (entry: Omit<LedgerEntry, 'id'>) => void;
+  addLedgerCategory: (name: string, kind: LedgerCategory['kind'], description: string) => void;
+  updateLedgerCategory: (id: string, name: string, kind: LedgerCategory['kind'], description: string) => void;
+  deleteLedgerCategory: (id: string) => boolean;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -215,7 +223,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [insumos, setInsumos] = useState<Insumo[]>(initialInsumos);
   const [insumoCategories, setInsumoCategories] = useState<InsumoCategory[]>(initialInsumoCategories);
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>(initialLedger);
-  const [financialSummary, setFinancialSummary] = useState<FinancialSummary>(initialFinancialSummary);
+  const [ledgerCategories, setLedgerCategories] = useState<LedgerCategory[]>(initialLedgerCategories);
 
   // --- USER ACTIONS ---
   const addUser = (userData: Omit<UserAccount, 'id' | 'createdAt'>) => {
@@ -871,24 +879,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } : prev);
     }
 
+    // El asiento automático referencia la categoría contable real "Ventas
+    // Restobar" (semilla en initialLedgerCategories) — si por algún motivo
+    // no existiera, cae a un id vacío en vez de romper el cobro; el nombre
+    // denormalizado sigue siendo correcto para mostrar en el Libro Diario.
+    const ventasCategory = ledgerCategories.find(c => c.name === 'Ventas Restobar');
     const newLedger: LedgerEntry = {
       id: `led-${Date.now()}`,
       date: new Date().toISOString().split('T')[0],
       type: 'ingreso',
-      category: 'Ventas Restobar',
+      categoryId: ventasCategory?.id ?? '',
+      categoryName: ventasCategory?.name ?? 'Ventas Restobar',
       description: `Cobro ${serie}-${correlativo} - Mesa #${order.tableNumber}`,
       amount: total,
       reference: newSale.id
     };
     setLedgerEntries(prev => [newLedger, ...prev]);
+    if (ventasCategory) {
+      setLedgerCategories(prev => prev.map(c => c.id === ventasCategory.id ? { ...c, entryCount: c.entryCount + 1 } : c));
+    }
 
-    setFinancialSummary(prev => ({
-      ...prev,
-      totalRevenue: prev.totalRevenue + total,
-      netProfit: prev.netProfit + total,
-      transactionsCount: prev.transactionsCount + 1
-    }));
-
+    // financialSummary (Ingresos Totales, Utilidad Neta, IGV Recaudado) ya
+    // no se actualiza a mano acá: se deriva en vivo de ledgerEntries+sales
+    // (accountingMeta.computeFinancialSummary), así que anular esta venta
+    // más adelante (cancelSale) excluye este asiento de los totales
+    // automáticamente, sin que este código tenga que "acordarse" de nada.
     showToast('Cobro Realizado', `Comprobante ${serie}-${correlativo} por S/ ${total.toFixed(2)} emitido correctamente.`);
     return newSale;
   };
@@ -1067,6 +1082,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  // --- ACCOUNTING CATEGORY ACTIONS ---
+  // Réplica exacta de addInsumoCategory/updateInsumoCategory/deleteInsumoCategory
+  // — mismo patrón, incluido el bloqueo de borrado con asientos asignados.
+  // Resuelve de raíz el bug de la categoría de asiento como texto libre: una
+  // categoría contable nueva es una fila más, no un valor distinto tipeado
+  // a mano cada vez (ver diagnóstico de Contabilidad, Desventaja #5).
+  const addLedgerCategory = (name: string, kind: LedgerCategory['kind'], description: string) => {
+    const newCat: LedgerCategory = { id: `ledcat-${Date.now()}`, name, kind, description, entryCount: 0 };
+    setLedgerCategories(prev => [...prev, newCat]);
+    showToast('Categoría Contable Creada', `Categoría "${name}" agregada exitosamente.`);
+  };
+
+  const updateLedgerCategory = (id: string, name: string, kind: LedgerCategory['kind'], description: string) => {
+    setLedgerCategories(prev => prev.map(c => (c.id === id ? { ...c, name, kind, description } : c)));
+    setLedgerEntries(prev => prev.map(e => e.categoryId === id ? { ...e, categoryName: name } : e));
+    showToast('Categoría Contable Actualizada', 'Se actualizaron los datos de la categoría.');
+  };
+
+  const deleteLedgerCategory = (id: string): boolean => {
+    const count = ledgerEntries.filter(e => e.categoryId === id).length;
+    if (count > 0) {
+      showToast('No se puede eliminar', `La categoría tiene ${count} asientos asociados. Reasigne o elimine los asientos primero.`, 'danger');
+      return false;
+    }
+    setLedgerCategories(prev => prev.filter(c => c.id !== id));
+    showToast('Categoría Contable Eliminada', 'La categoría fue eliminada correctamente.', 'info');
+    return true;
+  };
+
   // --- ACCOUNTING ACTIONS ---
   const addLedgerEntry = (entryData: Omit<LedgerEntry, 'id'>) => {
     const newEntry: LedgerEntry = {
@@ -1074,18 +1118,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `led-${Date.now()}`
     };
     setLedgerEntries(prev => [newEntry, ...prev]);
+    setLedgerCategories(prev => prev.map(c => c.id === entryData.categoryId ? { ...c, entryCount: c.entryCount + 1 } : c));
 
-    setFinancialSummary(prev => {
-      const isIngreso = entryData.type === 'ingreso';
-      const rev = isIngreso ? prev.totalRevenue + entryData.amount : prev.totalRevenue;
-      const exp = !isIngreso ? prev.totalExpenses + entryData.amount : prev.totalExpenses;
-      return {
-        ...prev,
-        totalRevenue: rev,
-        totalExpenses: exp,
-        netProfit: rev - exp
-      };
-    });
+    // financialSummary ya no se mantiene a mano acá: se deriva en vivo de
+    // ledgerEntries (ver components/accounting/accountingMeta.ts), así que
+    // este asiento queda reflejado en los KPIs de Contabilidad sin ningún
+    // paso adicional.
     showToast('Asiento Contable', `Registro contable guardado (${entryData.type.toUpperCase()}: S/ ${entryData.amount.toFixed(2)}).`);
   };
 
@@ -1167,8 +1205,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateInsumoCategory,
         deleteInsumoCategory,
         ledgerEntries,
-        financialSummary,
-        addLedgerEntry
+        ledgerCategories,
+        addLedgerEntry,
+        addLedgerCategory,
+        updateLedgerCategory,
+        deleteLedgerCategory
       }}
     >
       {children}

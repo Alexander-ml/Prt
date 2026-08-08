@@ -13,8 +13,8 @@ import type {
   CashSession,
   Insumo,
   InsumoCategory,
-  LedgerEntry,
-  FinancialSummary
+  LedgerCategory,
+  LedgerEntry
 } from '../types';
 
 export const initialUsers: UserAccount[] = [
@@ -628,20 +628,31 @@ export const initialInsumos: Insumo[] = [
   { id: 'ins-8', name: 'Chocolate 70% Cacao Bitter', unit: 'Kg', currentStock: 5.0, minStock: 4.0, costPerUnit: 34.00, categoryId: 'inscat-8', categoryName: 'Repostería', lastRestockDate: '2026-07-24' }
 ];
 
-export const initialLedger: LedgerEntry[] = [
-  { id: 'led-1', date: '2026-07-27', type: 'ingreso', category: 'Ventas Restobar', description: 'Consolidadas Ventas Turno Almuerzo', amount: 3420.50, reference: 'POS-2026-0727-A' },
-  { id: 'led-2', date: '2026-07-27', type: 'ingreso', category: 'Ventas Restobar', description: 'Ventas en progreso Turno Noche', amount: 1850.00, reference: 'POS-2026-0727-N' },
-  { id: 'led-3', date: '2026-07-26', type: 'egreso', category: 'Insumos & Proveedores', description: 'Compra de Mariscos y Pescado Fresco - Distribuidora del Mar', amount: 840.00, reference: 'FAC-E001-4491' },
-  { id: 'led-4', date: '2026-07-25', type: 'egreso', category: 'Servicios Básicos', description: 'Pago Luz y Gas Industrial Julio', amount: 1250.00, reference: 'REC-998231' },
-  { id: 'led-5', date: '2026-07-24', type: 'egreso', category: 'Insumos & Proveedores', description: 'Abastecimiento Licores y Pisco - Bodega Tabernero', amount: 920.00, reference: 'FAC-B002-1182' }
+// Categorías contables como entidad real (RF-73+) — antes un <input> de
+// texto libre en AccountingPage.tsx, sin ninguna fuente única. Mismo
+// patrón que `initialInsumoCategories`. `entryCount` denormalizado contra
+// los asientos de `initialLedger` de abajo.
+export const initialLedgerCategories: LedgerCategory[] = [
+  { id: 'ledcat-1', name: 'Ventas Restobar', kind: 'ingreso', description: 'Ingresos por cobro de comandas — generados automáticamente al facturar', entryCount: 5 },
+  { id: 'ledcat-2', name: 'Otros Ingresos', kind: 'ingreso', description: 'Ingresos no operativos: alquiler de espacios, eventos privados, etc.', entryCount: 0 },
+  { id: 'ledcat-3', name: 'Insumos & Proveedores', kind: 'egreso', description: 'Compra de insumos, ingredientes y abastecimiento a proveedores', entryCount: 2 },
+  { id: 'ledcat-4', name: 'Servicios Básicos', kind: 'egreso', description: 'Luz, agua, gas industrial e internet del local', entryCount: 1 },
+  { id: 'ledcat-5', name: 'Personal y Planilla', kind: 'egreso', description: 'Sueldos, propinas consolidadas y beneficios del personal', entryCount: 0 },
+  { id: 'ledcat-6', name: 'Mantenimiento y Equipos', kind: 'egreso', description: 'Reparación y mantenimiento de cocina, mobiliario y equipos', entryCount: 0 }
 ];
 
-export const initialFinancialSummary: FinancialSummary = {
-  period: 'Julio 2026 (Mes Actual)',
-  totalRevenue: 48950.00,
-  totalExpenses: 21400.00,
-  netProfit: 27550.00,
-  taxCollected: 8811.00,
-  averageTicket: 168.50,
-  transactionsCount: 290
-};
+// Asientos manuales/consolidados (led-1 a led-5, ya existentes) + un asiento
+// automático por cada venta real del mock (led-6 a led-8, mismo criterio
+// que `processSaleBilling` genera en caliente) — así el IGV Recaudado y los
+// desgloses de Contabilidad ya muestran datos reales desde el primer
+// arranque, no solo tras registrar ventas nuevas en la demo.
+export const initialLedger: LedgerEntry[] = [
+  { id: 'led-1', date: '2026-07-27', type: 'ingreso', categoryId: 'ledcat-1', categoryName: 'Ventas Restobar', description: 'Consolidadas Ventas Turno Almuerzo', amount: 3420.50, reference: 'POS-2026-0727-A' },
+  { id: 'led-2', date: '2026-07-27', type: 'ingreso', categoryId: 'ledcat-1', categoryName: 'Ventas Restobar', description: 'Ventas en progreso Turno Noche', amount: 1850.00, reference: 'POS-2026-0727-N' },
+  { id: 'led-3', date: '2026-07-26', type: 'egreso', categoryId: 'ledcat-3', categoryName: 'Insumos & Proveedores', description: 'Compra de Mariscos y Pescado Fresco - Distribuidora del Mar', amount: 840.00, reference: 'FAC-E001-4491' },
+  { id: 'led-4', date: '2026-07-25', type: 'egreso', categoryId: 'ledcat-4', categoryName: 'Servicios Básicos', description: 'Pago Luz y Gas Industrial Julio', amount: 1250.00, reference: 'REC-998231' },
+  { id: 'led-5', date: '2026-07-24', type: 'egreso', categoryId: 'ledcat-3', categoryName: 'Insumos & Proveedores', description: 'Abastecimiento Licores y Pisco - Bodega Tabernero', amount: 920.00, reference: 'FAC-B002-1182' },
+  { id: 'led-6', date: '2026-07-27', type: 'ingreso', categoryId: 'ledcat-1', categoryName: 'Ventas Restobar', description: 'Cobro F001-1 - Mesa #4', amount: 247.80, reference: 'ven-1001' },
+  { id: 'led-7', date: '2026-07-27', type: 'ingreso', categoryId: 'ledcat-1', categoryName: 'Ventas Restobar', description: 'Cobro B001-1 - Mesa #8', amount: 166.32, reference: 'ven-1002' },
+  { id: 'led-8', date: '2026-07-27', type: 'ingreso', categoryId: 'ledcat-1', categoryName: 'Ventas Restobar', description: 'Cobro T001-1 - Mesa #12', amount: 113.28, reference: 'ven-1003' }
+];

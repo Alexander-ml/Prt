@@ -16,17 +16,17 @@ import { ConfirmModal } from '../components/common/ConfirmModal';
 import { PageHeader } from '../components/common/PageHeader';
 import { BillingView } from '../components/sales/BillingView';
 import { HistoryView } from '../components/sales/HistoryView';
-import {
-  SplitBillModal,
-  ClienteModal,
-  OpenCashSessionModal,
-  CloseCashSessionModal,
-  CashMovementModal,
-  ConfirmCheckoutModal,
-  ReopenSaleModal,
-  ReceiptModal,
-} from '../components/sales/SalesModals';
-import { round2, roundToNearestDime, sumMoney } from '../utils/money';
+import { SplitBillModal } from '../components/sales/modals/SplitBillModal';
+import { ClienteModal } from '../components/sales/modals/ClienteModal';
+import { OpenCashSessionModal } from '../components/sales/modals/OpenCashSessionModal';
+import { CloseCashSessionModal } from '../components/sales/modals/CloseCashSessionModal';
+import { CashMovementModal } from '../components/sales/modals/CashMovementModal';
+import { ConfirmCheckoutModal } from '../components/sales/modals/ConfirmCheckoutModal';
+import { ReopenSaleModal } from '../components/sales/modals/ReopenSaleModal';
+import { ReceiptModal } from '../components/sales/modals/ReceiptModal';
+import { round2, sumMoney } from '../utils/money';
+import { calculateSaleTotals, resolveIgvPercentLabel } from '../utils/saleTotals';
+import { evaluarRequisitosComprobante } from '../utils/comprobante';
 
 export const SalesPage: React.FC = () => {
   const {
@@ -124,17 +124,23 @@ export const SalesPage: React.FC = () => {
     : 0;
 
   const activePromo = promotions.find(p => p.id === selectedPromoId && p.active);
-  const discountAmount = activePromo ? round2((subtotal * activePromo.discountPercentage) / 100) : 0;
-  const activeIgv = taxes.find(t => t.active && t.name.includes('IGV'));
-  const igvPercent = activeIgv ? activeIgv.percentage : 18;
-  const taxAmount = round2(((subtotal - discountAmount) * igvPercent) / 100);
   const tipAmount = round2(parseFloat(tipAmountInput) || 0);
-  // Mismo redondeo comercial que aplica AppContext.processSaleBilling — se
-  // replica aquí solo para la vista previa, el monto real siempre lo calcula
-  // el contexto al procesar el cobro.
-  const { rounded: totalAmount, adjustment: roundingAdjustment } = roundToNearestDime(
-    subtotal - discountAmount + taxAmount + tipAmount
-  );
+  // Única fuente de verdad para el cálculo del cobro: suma TODOS los
+  // impuestos activos (antes solo el que tuviera "IGV" en el nombre), así
+  // que activar "Recargo al Servicio" desde Configuración ahora sí cambia
+  // el total. AppContext.processSaleBilling usa exactamente esta misma
+  // función al procesar el cobro real, para que la vista previa nunca se
+  // desalinee del monto que efectivamente se cobra.
+  const { discountAmount, taxAmount, roundingAdjustment, total: totalAmount } = calculateSaleTotals({
+    subtotal,
+    activePromo,
+    taxes,
+    tipAmount,
+  });
+  // Solo para el rótulo "IGV (X%)" que ya mostraba la pantalla — el monto
+  // real cobrado depende de taxAmount (todos los impuestos activos), no de
+  // este porcentaje.
+  const igvPercent = resolveIgvPercentLabel(taxes);
 
   const paidSoFar = sumMoney(paymentBreakdown.map(p => p.amount));
   const pendingBalance = round2(totalAmount - paidSoFar);
@@ -142,9 +148,11 @@ export const SalesPage: React.FC = () => {
   const cashReceived = parseFloat(cashReceivedInput) || 0;
   const changeGiven = cashLine ? round2(Math.max(0, cashReceived - cashLine.amount)) : 0;
 
-  const requiresCliente = comprobanteTipo === 'factura';
+  // Boleta >= S/ 700 exige cliente igual que Factura (regla SUNAT que antes
+  // no existía en el sistema); Factura además exige que el cliente tenga RUC.
+  const { requiereCliente: requiresCliente, requiereRUC } = evaluarRequisitosComprobante(comprobanteTipo, totalAmount);
   const selectedClienteObj = clientes.find(c => c.id === selectedClienteId);
-  const clienteOk = !requiresCliente || (!!selectedClienteObj && selectedClienteObj.tipoDocumento === 'RUC');
+  const clienteOk = !requiresCliente || (!!selectedClienteObj && (!requiereRUC || selectedClienteObj.tipoDocumento === 'RUC'));
   const isCashSessionOpen = !!cashSession && cashSession.status === 'abierta';
   const paymentComplete = paymentBreakdown.length > 0 && Math.abs(pendingBalance) < 0.01;
   const cashOk = !cashLine || cashReceived >= cashLine.amount - 0.001;

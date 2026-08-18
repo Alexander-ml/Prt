@@ -10,6 +10,7 @@ import type {
 import { SectionCard } from '../../common/SectionCard';
 import { CustomDropdownSelect } from '../../common/CustomDropdownSelect';
 import { formatMoney } from '../../../utils/money';
+import { evaluarRequisitosComprobante, BOLETA_CLIENTE_OBLIGATORIO_DESDE } from '../../../utils/comprobante';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
 
 const COMPROBANTE_OPTIONS: { id: TipoComprobante; icon: string; label: string; hint: string }[] = [
@@ -94,9 +95,12 @@ export const CheckoutPanel: React.FC<CheckoutPanelProps> = ({
   canConfirm,
   onOpenConfirmCheckout,
 }) => {
-  const requiresCliente = comprobanteTipo === 'factura';
+  // Misma regla centralizada que SalesPage.tsx y BillingView.tsx: Factura
+  // siempre exige cliente con RUC; Boleta lo exige desde S/ 700 (regla
+  // SUNAT que antes no existía en el sistema — solo se pedía para Factura).
+  const { requiereCliente: requiresCliente, requiereRUC } = evaluarRequisitosComprobante(comprobanteTipo, totalAmount);
   const selectedCliente = clientes.find(c => c.id === selectedClienteId);
-  const clienteWarning = requiresCliente && (!selectedCliente || selectedCliente.tipoDocumento !== 'RUC');
+  const clienteWarning = requiresCliente && (!selectedCliente || (requiereRUC && selectedCliente.tipoDocumento !== 'RUC'));
   const paymentStarted = paymentBreakdown.length > 0;
   const paymentComplete = paymentStarted && Math.abs(pendingBalance) < 0.01;
 
@@ -162,7 +166,9 @@ export const CheckoutPanel: React.FC<CheckoutPanelProps> = ({
             </div>
             {clienteWarning && (
               <small className="d-block mt-1 text-danger" style={{ fontSize: '0.75rem' }}>
-                Una factura requiere un cliente con RUC.
+                {requiereRUC
+                  ? 'Una factura requiere un cliente con RUC.'
+                  : `Una boleta desde S/ ${BOLETA_CLIENTE_OBLIGATORIO_DESDE} requiere registrar los datos del cliente.`}
               </small>
             )}
           </div>
@@ -282,7 +288,7 @@ export const CheckoutPanel: React.FC<CheckoutPanelProps> = ({
           </small>
         ) : !canConfirm && (
           <small className="d-block text-center mt-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-            Complete la forma de pago{clienteWarning ? ' y el cliente para factura' : ''} para habilitar el cobro.
+            Complete la forma de pago{clienteWarning ? ' y los datos del cliente' : ''} para habilitar el cobro.
           </small>
         )}
       </SectionCard>

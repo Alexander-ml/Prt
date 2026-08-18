@@ -28,7 +28,8 @@ import type {
   LedgerCategory
 } from '../types';
 import { resolvePaymentCategory } from '../utils/payments';
-import { round2, roundToNearestDime, sumMoney } from '../utils/money';
+import { round2, sumMoney } from '../utils/money';
+import { calculateSaleTotals, resolveIgvPercentLabel } from '../utils/saleTotals';
 
 import {
   initialUsers,
@@ -797,24 +798,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    let discountAmount = 0;
-    let resolvedDiscountLabel = discountLabel;
-    if (appliedPromoId) {
-      const promo = promotions.find(p => p.id === appliedPromoId);
-      if (promo) {
-        discountAmount = round2((subtotal * promo.discountPercentage) / 100);
-        resolvedDiscountLabel = resolvedDiscountLabel ?? `${promo.name} (${promo.discountPercentage}%)`;
-      }
-    }
+    const promo = appliedPromoId ? promotions.find(p => p.id === appliedPromoId) : undefined;
+    const resolvedDiscountLabel = promo ? (discountLabel ?? `${promo.name} (${promo.discountPercentage}%)`) : discountLabel;
 
-    const activeIgv = taxes.find(t => t.active && t.name.includes('IGV'));
-    const igvPercent = activeIgv ? activeIgv.percentage : 18;
-    const taxAmount = round2(((subtotal - discountAmount) * igvPercent) / 100);
-    // Redondeo comercial al S/ 0.10 más cercano — se muestra siempre en el
-    // resumen (aunque casi siempre sea S/ 0.00) para que nunca sea invisible.
-    const { rounded: total, adjustment: roundingAdjustment } = roundToNearestDime(
-      subtotal - discountAmount + taxAmount + tipAmount
-    );
+    // Única fuente de verdad para el cálculo del cobro — la misma función
+    // que usa la vista previa de SalesPage.tsx, para que el monto que el
+    // cajero ve antes de cobrar nunca pueda desalinearse del que realmente
+    // se registra. Corrección central de este refactor: taxAmount ahora
+    // suma TODOS los impuestos activos (antes solo el que tuviera "IGV" en
+    // el nombre, así que "Recargo al Servicio" quedaba configurado en
+    // Configuración sin ningún efecto real en el cobro).
+    const { discountAmount, taxAmount, roundingAdjustment, total } = calculateSaleTotals({
+      subtotal,
+      activePromo: promo,
+      taxes,
+      tipAmount,
+    });
+    // Solo para el rótulo "IGV (X%)" que se guarda en el comprobante — el
+    // monto real cobrado ya depende de taxAmount (todos los impuestos
+    // activos), no de este porcentaje.
+    const igvPercent = resolveIgvPercentLabel(taxes);
 
     const paymentMethod = resolvePaymentCategory(paymentBreakdown.map(p => p.method));
     const serie = COMPROBANTE_SERIES[comprobanteTipo];
@@ -908,7 +911,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newSale;
   };
 
+  // Anular una venta ya cobrada es una acción con impacto contable directo
+  // (excluye el asiento de ledgerEntries de los totales financieros); antes
+  // solo se ocultaba el botón en HistoryView cuando currentRole no era
+  // Administrador, así que la regla dependía enteramente de que la UI no
+  // mostrara el botón, no de una validación real. Ahora se verifica acá
+  // también, para que la función rechace la operación aunque se invoque
+  // fuera de la UI actual.
   const cancelSale = (saleId: string, reason: string) => {
+    if (currentRole !== 'Administrador') {
+      showToast('Acción no permitida', 'Solo un Administrador puede anular una venta.', 'danger');
+      return;
+    }
     setSales(prev => prev.map(s => s.id === saleId ? { ...s, isCancelled: true, estadoPago: 'anulada', cancellationReason: reason } : s));
     showToast('Venta Anulada', `La venta ${saleId} fue cancelada. Motivo: ${reason}`, 'warning');
   };
@@ -918,7 +932,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // reemplaza el flujo formal de una nota de crédito ante SUNAT para
   // Boleta/Factura ya emitidas — ese caso queda fuera del alcance de este
   // prototipo y debería resolverse con un módulo de notas de crédito.
+  // Mismo criterio de guardia de rol que cancelSale: antes solo se ocultaba
+  // el botón en HistoryView, ahora también se verifica currentRole acá.
   const updateSalePayment = (saleId: string, params: UpdateSalePaymentParams) => {
+    if (currentRole !== 'Administrador') {
+      showToast('Acción no permitida', 'Solo un Administrador puede corregir una venta ya cobrada.', 'danger');
+      return;
+    }
     const sale = sales.find(s => s.id === saleId);
     if (!sale) return;
     const { comprobanteTipo, cliente, paymentBreakdown, cashDetail, reason } = params;

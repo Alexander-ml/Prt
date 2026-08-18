@@ -14,7 +14,7 @@ export const DashboardPage: React.FC = () => {
   const occupiedTables  = tables.filter(t => t.status === 'ocupada').length;
   const reservedTables  = tables.filter(t => t.status === 'reservada').length;
   const availableTables = tables.filter(t => t.status === 'disponible').length;
-  
+
   const activeOrders    = orders.filter(o => o.status !== 'cerrado' && o.status !== 'cancelado');
   const openOrders = activeOrders.filter(order => order.status === 'abierto').length;
   const preparingOrders = activeOrders.filter(order => order.status === 'en_preparacion').length;
@@ -36,41 +36,7 @@ export const DashboardPage: React.FC = () => {
         icon="bi-speedometer2"
         title="Panel de Control"
         subtitle="Visión en tiempo real de la operación, sala, cocina y situación financiera del restaurante."
-        actions={
-          <div className="d-flex gap-2 w-100">
-            <button
-              className="btn-brand btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1"
-              style={{
-                borderRadius: 8,
-                minHeight: 44,
-                fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)',
-              }}
-              onClick={() => navigate('/mesas')}
-            >
-              <i
-                className="bi bi-grid-3x3-gap-fill"
-                aria-hidden="true"
-              ></i>
-              <span>Ir a Mesas</span>
-            </button>
-
-            <button
-              className="btn-brand btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1"
-              style={{
-                borderRadius: 8,
-                minHeight: 44,
-                fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)',
-              }}
-              onClick={() => navigate('/pedidos')}
-            >
-              <i
-                className="bi-receipt"
-                aria-hidden="true"
-              ></i>
-              <span>Nuevo Pedido</span>
-            </button>
-          </div>
-        }
+        
       />
 
       {/* KPI Cards */}
@@ -251,7 +217,7 @@ export const DashboardPage: React.FC = () => {
                             <div className="text-truncate" style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                               Mesa #{ord.tableNumber}
                               <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                                {' '}— {ord.waiterName}
+                                {' '}  {ord.waiterName}
                               </span>
                             </div>
                             <div className="text-truncate" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>

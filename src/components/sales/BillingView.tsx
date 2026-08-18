@@ -15,6 +15,7 @@ import { BillingSteps } from './billing/BillingSteps';
 import type { BillingStepDef } from './billing/BillingSteps';
 import { OrderSummaryCard } from './billing/OrderSummaryCard';
 import { CheckoutPanel } from './billing/CheckoutPanel';
+import { evaluarRequisitosComprobante } from '../../utils/comprobante';
 
 interface BillingViewProps {
   // Caja (RF-56 v2) — gate: sin turno abierto no se puede cobrar.
@@ -137,10 +138,12 @@ export const BillingView: React.FC<BillingViewProps> = ({
   const isCashOpen = !!cashSession && cashSession.status === 'abierta';
 
   // Estado de cada paso del flujo — se deriva de las mismas props que ya
-  // recibía este componente, sin agregar lógica de negocio nueva.
-  const requiresCliente = comprobanteTipo === 'factura';
+  // recibía este componente. requiresCliente ahora usa la misma regla
+  // centralizada que SalesPage.tsx (Factura siempre, Boleta desde S/ 700)
+  // en vez de repetir `comprobanteTipo === 'factura'` a mano.
+  const { requiereCliente: requiresCliente, requiereRUC } = evaluarRequisitosComprobante(comprobanteTipo, totalAmount);
   const selectedCliente = clientes.find(c => c.id === selectedClienteId);
-  const clienteOk = !requiresCliente || (!!selectedCliente && selectedCliente.tipoDocumento === 'RUC');
+  const clienteOk = !requiresCliente || (!!selectedCliente && (!requiereRUC || selectedCliente.tipoDocumento === 'RUC'));
   const paymentComplete = paymentBreakdown.length > 0 && Math.abs(pendingBalance) < 0.01;
 
   const steps: BillingStepDef[] = [

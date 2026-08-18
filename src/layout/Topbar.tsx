@@ -7,7 +7,7 @@ interface TopbarProps {
 }
 
 const ROLE_CONFIG: Record<UserRole, { icon: string; color: string; label: string; userName: string }> = {
-  Administrador: { icon: 'bi-shield-lock-fill', color: '#4f46e5', label: 'Administrador', userName: 'Carlos Mendoza' },
+  Administrador: { icon: 'bi-shield-lock-fill', color: '#f97316', label: 'Administrador', userName: 'Carlos Mendoza' },
   Mesero:        { icon: 'bi-person-walking',   color: '#059669', label: 'Mesero (Sala)', userName: 'Juan Pérez' },
   Cocina:        { icon: 'bi-fire',             color: '#d97706', label: 'Cocina (KDS)',  userName: 'Chef Mario' },
 };

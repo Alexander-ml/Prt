@@ -77,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <div
             style={{
               width: 34, height: 34, borderRadius: 8,
-              background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
+              background: 'linear-gradient(135deg, #f97316, #fb923c)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}

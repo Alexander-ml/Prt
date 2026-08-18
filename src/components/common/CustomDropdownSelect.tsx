@@ -35,7 +35,7 @@ const COLOR_MAP: Record<string, { bg: string; text: string; border: string; dot:
   danger:    { bg: '#f8d7da', text: '#58151c', border: '#f1aeb5', dot: '#dc3545' },
   warning:   { bg: '#fff3cd', text: '#664d03', border: '#ffe69c', dot: '#f59e0b' },
   info:      { bg: '#cff4fc', text: '#055160', border: '#9eeaf9', dot: '#0dcaf0' },
-  primary:   { bg: '#eef2ff', text: '#3730a3', border: '#c7d2fe', dot: '#4f46e5' },
+  primary:   { bg: '#ffedd5', text: '#ea580c', border: '#fed7aa', dot: '#f97316' },
   secondary: { bg: '#e9ecef', text: '#343a40', border: '#ced4da', dot: '#6c757d' },
   violet:    { bg: '#ede9fe', text: '#4c1d95', border: '#c4b5fd', dot: '#7c3aed' },
   amber:     { bg: '#fef3c7', text: '#92400e', border: '#fcd34d', dot: '#d97706' },
@@ -269,7 +269,7 @@ export const CustomDropdownSelect: React.FC<CustomDropdownSelectProps> = ({
           )}
         </span>
         {isSelected && (
-          <i className="bi bi-check-lg" style={{ color: colors?.dot ?? '#4f46e5', fontSize: '0.9rem', flexShrink: 0 }} />
+          <i className="bi bi-check-lg" style={{ color: colors?.dot ?? '#f97316', fontSize: '0.9rem', flexShrink: 0 }} />
         )}
       </li>
     );

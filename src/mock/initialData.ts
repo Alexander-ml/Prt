@@ -14,7 +14,12 @@ import type {
   Insumo,
   InsumoCategory,
   LedgerCategory,
-  LedgerEntry
+  LedgerEntry,
+  StockMovement,
+  WasteEntry,
+  Supplier,
+  SupplierPriceHistory,
+  InventoryAlert
 } from '../types';
 
 export const initialUsers: UserAccount[] = [
@@ -655,4 +660,41 @@ export const initialLedger: LedgerEntry[] = [
   { id: 'led-6', date: '2026-07-27', type: 'ingreso', categoryId: 'ledcat-1', categoryName: 'Ventas Restobar', description: 'Cobro F001-1 - Mesa #4', amount: 247.80, reference: 'ven-1001' },
   { id: 'led-7', date: '2026-07-27', type: 'ingreso', categoryId: 'ledcat-1', categoryName: 'Ventas Restobar', description: 'Cobro B001-1 - Mesa #8', amount: 166.32, reference: 'ven-1002' },
   { id: 'led-8', date: '2026-07-27', type: 'ingreso', categoryId: 'ledcat-1', categoryName: 'Ventas Restobar', description: 'Cobro T001-1 - Mesa #12', amount: 113.28, reference: 'ven-1003' }
+];
+
+export const initialSuppliers: Supplier[] = [
+  { id: 'sup-1', name: 'Distribuidora del Mar', contactName: 'Roberto Fernández', phone: '+51 999 111 222', email: 'ventas@distribuidoradelmar.pe', address: 'Av. Argentina 1234, Callao', ruc: '20511122233', active: true },
+  { id: 'sup-2', name: 'Bodega Tabernero', contactName: 'Claudia Ruiz', phone: '+51 988 333 444', email: 'claudia@bodegatabernero.pe', address: 'Jr. de la Unión 456, Lima', ruc: '20444455566', active: true },
+  { id: 'sup-3', name: 'Lácteos Andinos', contactName: 'Miguel Ángel', phone: '+51 977 555 666', email: 'pedidos@lacteosandinos.pe', address: 'Carretera Central Km 12, Chosica', ruc: '20677788899', active: true },
+  { id: 'sup-4', name: 'Verdulería La Huerta', contactName: 'Ana Torres', phone: '+51 966 777 888', email: 'ana@la-huerta.pe', address: 'Mercado de Surquillo Stand 45', ruc: '10777788890', active: true }
+];
+
+export const initialSupplierPriceHistory: SupplierPriceHistory[] = [
+  { id: 'sph-1', supplierId: 'sup-1', supplierName: 'Distribuidora del Mar', insumoId: 'ins-2', insumoName: 'Pescado Corvina Fresco', costPerUnit: 38.00, recordedAt: '2026-07-27' },
+  { id: 'sph-2', supplierId: 'sup-1', supplierName: 'Distribuidora del Mar', insumoId: 'ins-2', insumoName: 'Pescado Corvina Fresco', costPerUnit: 36.50, recordedAt: '2026-07-20' },
+  { id: 'sph-3', supplierId: 'sup-2', supplierName: 'Bodega Tabernero', insumoId: 'ins-3', insumoName: 'Pisco Quebranta 750ml', costPerUnit: 42.00, recordedAt: '2026-07-27' },
+  { id: 'sph-4', supplierId: 'sup-2', supplierName: 'Bodega Tabernero', insumoId: 'ins-3', insumoName: 'Pisco Quebranta 750ml', costPerUnit: 41.20, recordedAt: '2026-07-10' },
+  { id: 'sph-5', supplierId: 'sup-3', supplierName: 'Lácteos Andinos', insumoId: 'ins-5', insumoName: 'Queso Parmesano Grana Padano', costPerUnit: 85.00, recordedAt: '2026-07-27' },
+  { id: 'sph-6', supplierId: 'sup-4', supplierName: 'Verdulería La Huerta', insumoId: 'ins-7', insumoName: 'Limón Sutil Seleccionado', costPerUnit: 3.50, recordedAt: '2026-07-27' }
+];
+
+export const initialStockMovements: StockMovement[] = [
+  { id: 'sm-1', insumoId: 'ins-1', insumoName: 'Lomo Fino de Res Premium', type: 'compra', quantity: 5, unit: 'Kg', previousStock: 3.5, newStock: 8.5, reason: 'Compra semanal', referenceId: 'ord-1', createdAt: '2026-07-25 09:15' },
+  { id: 'sm-2', insumoId: 'ins-1', insumoName: 'Lomo Fino de Res Premium', type: 'consumo_venta', quantity: -2.5, unit: 'Kg', previousStock: 8.5, newStock: 6.0, reason: 'Venta día 25/07', referenceId: 'ven-1001', createdAt: '2026-07-25 20:30' },
+  { id: 'sm-3', insumoId: 'ins-1', insumoName: 'Lomo Fino de Res Premium', type: 'consumo_venta', quantity: -2.0, unit: 'Kg', previousStock: 6.0, newStock: 4.0, reason: 'Venta día 26/07', referenceId: 'ven-1002', createdAt: '2026-07-26 20:10' },
+  { id: 'sm-4', insumoId: 'ins-1', insumoName: 'Lomo Fino de Res Premium', type: 'ajuste_entrada', quantity: 4.5, unit: 'Kg', previousStock: 4.0, newStock: 8.5, reason: 'Ajuste por conteo físico', createdAt: '2026-07-27 08:45' },
+  { id: 'sm-5', insumoId: 'ins-3', insumoName: 'Pisco Quebranta 750ml', type: 'compra', quantity: 6, unit: 'Botella', previousStock: 0, newStock: 6, reason: 'Compra semanal', referenceId: 'ord-2', createdAt: '2026-07-20 10:00' },
+  { id: 'sm-6', insumoId: 'ins-3', insumoName: 'Pisco Quebranta 750ml', type: 'consumo_venta', quantity: -2, unit: 'Botella', previousStock: 6, newStock: 4, reason: 'Venta día 26/07', referenceId: 'ven-1003', createdAt: '2026-07-26 20:25' }
+];
+
+export const initialWasteEntries: WasteEntry[] = [
+  { id: 'waste-1', insumoId: 'ins-5', insumoName: 'Queso Parmesano Grana Padano', quantity: 0.3, unit: 'Kg', reason: 'rotura', costPerUnit: 85.00, totalCost: 25.50, createdAt: '2026-07-26 14:20' },
+  { id: 'waste-2', insumoId: 'ins-7', insumoName: 'Limón Sutil Seleccionado', quantity: 1.2, unit: 'Kg', reason: 'caducidad', costPerUnit: 3.50, totalCost: 4.20, createdAt: '2026-07-27 09:05' },
+  { id: 'waste-3', insumoId: 'ins-4', insumoName: 'Arroz Extra Superior', quantity: 0.5, unit: 'Kg', reason: 'preparacion', costPerUnit: 4.20, totalCost: 2.10, createdAt: '2026-07-27 11:30' }
+];
+
+export const initialInventoryAlerts: InventoryAlert[] = [
+  { id: 'alert-1', insumoId: 'ins-1', insumoName: 'Lomo Fino de Res Premium', type: 'stock_bajo', message: 'Stock por debajo del mínimo (8.5 < 10.0)', createdAt: '2026-07-27 08:00' },
+  { id: 'alert-2', insumoId: 'ins-3', insumoName: 'Pisco Quebranta 750ml', type: 'stock_bajo', message: 'Stock por debajo del mínimo (4.0 < 6.0)', createdAt: '2026-07-27 08:00' },
+  { id: 'alert-3', insumoId: 'ins-6', insumoName: 'Aceite de Trufa Negra 250ml', type: 'stock_critico', message: 'Stock crítico (1.5 < 2.0)', createdAt: '2026-07-27 08:00' }
 ];

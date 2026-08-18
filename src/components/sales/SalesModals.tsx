@@ -980,7 +980,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ sale, onClose, resta
           {sale.items.map((it, idx) => (
             <div key={idx} className="d-flex justify-content-between">
               <span>{it.quantity}x {it.dishName}</span>
-              <span>S/ {(it.price * it.quantity).toFixed(2)}</span>
+              <span>{formatMoney(it.price * it.quantity)}</span>
             </div>
           ))}
         </div>

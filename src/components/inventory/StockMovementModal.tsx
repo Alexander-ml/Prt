@@ -45,9 +45,9 @@ export const StockMovementModal: React.FC<StockMovementModalProps> = ({
           >
             <div
               className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-              style={{ width: 44, height: 44, background: '#e0e7ff' }}
+              style={{ width: 44, height: 44, background: 'var(--brand-primary-soft)' }}
             >
-              <i className="bi bi-boxes" style={{ color: '#4f46e5', fontSize: 20 }} />
+              <i className="bi bi-boxes" style={{ color: 'var(--brand-primary)', fontSize: 20 }} />
             </div>
             <div>
               <div className="fw-bold text-dark">{targetInsumo.name}</div>

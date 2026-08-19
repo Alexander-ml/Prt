@@ -6,14 +6,14 @@ interface TopbarProps {
   onMenuClick: () => void;
 }
 
-const ROLE_CONFIG: Record<UserRole, { icon: string; color: string; label: string; userName: string }> = {
-  Administrador: { icon: 'bi-shield-lock-fill', color: '#4f46e5', label: 'Administrador', userName: 'Carlos Mendoza' },
-  Mesero:        { icon: 'bi-person-walking',   color: '#059669', label: 'Mesero (Sala)', userName: 'Juan Pérez' },
-  Cocina:        { icon: 'bi-fire',             color: '#d97706', label: 'Cocina (KDS)',  userName: 'Chef Mario' },
+const ROLE_CONFIG: Record<UserRole, { icon: string; color: string; surface: string; border: string; label: string; userName: string }> = {
+  Administrador: { icon: 'bi-shield-lock-fill', color: 'var(--brand-black)', surface: 'var(--brand-black-soft)', border: 'var(--brand-black)', label: 'Administrador', userName: 'Carlos Mendoza' },
+  Mesero:        { icon: 'bi-person-walking', color: 'var(--brand-primary)', surface: 'var(--brand-primary-soft)', border: 'var(--brand-primary-subtle)', label: 'Mesero (Sala)', userName: 'Juan Pérez' },
+  Cocina:        { icon: 'bi-fire', color: 'var(--brand-yellow-text)', surface: 'var(--brand-yellow-soft)', border: 'var(--brand-yellow)', label: 'Cocina (KDS)', userName: 'Chef Mario' },
 };
 
 export const Topbar: React.FC<TopbarProps> = ({ onMenuClick }) => {
-  const { currentRole, setCurrentRole, restaurantInfo, insumos, orders } = useApp();
+  const { currentRole, setCurrentRole, insumos, orders } = useApp();
 
   const config = ROLE_CONFIG[currentRole];
   const lowStockCount = insumos.filter(i => i.currentStock <= i.minStock).length;
@@ -21,8 +21,8 @@ export const Topbar: React.FC<TopbarProps> = ({ onMenuClick }) => {
 
   return (
     <header className="app-topbar" role="banner">
-      {/* Left: Hamburger + Brand */}
-      <div className="d-flex align-items-center gap-3 min-w-0">
+      {/* Left: navegación móvil. El branding vive únicamente en Sidebar. */}
+      <div className="d-flex align-items-center min-w-0">
         <button
           className="topbar-hamburger"
           onClick={onMenuClick}
@@ -31,26 +31,6 @@ export const Topbar: React.FC<TopbarProps> = ({ onMenuClick }) => {
         >
           <i className="bi bi-list fs-5"></i>
         </button>
-
-        <div className="topbar-brand-name d-flex align-items-center gap-2 min-w-0">
-          <span
-            className="fw-bold text-truncate"
-            style={{ color: 'var(--text-primary)', fontSize: '0.95rem', letterSpacing: '-0.01em' }}
-          >
-            {restaurantInfo.name}
-          </span>
-          <span
-            className="d-none d-lg-inline-flex badge align-items-center gap-1"
-            style={{
-              background: 'var(--surface-muted)', color: 'var(--text-muted)',
-              border: '1px solid var(--border-color)', borderRadius: 6,
-              fontSize: '0.72rem', fontWeight: 600, padding: '0.25rem 0.6rem',
-            }}
-          >
-            <i className="bi bi-geo-alt-fill" style={{ fontSize: '0.65rem' }}></i>
-            {restaurantInfo.address}
-          </span>
-        </div>
       </div>
 
       {/* Right: Indicators + Role Switcher + User */}
@@ -61,8 +41,8 @@ export const Topbar: React.FC<TopbarProps> = ({ onMenuClick }) => {
           <div
             className="d-none d-md-flex align-items-center gap-1"
             style={{
-              background: 'var(--color-amber-bg)', border: '1px solid #fcd34d',
-              color: 'var(--color-amber-text)', borderRadius: 99, padding: '0.25rem 0.7rem',
+              background: 'var(--brand-yellow-soft)', border: '1px solid var(--brand-yellow)',
+              color: 'var(--brand-yellow-text)', borderRadius: 99, padding: '0.25rem 0.7rem',
               fontSize: '0.75rem', fontWeight: 700,
             }}
           >
@@ -76,8 +56,8 @@ export const Topbar: React.FC<TopbarProps> = ({ onMenuClick }) => {
           <div
             className="d-none d-md-flex align-items-center gap-1"
             style={{
-              background: 'var(--color-rose-bg)', border: '1px solid #fca5a5',
-              color: 'var(--color-rose-text)', borderRadius: 99, padding: '0.25rem 0.7rem',
+              background: 'var(--brand-red-soft)', border: '1px solid var(--brand-red)',
+              color: 'var(--brand-red-text)', borderRadius: 99, padding: '0.25rem 0.7rem',
               fontSize: '0.75rem', fontWeight: 700,
             }}
           >
@@ -125,13 +105,14 @@ export const Topbar: React.FC<TopbarProps> = ({ onMenuClick }) => {
                   <div
                     style={{
                       width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                      background: currentRole === role ? cfg.color : 'var(--surface-muted)',
+                      background: currentRole === role ? cfg.surface : 'var(--surface-muted)',
+                      border: `1px solid ${currentRole === role ? cfg.border : 'var(--border-color)'}`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
                   >
                     <i
                       className={`bi ${cfg.icon}`}
-                      style={{ color: currentRole === role ? '#fff' : cfg.color, fontSize: '0.95rem' }}
+                      style={{ color: cfg.color, fontSize: '0.95rem' }}
                     ></i>
                   </div>
                   <div>
@@ -139,7 +120,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onMenuClick }) => {
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1 }}>{cfg.userName}</div>
                   </div>
                   {currentRole === role && (
-                    <i className="bi bi-check2 ms-auto text-primary"></i>
+                    <i className="bi bi-check2 ms-auto" style={{ color: 'var(--brand-primary)' }}></i>
                   )}
                 </button>
               </li>
@@ -152,8 +133,8 @@ export const Topbar: React.FC<TopbarProps> = ({ onMenuClick }) => {
           <div
             style={{
               width: 36, height: 36, borderRadius: 9999,
-              background: `linear-gradient(135deg, ${config.color}33, ${config.color}66)`,
-              border: `2px solid ${config.color}44`,
+              background: config.surface,
+              border: `2px solid ${config.border}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: config.color, fontWeight: 800, fontSize: '0.85rem', flexShrink: 0,
             }}

@@ -66,7 +66,7 @@ export const FinancialDistributionCard: React.FC<FinancialDistributionCardProps>
               className="progress-bar"
               style={{
                 width: `${Math.max(0, Math.min(100, marginPct))}%`,
-                background: 'linear-gradient(90deg, #4f46e5, #818cf8)',
+                background: 'linear-gradient(90deg, var(--brand-primary), var(--brand-primary-subtle))',
                 borderRadius: 99,
                 transition: 'width 0.5s ease',
               }}

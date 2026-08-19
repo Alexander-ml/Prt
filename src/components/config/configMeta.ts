@@ -1,4 +1,4 @@
-import type { Promotion } from '../../types';
+import type { Promotion, RestaurantOpeningDay, Weekday } from '../../types';
 import type { DropdownOption } from '../common/CustomDropdownSelect';
 
 /**
@@ -38,3 +38,41 @@ export const PROMOTION_TYPE_OPTIONS: DropdownOption[] = PROMOTION_TYPE_ORDER.map
   label: PROMOTION_TYPE_META[type].label,
   icon: PROMOTION_TYPE_META[type].icon,
 }));
+
+export const WEEKDAY_META: { day: Weekday; label: string }[] = [
+  { day: 'lunes', label: 'Lunes' },
+  { day: 'martes', label: 'Martes' },
+  { day: 'miercoles', label: 'Miércoles' },
+  { day: 'jueves', label: 'Jueves' },
+  { day: 'viernes', label: 'Viernes' },
+  { day: 'sabado', label: 'Sábado' },
+  { day: 'domingo', label: 'Domingo' },
+];
+
+const DEFAULT_OPENING_SCHEDULE: RestaurantOpeningDay[] = [
+  { day: 'lunes', isOpen: false, opensAt: '12:00', closesAt: '22:00' },
+  { day: 'martes', isOpen: true, opensAt: '12:00', closesAt: '22:00' },
+  { day: 'miercoles', isOpen: true, opensAt: '12:00', closesAt: '22:00' },
+  { day: 'jueves', isOpen: true, opensAt: '12:00', closesAt: '22:00' },
+  { day: 'viernes', isOpen: true, opensAt: '12:00', closesAt: '23:00' },
+  { day: 'sabado', isOpen: true, opensAt: '12:00', closesAt: '23:00' },
+  { day: 'domingo', isOpen: true, opensAt: '12:00', closesAt: '22:00' },
+];
+
+/** Completa con valores seguros los datos antiguos que solo tenían texto libre. */
+export const normalizeOpeningSchedule = (schedule?: RestaurantOpeningDay[]): RestaurantOpeningDay[] => {
+  const configuredDays = new Map(schedule?.map(item => [item.day, item]));
+
+  return DEFAULT_OPENING_SCHEDULE.map(defaultDay => ({
+    ...(configuredDays.get(defaultDay.day) ?? defaultDay),
+  }));
+};
+
+/** Resumen legible que se conserva para recibos u otras vistas que aún usan texto. */
+export const formatOpeningHours = (schedule: RestaurantOpeningDay[]): string =>
+  schedule
+    .map(item => {
+      const label = WEEKDAY_META.find(day => day.day === item.day)?.label ?? item.day;
+      return item.isOpen ? `${label}: ${item.opensAt}–${item.closesAt}` : `${label}: cerrado`;
+    })
+    .join(' · ');

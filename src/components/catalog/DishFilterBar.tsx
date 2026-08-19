@@ -43,7 +43,7 @@ export const DishFilterBar: React.FC<DishFilterBarProps> = ({
     <SectionCard
       icon="bi-funnel"
       title="Filtros del Catálogo"
-      className="mb-4"
+      className="mb-4 catalog-filter-card"
       actions={
         onCreateDish && (
           <button type="button" className="btn-brand btn btn-sm fw-semibold rounded-3" onClick={onCreateDish}>
@@ -52,20 +52,24 @@ export const DishFilterBar: React.FC<DishFilterBarProps> = ({
         )
       }
     >
-      <div className="row g-3 align-items-center">
-        <div className="col-12">
+      <div className="catalog-filter-grid">
+        <div className="catalog-filter-search">
+          <label id="catalogSearchLabel" htmlFor="catalogDishSearch" className="catalog-filter-label">Buscar plato</label>
           <SearchBar
+            id="catalogDishSearch"
+            labelledBy="catalogSearchLabel"
             value={searchQuery}
             onChange={onSearchChange}
             placeholder="Buscar plato por nombre o descripción..."
           />
         </div>
-        <div className="col-12 col-sm-6 col-md-4">
-          {/* Select de categorización: colores neutros, sin semántica de alerta */}
+        <div>
+          <span id="catalogCategoryLabel" className="catalog-filter-label">Categoría</span>
           <CustomDropdownSelect
             value={selectedCategory}
             onChange={onCategoryChange}
             size="sm"
+            labelId="catalogCategoryLabel"
             options={[
               { value: 'todas', label: 'Todas las Categorías', icon: 'bi-grid-3x3-gap-fill', colorVariant: 'secondary' },
               ...categories.map(cat => ({
@@ -77,21 +81,23 @@ export const DishFilterBar: React.FC<DishFilterBarProps> = ({
             ]}
           />
         </div>
-        <div className="col-12 col-sm-6 col-md-4">
-          {/* Select de estado: colores semánticos por disponibilidad */}
+        <div>
+          <span id="catalogAvailabilityLabel" className="catalog-filter-label">Estado</span>
           <CustomDropdownSelect
             value={selectedAvailability}
             onChange={onAvailabilityChange}
             size="sm"
+            labelId="catalogAvailabilityLabel"
             options={AVAILABILITY_FILTER_OPTIONS}
           />
         </div>
-        <div className="col-12 col-sm-12 col-md-4">
-          {/* Select de estación de cocina (KDS): mismos colores/íconos que Cocina */}
+        <div>
+          <span id="catalogStationLabel" className="catalog-filter-label">Estación</span>
           <CustomDropdownSelect
             value={selectedStation}
             onChange={onStationChange}
             size="sm"
+            labelId="catalogStationLabel"
             placeholder="Estación de cocina..."
             options={[
               { value: 'todas', label: 'Todas las Estaciones', icon: 'bi-grid-3x3-gap-fill', colorVariant: 'secondary' },

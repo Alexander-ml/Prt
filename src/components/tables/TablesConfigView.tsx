@@ -7,6 +7,7 @@ import { ConfirmModal } from '../common/ConfirmModal';
 import { CustomDropdownSelect } from '../common/CustomDropdownSelect';
 import { EmptyState } from '../common/EmptyState';
 import { Badge } from '../common/Badge';
+import { MobileAreaList, MobileTableList } from './TablesConfigMobileLists';
 import { TABLE_STATUS_META } from './tableStatusMeta';
 
 /**
@@ -61,6 +62,24 @@ export const TablesConfigView: React.FC = () => {
     setIsTableModalOpen(true);
   };
 
+  const openNewAreaModal = () => {
+    setEditingArea(null);
+    setAreaFormData({ name: '', description: '' });
+    setIsAreaModalOpen(true);
+  };
+
+  const openEditAreaModal = (area: Area) => {
+    setEditingArea(area);
+    setAreaFormData({ name: area.name, description: area.description });
+    setIsAreaModalOpen(true);
+  };
+
+  const openEditTableModal = (table: Table) => {
+    setEditingTable(table);
+    setTableFormData({ number: table.number, areaId: table.areaId, capacity: table.capacity });
+    setIsTableModalOpen(true);
+  };
+
   return (
     <div className="row g-4 mb-4">
       {/* Left Column: Areas Management (RF-25, RF-26, RF-27, RF-28) */}
@@ -68,22 +87,27 @@ export const TablesConfigView: React.FC = () => {
         <SectionCard
           icon="bi-geo-alt-fill"
           title="Áreas Configuradas"
+          className="table-config-section-card"
           noPadding
           actions={
             <button
               type="button"
               className="btn-brand btn btn-sm fw-semibold"
-              onClick={() => {
-                setEditingArea(null);
-                setAreaFormData({ name: '', description: '' });
-                setIsAreaModalOpen(true);
-              }}
+              onClick={openNewAreaModal}
             >
               <i className="bi bi-plus-lg me-1" aria-hidden="true"></i> Nueva Área
             </button>
           }
         >
-          <div className="table-responsive-x">
+          <div className="d-sm-none">
+            <MobileAreaList
+              areas={areas}
+              tables={tables}
+              onEdit={openEditAreaModal}
+              onDelete={setDeletingArea}
+            />
+          </div>
+          <div className="d-none d-sm-block table-responsive-x">
             <div className="custom-table-container">
               <table className="custom-table" style={{ minWidth: 420 }}>
                 <thead>
@@ -122,11 +146,7 @@ export const TablesConfigView: React.FC = () => {
                                 type="button"
                                 className="btn-icon btn-icon-primary"
                                 aria-label={`Editar área ${area.name}`}
-                                onClick={() => {
-                                  setEditingArea(area);
-                                  setAreaFormData({ name: area.name, description: area.description });
-                                  setIsAreaModalOpen(true);
-                                }}
+                                onClick={() => openEditAreaModal(area)}
                               >
                                 <i className="bi bi-pencil-fill" aria-hidden="true"></i>
                               </button>
@@ -156,6 +176,7 @@ export const TablesConfigView: React.FC = () => {
         <SectionCard
           icon="bi-table"
           title="Listado de Mesas Registradas"
+          className="table-config-section-card"
           noPadding
           actions={
             <button type="button" className="btn-brand btn btn-sm fw-semibold" onClick={openNewTableModal}>
@@ -163,7 +184,14 @@ export const TablesConfigView: React.FC = () => {
             </button>
           }
         >
-          <div className="table-responsive-x">
+          <div className="d-sm-none">
+            <MobileTableList
+              tables={tables}
+              onEdit={openEditTableModal}
+              onDelete={setDeletingTable}
+            />
+          </div>
+          <div className="d-none d-sm-block table-responsive-x">
             <div className="custom-table-container">
               <table className="custom-table" style={{ minWidth: 620 }}>
                 <thead>
@@ -206,11 +234,7 @@ export const TablesConfigView: React.FC = () => {
                                 type="button"
                                 className="btn-icon btn-icon-primary"
                                 aria-label={`Editar mesa ${table.number}`}
-                                onClick={() => {
-                                  setEditingTable(table);
-                                  setTableFormData({ number: table.number, areaId: table.areaId, capacity: table.capacity });
-                                  setIsTableModalOpen(true);
-                                }}
+                                onClick={() => openEditTableModal(table)}
                               >
                                 <i className="bi bi-pencil-fill" aria-hidden="true"></i>
                               </button>

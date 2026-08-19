@@ -61,6 +61,7 @@ export const CategoriesView: React.FC = () => {
         icon="bi-tags-fill"
         title="Categorías del Menú"
         noPadding
+        className="catalog-categories-card"
         actions={
           isAdmin && (
             <button

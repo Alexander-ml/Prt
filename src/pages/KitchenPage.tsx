@@ -1,16 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { PageHeader } from '../components/common/PageHeader';
+import { ResponsiveSectionNav } from '../components/common/ResponsiveSectionNav';
 import { Modal } from '../components/common/Modal';
 import { EmptyState } from '../components/common/EmptyState';
 import { CustomDropdownSelect } from '../components/common/CustomDropdownSelect';
 import { KitchenStatsRow } from '../components/kitchen/KitchenStatsRow';
-import { KitchenToolbar, type KitchenViewMode } from '../components/kitchen/KitchenToolbar';
+import { KitchenToolbar, type KitchenOrderScope, type KitchenViewMode } from '../components/kitchen/KitchenToolbar';
 import { KitchenOrderCard } from '../components/kitchen/KitchenOrderCard';
 import { KitchenStationBoard } from '../components/kitchen/KitchenStationBoard';
 import { useNowTick } from '../hooks/useNowTick';
 import { useKitchenAlertSound } from '../hooks/useKitchenAlertSound';
-import { getElapsedMinutes, getExpectedMinutes, getTimeStatus } from '../components/kitchen/kitchenMeta';
+import { getElapsedMinutes, getExpectedMinutes, getKdsQueueRank, getTimeStatus } from '../components/kitchen/kitchenMeta';
+
+const KITCHEN_VIEW_ITEMS = [
+  { value: 'mesa', label: 'Por Comanda', icon: 'bi-grid-3x3-gap-fill' },
+  { value: 'estacion', label: 'Por Estación', icon: 'bi-diagram-3-fill' },
+];
 
 export const KitchenPage: React.FC = () => {
   const {
@@ -37,7 +43,7 @@ export const KitchenPage: React.FC = () => {
   // --- Estado de la barra de herramientas ---
   const [viewMode, setViewMode] = useState<KitchenViewMode>('mesa');
   const [searchQuery, setSearchQuery] = useState('');
-  const [hideReady, setHideReady] = useState(false);
+  const [orderScope, setOrderScope] = useState<KitchenOrderScope>('all');
 
   // --- Modal: Notificar Agotado (RF-55) ---
   const [isIndisponibleModalOpen, setIsIndisponibleModalOpen] = useState(false);
@@ -103,10 +109,11 @@ export const KitchenPage: React.FC = () => {
     knownOrderIdsRef.current = currentIds;
   }, [kitchenOrders, dishes, playNewOrderBeep, playUrgentBeep]);
 
-  // --- Búsqueda + ocultar listos + comandas prioritarias primero ---
+  // --- Búsqueda + filtro de estado de comanda + cola operativa ---
   const filteredOrders = useMemo(() => {
     let list = kitchenOrders;
-    if (hideReady) list = list.filter(o => o.status !== 'listo');
+    if (orderScope === 'active') list = list.filter(o => o.status === 'en_preparacion');
+    if (orderScope === 'ready') list = list.filter(o => o.status === 'listo');
 
     const q = searchQuery.trim().toLowerCase();
     if (q) {
@@ -118,21 +125,26 @@ export const KitchenPage: React.FC = () => {
       );
     }
 
-    // Array.prototype.sort es estable: esto solo antepone las prioritarias
-    // sin alterar el orden cronológico ya aplicado en kitchenOrders.
-    return [...list].sort((a, b) => Number(!!b.priority) - Number(!!a.priority));
-  }, [kitchenOrders, hideReady, searchQuery]);
+    return [...list].sort((a, b) => {
+      const rankDiff = getKdsQueueRank(a, dishes) - getKdsQueueRank(b, dishes);
+      if (rankDiff !== 0) return rankDiff;
+      const elapsedA = getElapsedMinutes(a.sentToKitchenAt) ?? 0;
+      const elapsedB = getElapsedMinutes(b.sentToKitchenAt) ?? 0;
+      return elapsedB - elapsedA;
+    });
+  }, [kitchenOrders, orderScope, searchQuery, dishes]);
 
   // --- Resumen (siempre sobre el total real, no sobre lo filtrado) ---
   const activeCommandas = kitchenOrders.filter(o => o.status === 'en_preparacion').length;
-  const itemsListos = kitchenOrders.reduce(
-    (acc, o) => acc + o.items.filter(i => i.status === 'listo' || i.status === 'entregado').length,
-    0
-  );
   const itemsPendientes = kitchenOrders.reduce(
-    (acc, o) => acc + o.items.filter(i => i.status === 'pendiente' || i.status === 'preparando').length,
+    (acc, o) => acc + o.items.filter(i => i.status === 'pendiente').length,
     0
   );
+  const itemsPreparando = kitchenOrders.reduce(
+    (acc, o) => acc + o.items.filter(i => i.status === 'preparando').length,
+    0
+  );
+  const commandasListas = kitchenOrders.filter(o => o.status === 'listo').length;
   const urgentOrdersCount = kitchenOrders.filter(o => {
     if (o.status === 'listo') return false;
     return getTimeStatus(getElapsedMinutes(o.sentToKitchenAt), getExpectedMinutes(o, dishes)) === 'urgent';
@@ -185,35 +197,33 @@ export const KitchenPage: React.FC = () => {
         title="Cocina - Kitchen Display System (KDS)"
         subtitle="Control de comandas en tiempo real, tiempos de preparación y disponibilidad de platos."
         actions={
-          <button
-            type="button"
-            className="btn btn-outline-danger fw-semibold"
-            onClick={() => setIsIndisponibleModalOpen(true)}
-          >
-            <i className="bi bi-slash-circle-fill me-2" aria-hidden="true"></i>
-            Notificar Agotado
-          </button>
+          <ResponsiveSectionNav
+            items={KITCHEN_VIEW_ITEMS}
+            value={viewMode}
+            onChange={value => setViewMode(value as KitchenViewMode)}
+            ariaLabel="Cambiar vista de cocina"
+          />
         }
       />
 
       {/* Summary Stats Row */}
       <KitchenStatsRow
         activeCommandas={activeCommandas}
-        itemsListos={itemsListos}
         itemsPendientes={itemsPendientes}
+        itemsPreparando={itemsPreparando}
+        commandasListas={commandasListas}
         urgentOrdersCount={urgentOrdersCount}
       />
 
-      {/* Toolbar: vista por mesa/estación, búsqueda, ocultar listos, sonido */}
+      {/* Toolbar: búsqueda, filtro de comandas, alertas y herramientas auxiliares */}
       <KitchenToolbar
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        hideReady={hideReady}
-        onToggleHideReady={() => setHideReady(v => !v)}
+        orderScope={orderScope}
+        onOrderScopeChange={setOrderScope}
         soundEnabled={soundEnabled}
         onToggleSound={() => setSoundEnabled(!soundEnabled)}
+        onOpenIndisponible={() => setIsIndisponibleModalOpen(true)}
       />
 
       {/* Tickets */}
@@ -237,9 +247,9 @@ export const KitchenPage: React.FC = () => {
           onRequestCancelItem={handleRequestCancelItem}
         />
       ) : (
-        <div className="row g-4 mb-4">
+        <div className="kds-orders-grid mb-4">
           {filteredOrders.map(order => (
-            <div key={order.id} className="col-12 col-md-6 col-xl-4">
+            <div key={order.id}>
               <KitchenOrderCard
                 order={order}
                 dishes={dishes}

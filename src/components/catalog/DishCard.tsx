@@ -8,6 +8,7 @@ interface DishCardProps {
   isAdmin: boolean;
   onEdit: (dish: Dish) => void;
   onToggleActive: (dishId: string) => void;
+  onViewIngredients: (dish: Dish) => void;
   /** true si algún insumo de la receta tiene menos stock del que necesita
    *  una porción. Solo informativo — no cambia `isAvailableToday` (ver
    *  diagnóstico de Inventario, sección 4.3 y sección 8). */
@@ -26,10 +27,17 @@ interface DishCardProps {
  * `.dish-card:hover` (ver custom.css), en vez de mutar `style` a mano con
  * `onMouseEnter`/`onMouseLeave` como hacía la versión anterior.
  */
-export const DishCard: React.FC<DishCardProps> = ({ dish, isAdmin, onEdit, onToggleActive, insufficientStock }) => {
+export const DishCard: React.FC<DishCardProps> = ({
+  dish,
+  isAdmin,
+  onEdit,
+  onToggleActive,
+  onViewIngredients,
+  insufficientStock,
+}) => {
   return (
-    <div className="dish-card card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
-      <div className="position-relative" style={{ height: 150, overflow: 'hidden', background: '#f8fafc' }}>
+    <article className="dish-card card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+      <div className="dish-card-media position-relative">
         <img src={dish.image} alt={dish.name} className="w-100 h-100 object-fit-cover" />
         <div className="position-absolute top-0 start-0 m-2">
           <Badge status={dish.categoryName} variant="dark" />
@@ -38,9 +46,9 @@ export const DishCard: React.FC<DishCardProps> = ({ dish, isAdmin, onEdit, onTog
           <Badge status={dish.active ? 'Activo' : 'Desactivado'} variant={dish.active ? 'success' : 'secondary'} />
         </div>
         {!dish.isAvailableToday && (
-          <div className="position-absolute bottom-0 start-0 end-0 bg-danger bg-opacity-90 text-white text-center py-1 small fw-bold text-uppercase">
+          <div className="dish-card-unavailable position-absolute bottom-0 start-0 end-0 text-center py-1 small fw-bold text-uppercase">
             <i className="bi bi-slash-circle-fill me-1" aria-hidden="true"></i>
-            Agotado Hoy
+            No disponible hoy
           </div>
         )}
       </div>
@@ -109,11 +117,20 @@ export const DishCard: React.FC<DishCardProps> = ({ dish, isAdmin, onEdit, onTog
           </div>
         )}
 
-        <div className="d-flex align-items-center justify-content-between pt-2 border-top mt-auto">
-          <div>
-            {dish.isAvailableToday && (
-              <Badge status="Disponible Hoy" variant="info" icon="bi-check-lg" />
-            )}
+        <div className="dish-card-actions pt-2 border-top mt-auto">
+          <div className="d-flex align-items-center flex-wrap gap-2">
+            <Badge
+              status={dish.isAvailableToday ? 'Disponible hoy' : 'No disponible hoy'}
+              variant={dish.isAvailableToday ? 'info' : 'danger'}
+              icon={dish.isAvailableToday ? 'bi-check-lg' : 'bi-slash-circle-fill'}
+            />
+            <button
+              type="button"
+              className="btn btn-link btn-sm catalog-view-ingredients"
+              onClick={() => onViewIngredients(dish)}
+            >
+              <i className="bi bi-box-seam me-1" aria-hidden="true"></i> Ver insumos
+            </button>
           </div>
           {isAdmin && (
             <div className="d-flex gap-1">
@@ -137,6 +154,6 @@ export const DishCard: React.FC<DishCardProps> = ({ dish, isAdmin, onEdit, onTog
           )}
         </div>
       </div>
-    </div>
+    </article>
   );
 };

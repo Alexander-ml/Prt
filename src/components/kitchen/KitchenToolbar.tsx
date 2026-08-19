@@ -1,17 +1,18 @@
 import React from 'react';
 import { SearchBar } from '../common/SearchBar';
+import { CustomDropdownSelect } from '../common/CustomDropdownSelect';
 
 export type KitchenViewMode = 'mesa' | 'estacion';
+export type KitchenOrderScope = 'all' | 'active' | 'ready';
 
 interface KitchenToolbarProps {
-  viewMode: KitchenViewMode;
-  onViewModeChange: (mode: KitchenViewMode) => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  hideReady: boolean;
-  onToggleHideReady: () => void;
+  orderScope: KitchenOrderScope;
+  onOrderScopeChange: (scope: KitchenOrderScope) => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
+  onOpenIndisponible: () => void;
 }
 
 /**
@@ -20,78 +21,64 @@ interface KitchenToolbarProps {
  * apilen sin fricción en móvil/tablet (dispositivo típico de cocina).
  */
 export const KitchenToolbar: React.FC<KitchenToolbarProps> = ({
-  viewMode,
-  onViewModeChange,
   searchQuery,
   onSearchChange,
-  hideReady,
-  onToggleHideReady,
+  orderScope,
+  onOrderScopeChange,
   soundEnabled,
   onToggleSound,
+  onOpenIndisponible,
 }) => {
   return (
     <div className="section-card mb-4">
-      <div className="section-card-body py-3 d-flex flex-wrap align-items-center gap-2">
-        {/* Vista: Por Mesa / Por Estación */}
-        <div
-          className="btn-group flex-shrink-0"
-          role="group"
-          aria-label="Modo de visualización del KDS"
-        >
+      <div className="section-card-body kds-toolbar">
+        <div className="kds-toolbar-search">
+          <label id="kdsSearchLabel" htmlFor="kdsSearch" className="kds-toolbar-label">Buscar</label>
+          <SearchBar
+            id="kdsSearch"
+            labelledBy="kdsSearchLabel"
+            value={searchQuery}
+            onChange={onSearchChange}
+            placeholder="Mesa, área o mesero..."
+          />
+        </div>
+
+        <div className="kds-toolbar-control">
+          <span id="kdsScopeLabel" className="kds-toolbar-label">Mostrar</span>
+          <CustomDropdownSelect
+            id="kdsOrderScope"
+            labelId="kdsScopeLabel"
+            value={orderScope}
+            onChange={value => onOrderScopeChange(value as KitchenOrderScope)}
+            size="sm"
+            options={[
+              { value: 'all', label: 'Todas las comandas', icon: 'bi-collection-fill', colorVariant: 'secondary' },
+              { value: 'active', label: 'Solo en preparación', icon: 'bi-fire', colorVariant: 'warning' },
+              { value: 'ready', label: 'Listas para pase', icon: 'bi-check-circle-fill', colorVariant: 'success' },
+            ]}
+          />
+        </div>
+
+        <div className="kds-toolbar-control kds-toolbar-sound-control">
+          <span className="kds-toolbar-label">Alertas</span>
           <button
             type="button"
-            className={`btn fw-semibold ${viewMode === 'mesa' ? 'btn-brand text-white' : 'btn-outline-secondary'}`}
-            style={{ borderRadius: '8px 0 0 8px' }}
-            aria-pressed={viewMode === 'mesa'}
-            onClick={() => onViewModeChange('mesa')}
+            className={`btn kds-toolbar-sound ${soundEnabled ? 'is-enabled' : ''}`}
+            aria-pressed={soundEnabled}
+            onClick={onToggleSound}
           >
-            <i className="bi bi-grid-3x3-gap-fill me-1" aria-hidden="true"></i>
-            Por Mesa
-          </button>
-          <button
-            type="button"
-            className={`btn fw-semibold ${viewMode === 'estacion' ? 'btn-brand text-white' : 'btn-outline-secondary'}`}
-            style={{ borderRadius: '0 8px 8px 0' }}
-            aria-pressed={viewMode === 'estacion'}
-            onClick={() => onViewModeChange('estacion')}
-          >
-            <i className="bi bi-diagram-3-fill me-1" aria-hidden="true"></i>
-            Por Estación
+            <i className={`bi ${soundEnabled ? 'bi-bell-fill' : 'bi-bell-slash-fill'}`} aria-hidden="true"></i>
+            {soundEnabled ? 'Sonido activo' : 'Sonido apagado'}
           </button>
         </div>
 
-        {/* Búsqueda por mesa o mesero */}
-        <SearchBar
-          value={searchQuery}
-          onChange={onSearchChange}
-          placeholder="Buscar por mesa o mesero..."
-          className="flex-grow-1"
-        />
-
-        {/* Ocultar listos */}
-        <button
-          type="button"
-          className={`btn fw-semibold flex-shrink-0 ${hideReady ? 'btn-brand-outline' : 'btn-outline-secondary'}`}
-          style={{ borderRadius: 8 }}
-          aria-pressed={hideReady}
-          onClick={onToggleHideReady}
-        >
-          <i className={`bi ${hideReady ? 'bi-eye-slash-fill' : 'bi-eye-fill'} me-1`} aria-hidden="true"></i>
-          <span className="d-none d-sm-inline">Ocultar Listos</span>
-          <span className="d-inline d-sm-none">Listos</span>
-        </button>
-
-        {/* Sonido de alertas */}
-        <button
-          type="button"
-          className={`btn-icon flex-shrink-0 ${soundEnabled ? 'btn-icon-primary' : ''}`}
-          aria-pressed={soundEnabled}
-          aria-label={soundEnabled ? 'Silenciar alertas sonoras' : 'Activar alertas sonoras'}
-          title={soundEnabled ? 'Silenciar alertas sonoras' : 'Activar alertas sonoras'}
-          onClick={onToggleSound}
-        >
-          <i className={`bi ${soundEnabled ? 'bi-bell-fill' : 'bi-bell-slash-fill'}`} aria-hidden="true"></i>
-        </button>
+        <div className="kds-toolbar-control kds-toolbar-tools">
+          <span className="kds-toolbar-label">Herramientas</span>
+          <button type="button" className="btn btn-outline-danger kds-toolbar-outage" onClick={onOpenIndisponible}>
+            <i className="bi bi-slash-circle-fill" aria-hidden="true"></i>
+            Notificar agotado
+          </button>
+        </div>
       </div>
     </div>
   );

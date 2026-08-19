@@ -29,7 +29,7 @@ export const KitchenStationBoard: React.FC<KitchenStationBoardProps> = ({
   const statusRank: Record<string, number> = { pendiente: 0, preparando: 1, listo: 2, entregado: 3 };
 
   return (
-    <div className="row g-3 mb-4 align-items-start">
+    <div className="kds-station-grid mb-4">
       {KITCHEN_STATION_ORDER.map(station => {
         const meta = KITCHEN_STATION_META[station];
 
@@ -50,8 +50,7 @@ export const KitchenStationBoard: React.FC<KitchenStationBoardProps> = ({
         const pendingCount = rows.filter(r => r.item.status === 'pendiente' || r.item.status === 'preparando').length;
 
         return (
-          <div key={station} className="col-12 col-md-6 col-xl-4 col-xxl-20p">
-            <div className="kds-station-column">
+          <section key={station} className="kds-station-column" aria-label={`${meta.label}: ${pendingCount} pendientes`}>
               <div className={`kds-station-header kds-station-header-${meta.colorTheme}`}>
                 <span className="d-flex align-items-center gap-2">
                   <i className={`bi ${meta.icon}`} aria-hidden="true"></i>
@@ -61,7 +60,7 @@ export const KitchenStationBoard: React.FC<KitchenStationBoardProps> = ({
               </div>
               <div className="kds-station-body">
                 {rows.length === 0 ? (
-                  <EmptyState icon="bi-check2-circle" title="Sin pendientes" />
+                  <EmptyState icon="bi-check2-circle" title="Sin actividad" description="No hay ítems activos en esta estación." />
                 ) : (
                   rows.map(({ order, item }) => (
                     <div key={item.id} className="kds-station-item-wrap">
@@ -82,8 +81,7 @@ export const KitchenStationBoard: React.FC<KitchenStationBoardProps> = ({
                   ))
                 )}
               </div>
-            </div>
-          </div>
+          </section>
         );
       })}
     </div>

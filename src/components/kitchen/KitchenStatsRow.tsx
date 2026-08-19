@@ -1,38 +1,46 @@
 import React from 'react';
-import { StatCard } from '../common/StatCard';
 
 interface KitchenStatsRowProps {
   activeCommandas: number;
-  itemsListos: number;
   itemsPendientes: number;
+  itemsPreparando: number;
+  commandasListas: number;
   urgentOrdersCount: number;
 }
 
 export const KitchenStatsRow: React.FC<KitchenStatsRowProps> = ({
   activeCommandas,
-  itemsListos,
   itemsPendientes,
+  itemsPreparando,
+  commandasListas,
   urgentOrdersCount,
 }) => {
   return (
-    <div className="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3 mb-4 stagger-children">
-      <div className="col">
-        <StatCard title="Comandas Activas" value={activeCommandas} icon="bi-receipt" colorTheme="indigo" />
+    <section className="kds-summary mb-4" aria-label="Resumen operativo de cocina">
+      <div className="kds-summary-item is-primary">
+        <i className="bi bi-receipt" aria-hidden="true"></i>
+        <span>Activas</span>
+        <strong>{activeCommandas}</strong>
       </div>
-      <div className="col">
-        <StatCard title="Items Listos" value={itemsListos} icon="bi-check-circle-fill" colorTheme="emerald" />
+      <div className="kds-summary-item">
+        <i className="bi bi-hourglass-split" aria-hidden="true"></i>
+        <span>Por iniciar</span>
+        <strong>{itemsPendientes}</strong>
       </div>
-      <div className="col">
-        <StatCard title="Items Pendientes" value={itemsPendientes} icon="bi-clock" colorTheme="amber" />
+      <div className="kds-summary-item">
+        <i className="bi bi-fire" aria-hidden="true"></i>
+        <span>Preparando</span>
+        <strong>{itemsPreparando}</strong>
       </div>
-      <div className="col">
-        <StatCard
-          title="Pedidos Urgentes"
-          value={urgentOrdersCount}
-          icon="bi-alarm-fill"
-          colorTheme="rose"
-        />
+      <div className="kds-summary-item is-ready">
+        <i className="bi bi-check-circle-fill" aria-hidden="true"></i>
+        <span>Listas</span>
+        <strong>{commandasListas}</strong>
       </div>
-    </div>
+      <div className={`kds-summary-urgent ${urgentOrdersCount > 0 ? 'has-urgent-orders' : ''}`}>
+        <i className="bi bi-alarm-fill" aria-hidden="true"></i>
+        <span>{urgentOrdersCount} urgente{urgentOrdersCount === 1 ? '' : 's'}</span>
+      </div>
+    </section>
   );
 };

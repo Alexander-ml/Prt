@@ -28,7 +28,12 @@ export const TableCard: React.FC<TableCardProps> = ({ table, activeOrder, onClic
       role="button"
       tabIndex={0}
       aria-label={`Mesa ${table.number}, área ${table.areaName}, estado ${meta.label}`}
-      onKeyDown={e => e.key === 'Enter' && onClick()}
+      onKeyDown={event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onClick();
+        }
+      }}
     >
       <div style={{ minWidth: 0 }}>
         <div className="d-flex align-items-start justify-content-between gap-2 mb-2">
@@ -122,7 +127,7 @@ export const TableCard: React.FC<TableCardProps> = ({ table, activeOrder, onClic
         className="d-flex align-items-center justify-content-between pt-2 mt-2 border-top"
         style={{ fontSize: '0.75rem', color: 'var(--text-muted)', borderColor: 'var(--border-muted)' }}
       >
-        <span>Clic para opciones</span>
+        <span>Ver acciones</span>
         <i className="bi bi-three-dots-vertical" aria-hidden="true"></i>
       </div>
     </div>

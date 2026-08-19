@@ -1652,6 +1652,99 @@ html, body {
   .restaurant-logo-manager { flex-direction: column; }
 }
 
+/* Listas móviles de Impuestos y Promociones — mismo patrón visual que
+   .table-config-mobile-list (Áreas y Mesas): article por registro,
+   encabezado con identidad + estado, detalles secundarios en dl,
+   acciones siempre visibles y con texto. */
+.config-mobile-list {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.75rem;
+}
+.config-mobile-item {
+  padding: 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+}
+.config-mobile-item-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+.config-mobile-item h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.config-mobile-item p {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.config-mobile-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.8rem 0 0;
+}
+.config-mobile-details div {
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+.config-mobile-details-full { grid-column: 1 / -1; }
+.config-mobile-details dt {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.config-mobile-details dd {
+  margin: 0.15rem 0 0;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.config-mobile-actions {
+  display: flex;
+  gap: 0.55rem;
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--border-muted);
+}
+.config-mobile-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+@media (max-width: 575.98px) {
+  .config-list-card .section-card-header { flex-wrap: wrap; }
+  .config-list-card .section-card-header > div:last-child { width: 100%; }
+  .config-list-card .section-card-header .btn { width: 100%; min-height: 42px; }
+}
+
+@media (max-width: 359.98px) {
+  .config-mobile-details { grid-template-columns: 1fr; }
+  .config-mobile-actions { flex-direction: column; }
+}
+
 /* ───────────────────────────────────────────
    26. TOAST CONTAINER
    ─────────────────────────────────────────── */
@@ -2457,4 +2550,181 @@ html, body {
   .catalog-mobile-summary { grid-template-columns: 1fr; }
   .catalog-category-mobile-actions { flex-direction: column; }
   .catalog-menu-group li { grid-template-columns: 1fr; }
+}
+
+/* ───────────────────────────────────────────
+   30. PERSONAL Y USUARIOS
+   ─────────────────────────────────────────── */
+
+/* Resumen compacto de personal, mostrado exclusivamente en móvil —
+   mismo patrón que .table-mobile-summary (Áreas y Mesas) y
+   .catalog-mobile-summary (Catálogo). */
+.users-mobile-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-xs);
+}
+.users-mobile-summary-main p {
+  display: block;
+  margin: 0 0 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.users-mobile-summary-main strong {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 850;
+  line-height: 1;
+}
+.users-mobile-summary-states {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+.users-mobile-summary-states span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.users-mobile-summary-states i { font-size: 0.9rem; }
+.users-mobile-summary-states .is-active { color: var(--color-emerald-text); }
+.users-mobile-summary-states .is-inactive { color: var(--color-rose-text); }
+
+/* Filtros con etiqueta superior (label → control), mismo criterio que
+   .catalog-filter-grid en Catálogo. */
+.users-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.6fr) minmax(180px, 1fr);
+  gap: 0.85rem;
+  align-items: end;
+}
+.users-filter-search { min-width: 0; }
+.users-filter-label {
+  display: block;
+  margin: 0 0 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Lista móvil de cuentas de personal — mismo patrón visual que
+   .table-config-mobile-list (Áreas y Mesas): article por cuenta,
+   encabezado con identidad + estado, detalles secundarios en dl,
+   acciones siempre visibles y con texto (no solo íconos). */
+.users-mobile-list {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.75rem;
+}
+.users-mobile-item {
+  padding: 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+}
+.users-mobile-item-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+.users-mobile-item-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.users-mobile-item-identity h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.users-mobile-item-identity p {
+  margin: 0.1rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.users-mobile-item-role { margin: 0.75rem 0 0; }
+.users-mobile-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.8rem 0 0;
+}
+.users-mobile-details div {
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+.users-mobile-details dt {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.users-mobile-details dd {
+  margin: 0.15rem 0 0;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.users-mobile-actions {
+  display: flex;
+  gap: 0.55rem;
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--border-muted);
+}
+.users-mobile-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0.45rem 0.4rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+.users-mobile-actions .btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 767.98px) {
+  .users-filter-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 575.98px) {
+  .users-list-card .section-card-header { flex-wrap: wrap; }
+  .users-list-card .section-card-header > div:last-child { width: 100%; }
+  .users-list-card .section-card-header .btn { width: 100%; min-height: 42px; }
+}
+
+@media (max-width: 359.98px) {
+  .users-mobile-summary { grid-template-columns: 1fr; }
+  .users-mobile-details { grid-template-columns: 1fr; }
+  .users-mobile-actions { flex-direction: column; }
 }

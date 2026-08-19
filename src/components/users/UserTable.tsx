@@ -4,27 +4,36 @@ import { EmptyState } from '../common/EmptyState';
 import { Badge } from '../common/Badge';
 import { ROLE_META, getAvatarStyle } from './userRoleMeta';
 
+interface UserTableEmptyState {
+  icon: string;
+  title: string;
+  description: string;
+}
+
 interface UserTableProps {
   users: UserAccount[];
   onEdit: (user: UserAccount) => void;
   onResetPassword: (user: UserAccount) => void;
   onRequestStatusToggle: (user: UserAccount) => void;
+  emptyState: UserTableEmptyState;
 }
 
 /**
- * UserTable — Tabla de personal, presentacional pura. No recibe nada del
- * formulario de alta/edición (Interface Segregation) — solo lo necesario
- * para listar cuentas y disparar sus 3 acciones por fila.
+ * UserTable — Tabla de personal para Desktop/Tablet, presentacional pura.
+ * No recibe nada del formulario de alta/edición (Interface Segregation) —
+ * solo lo necesario para listar cuentas y disparar sus 3 acciones por fila.
+ * En móvil, `UsersPage` muestra `UsersMobileList` en su lugar.
  *
  * El color del avatar y la variante del Badge de rol salen de `ROLE_META`
  * (userRoleMeta.ts) — sin ternarios manuales de color, y sin fallback
  * silencioso: un rol no declarado en `ROLE_META` simplemente no compila
  * (TypeScript lo exige vía `Record<UserRole, RoleMeta>`).
  *
- * Incluye `EmptyState` cuando el filtro no devuelve resultados, igual que
- * `CategoryTable` y `TablesConfigView`.
+ * `emptyState` lo decide `UsersPage`, que es quien sabe distinguir "no
+ * existen usuarios" de "existen usuarios pero el filtro no encontró
+ * coincidencias" (mismo mensaje que usa `UsersMobileList`).
  */
-export const UserTable: React.FC<UserTableProps> = ({ users, onEdit, onResetPassword, onRequestStatusToggle }) => {
+export const UserTable: React.FC<UserTableProps> = ({ users, onEdit, onResetPassword, onRequestStatusToggle, emptyState }) => {
   return (
     <div className="table-responsive-x">
       <div className="custom-table-container">
@@ -44,8 +53,9 @@ export const UserTable: React.FC<UserTableProps> = ({ users, onEdit, onResetPass
               <tr>
                 <td colSpan={6} className="text-center py-4">
                   <EmptyState
-                    title="No se encontraron usuarios"
-                    description="Intenta cambiar los filtros de búsqueda o registra un nuevo usuario."
+                    icon={emptyState.icon}
+                    title={emptyState.title}
+                    description={emptyState.description}
                   />
                 </td>
               </tr>

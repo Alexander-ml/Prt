@@ -72,9 +72,9 @@ export const LedgerEntryFormModal: React.FC<LedgerEntryFormModalProps> = ({
       subtitle={editingEntryId ? 'Modifique los campos y registre el motivo del cambio.' : 'Registre un ingreso o egreso manual en el libro diario.'}
       footer={footerButtons}
     >
-      <form ref={formRef} onSubmit={onSubmit}>
-        <div className="mb-3">
-          <label className="form-label">Fecha del Asiento *</label>
+      <form ref={formRef} onSubmit={onSubmit} className="d-flex flex-column gap-3">
+        <div>
+          <label className="form-label mb-1">Fecha del Asiento *</label>
           <input
             type="date"
             className="form-control rounded-3"
@@ -84,19 +84,19 @@ export const LedgerEntryFormModal: React.FC<LedgerEntryFormModalProps> = ({
           />
         </div>
 
-        <div className="mb-3">
-          <label className="form-label d-block">Tipo de Registro *</label>
+        <div>
+          <label className="form-label mb-1 d-block">Tipo de Registro *</label>
           <div className="d-flex gap-2">
             <button
               type="button"
-              className={`btn flex-grow-1 fw-semibold ${formData.type === 'ingreso' ? 'btn-success' : 'btn-outline-success'} rounded-3`}
+              className={`btn flex-grow-1 fw-semibold py-2 ${formData.type === 'ingreso' ? 'btn-success' : 'btn-outline-success'} rounded-3`}
               onClick={() => handleTypeChange('ingreso')}
             >
               <i className="bi bi-arrow-down-left-circle me-1"></i> Ingreso
             </button>
             <button
               type="button"
-              className={`btn flex-grow-1 fw-semibold ${formData.type === 'egreso' ? 'btn-danger' : 'btn-outline-danger'} rounded-3`}
+              className={`btn flex-grow-1 fw-semibold py-2 ${formData.type === 'egreso' ? 'btn-danger' : 'btn-outline-danger'} rounded-3`}
               onClick={() => handleTypeChange('egreso')}
             >
               <i className="bi bi-arrow-up-right-circle me-1"></i> Egreso
@@ -104,8 +104,8 @@ export const LedgerEntryFormModal: React.FC<LedgerEntryFormModalProps> = ({
           </div>
         </div>
 
-        <div className="mb-3">
-          <label className="form-label d-block">Categoría *</label>
+        <div>
+          <label className="form-label mb-1 d-block">Categoría *</label>
           <CustomDropdownSelect
             value={formData.categoryId}
             onChange={value => onChange({ categoryId: value })}
@@ -115,8 +115,8 @@ export const LedgerEntryFormModal: React.FC<LedgerEntryFormModalProps> = ({
           />
         </div>
 
-        <div className="mb-3">
-          <label className="form-label">Descripción *</label>
+        <div>
+          <label className="form-label mb-1">Descripción *</label>
           <input
             type="text"
             className="form-control rounded-3"
@@ -127,9 +127,9 @@ export const LedgerEntryFormModal: React.FC<LedgerEntryFormModalProps> = ({
           />
         </div>
 
-        <div className="row g-3 mb-3">
+        <div className="row g-2">
           <div className="col-6">
-            <label className="form-label">Monto (S/) *</label>
+            <label className="form-label mb-1">Monto (S/) *</label>
             <div className="input-group">
               <span className="input-group-text rounded-start-3">S/</span>
               <input
@@ -144,7 +144,7 @@ export const LedgerEntryFormModal: React.FC<LedgerEntryFormModalProps> = ({
             </div>
           </div>
           <div className="col-6">
-            <label className="form-label">Referencia / Comprobante</label>
+            <label className="form-label mb-1">Referencia</label>
             <input
               type="text"
               className="form-control rounded-3"
@@ -157,7 +157,7 @@ export const LedgerEntryFormModal: React.FC<LedgerEntryFormModalProps> = ({
 
         {editingEntryId && (
           <div>
-            <label className="form-label">Motivo de Edición *</label>
+            <label className="form-label mb-1">Motivo de Edición *</label>
             <input
               type="text"
               className="form-control rounded-3"

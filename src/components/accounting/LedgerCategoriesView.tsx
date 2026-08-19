@@ -89,9 +89,9 @@ export const LedgerCategoriesView: React.FC = () => {
           </button>
         }
       >
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0" style={{ minWidth: 640 }}>
-            <thead className="table-light">
+        <div className="table-responsive-x">
+          <table className="custom-table" style={{ minWidth: 640 }}>
+            <thead>
               <tr>
                 <th>Categoría</th>
                 <th>Tipo</th>

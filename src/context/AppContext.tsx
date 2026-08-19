@@ -212,6 +212,8 @@ export interface AppContextType {
   ledgerEntries: LedgerEntry[];
   ledgerCategories: LedgerCategory[];
   addLedgerEntry: (entry: Omit<LedgerEntry, 'id'>) => void;
+  updateLedgerEntry: (id: string, data: Partial<LedgerEntry>, reason: string) => void;
+  reverseLedgerEntry: (id: string, reason: string) => void;
   addLedgerCategory: (name: string, kind: LedgerCategory['kind'], description: string) => void;
   updateLedgerCategory: (id: string, name: string, kind: LedgerCategory['kind'], description: string) => void;
   deleteLedgerCategory: (id: string) => boolean;
@@ -257,8 +259,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
   const [supplierPriceHistory, setSupplierPriceHistory] = useState<SupplierPriceHistory[]>(initialSupplierPriceHistory);
   const [inventoryAlerts, setInventoryAlerts] = useState<InventoryAlert[]>(initialInventoryAlerts);
-  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>(initialLedger);
-  const [ledgerCategories, setLedgerCategories] = useState<LedgerCategory[]>(initialLedgerCategories);
+  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>(() => {
+    try {
+      const saved = localStorage.getItem('prt_ledgerEntries');
+      return saved ? JSON.parse(saved) : initialLedger;
+    } catch { return initialLedger; }
+  });
+  const [ledgerCategories, setLedgerCategories] = useState<LedgerCategory[]>(() => {
+    try {
+      const saved = localStorage.getItem('prt_ledgerCategories');
+      return saved ? JSON.parse(saved) : initialLedgerCategories;
+    } catch { return initialLedgerCategories; }
+  });
+
+  // --- LOCALSTORAGE PERSISTENCE ---
+  useEffect(() => {
+    localStorage.setItem('prt_ledgerEntries', JSON.stringify(ledgerEntries));
+  }, [ledgerEntries]);
+  useEffect(() => {
+    localStorage.setItem('prt_ledgerCategories', JSON.stringify(ledgerCategories));
+  }, [ledgerCategories]);
+  useEffect(() => {
+    localStorage.setItem('prt_sales', JSON.stringify(sales));
+  }, [sales]);
+  useEffect(() => {
+    localStorage.setItem('prt_cashSession', JSON.stringify(cashSession));
+  }, [cashSession]);
+  useEffect(() => {
+    localStorage.setItem('prt_cashSessionHistory', JSON.stringify(cashSessionHistory));
+  }, [cashSessionHistory]);
 
   // --- USER ACTIONS ---
   const addUser = (userData: Omit<UserAccount, 'id' | 'createdAt'>) => {
@@ -945,6 +974,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const cancelSale = (saleId: string, reason: string) => {
     setSales(prev => prev.map(s => s.id === saleId ? { ...s, isCancelled: true, estadoPago: 'anulada', cancellationReason: reason } : s));
+    // Reversión automática del asiento contable asociado a la venta
+    const originalEntry = ledgerEntries.find(e => e.reference === saleId && !e.isReversal && !e.reversedBy);
+    if (originalEntry) {
+      const reversalEntry: LedgerEntry = {
+        id: `led-rev-${Date.now()}`,
+        date: new Date().toISOString().split('T')[0],
+        type: originalEntry.type === 'ingreso' ? 'egreso' : 'ingreso',
+        categoryId: originalEntry.categoryId,
+        categoryName: originalEntry.categoryName,
+        description: `Reversión automática por anulación de venta: ${originalEntry.description}. Motivo: ${reason}`,
+        amount: originalEntry.amount,
+        reference: `REV-${originalEntry.reference}`,
+        createdAt: new Date().toISOString(),
+        isReversal: true,
+        reversalOfId: originalEntry.id
+      };
+      setLedgerEntries(prev => [reversalEntry, ...prev]);
+      setLedgerEntries(prev => prev.map(e => e.id === originalEntry.id ? { ...e, reversedBy: reversalEntry.id } : e));
+    }
     showToast('Venta Anulada', `La venta ${saleId} fue cancelada. Motivo: ${reason}`, 'warning');
   };
 
@@ -1006,6 +1054,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const difference = round2(countedCash - cashSession.expectedCash);
     const closedSession: CashSession = { ...cashSession, closedAt, closedBy, countedCash, difference, status: 'cerrada' };
     setCashSessionHistory(prev => [closedSession, ...prev]);
+    // Asiento contable por sobrante/faltante de arqueo
+    if (difference !== 0) {
+      const isSobrante = difference > 0;
+      const cat = isSobrante
+        ? ledgerCategories.find(c => c.name === 'Otros Ingresos')
+        : ledgerCategories.find(c => c.name === 'Faltantes y Ajustes');
+      const newEntry: LedgerEntry = {
+        id: `led-${Date.now()}`,
+        date: new Date().toISOString().split('T')[0],
+        type: isSobrante ? 'ingreso' : 'egreso',
+        categoryId: cat?.id ?? '',
+        categoryName: cat?.name ?? (isSobrante ? 'Otros Ingresos' : 'Faltantes y Ajustes'),
+        description: `${isSobrante ? 'Sobrante' : 'Faltante'} de arqueo de caja (${closedSession.id}) — Esperado: S/ ${cashSession.expectedCash.toFixed(2)}, Contado: S/ ${countedCash.toFixed(2)}`,
+        amount: Math.abs(difference),
+        reference: `arqueo-${closedSession.id}`
+      };
+      setLedgerEntries(prev => [newEntry, ...prev]);
+      if (cat) {
+        setLedgerCategories(prev => prev.map(c => c.id === cat.id ? { ...c, entryCount: c.entryCount + 1 } : c));
+      }
+    }
     setCashSession(null);
     showToast(
       'Caja Cerrada',
@@ -1033,6 +1102,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       expectedCash: round2(prev.expectedCash + (type === 'ingreso_manual' ? amount : -amount)),
       movements: [...prev.movements, movement]
     } : prev);
+    // Asiento contable automático
+    const cat = type === 'ingreso_manual'
+      ? ledgerCategories.find(c => c.name === 'Otros Ingresos')
+      : ledgerCategories.find(c => c.name === 'Personal y Planilla');
+    const newEntry: LedgerEntry = {
+      id: `led-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      type: type === 'ingreso_manual' ? 'ingreso' : 'egreso',
+      categoryId: cat?.id ?? '',
+      categoryName: cat?.name ?? (type === 'ingreso_manual' ? 'Otros Ingresos' : 'Personal y Planilla'),
+      description: `${description} (Caja: ${cashSession.id})`,
+      amount,
+      reference: `caja-${cashSession.id}-${movement.id}`
+    };
+    setLedgerEntries(prev => [newEntry, ...prev]);
+    if (cat) {
+      setLedgerCategories(prev => prev.map(c => c.id === cat.id ? { ...c, entryCount: c.entryCount + 1 } : c));
+    }
     showToast(
       type === 'ingreso_manual' ? 'Ingreso Registrado' : 'Retiro Registrado',
       `${description} — S/ ${amount.toFixed(2)}`,
@@ -1125,6 +1212,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return i;
     }));
+    // Asiento contable por reposición de inventario
+    if (isRestock) {
+      const insumo = insumos.find(i => i.id === id);
+      if (insumo) {
+        const totalCost = Number((quantityDelta * insumo.costPerUnit).toFixed(2));
+        const cat = ledgerCategories.find(c => c.name === 'Insumos & Proveedores');
+        const newEntry: LedgerEntry = {
+          id: `led-${Date.now()}`,
+          date: new Date().toISOString().split('T')[0],
+          type: 'egreso',
+          categoryId: cat?.id ?? '',
+          categoryName: cat?.name ?? 'Insumos & Proveedores',
+          description: `Compra ${insumo.name}: +${quantityDelta} ${insumo.unit} @ S/ ${insumo.costPerUnit.toFixed(2)}`,
+          amount: totalCost,
+          reference: `restock-${id}`
+        };
+        setLedgerEntries(prev => [newEntry, ...prev]);
+        if (cat) {
+          setLedgerCategories(prev => prev.map(c => c.id === cat.id ? { ...c, entryCount: c.entryCount + 1 } : c));
+        }
+      }
+    }
     showToast(
       isRestock ? 'Ingreso a Inventario' : 'Consumo / Ajuste de Insumo',
       `Se registró ${isRestock ? '+' : '-'}${quantityDelta} en el stock.`
@@ -1140,6 +1249,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setStockMovements(prev => [newMovement, ...prev]);
     setInsumos(prev => prev.map(i => i.id === movement.insumoId ? { ...i, currentStock: movement.newStock } : i));
+    // Asiento contable automático por compras
+    if (movement.type === 'compra' && movement.quantity > 0) {
+      const insumo = insumos.find(i => i.id === movement.insumoId);
+      const totalCost = Number((movement.quantity * (insumo?.costPerUnit ?? 0)).toFixed(2));
+      if (totalCost > 0) {
+        const cat = ledgerCategories.find(c => c.name === 'Insumos & Proveedores');
+        const entry: LedgerEntry = {
+          id: `led-${Date.now()}`,
+          date: new Date().toISOString().split('T')[0],
+          type: 'egreso',
+          categoryId: cat?.id ?? '',
+          categoryName: cat?.name ?? 'Insumos & Proveedores',
+          description: `Compra ${movement.insumoName}: +${movement.quantity} ${movement.unit} — ${movement.reason || 'Compra registrada'}`,
+          amount: totalCost,
+          reference: movement.referenceId ?? `sm-${newMovement.id}`
+        };
+        setLedgerEntries(prev => [entry, ...prev]);
+        if (cat) {
+          setLedgerCategories(prev => prev.map(c => c.id === cat.id ? { ...c, entryCount: c.entryCount + 1 } : c));
+        }
+      }
+    }
   };
 
   const addWasteEntry = (entry: Omit<WasteEntry, 'id' | 'createdAt'>) => {
@@ -1160,6 +1291,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return i;
     }));
+    // Asiento contable por merma (pérdida de inventario)
+    const cat = ledgerCategories.find(c => c.name === 'Insumos & Proveedores');
+    const ledgerEntry: LedgerEntry = {
+      id: `led-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      type: 'egreso',
+      categoryId: cat?.id ?? '',
+      categoryName: cat?.name ?? 'Insumos & Proveedores',
+      description: `Merma: ${entry.insumoName} (${entry.quantity} ${entry.unit}) — ${entry.reason} — Pérdida: S/ ${totalCost.toFixed(2)}`,
+      amount: totalCost,
+      reference: `waste-${newEntry.id}`
+    };
+    setLedgerEntries(prev => [ledgerEntry, ...prev]);
+    if (cat) {
+      setLedgerCategories(prev => prev.map(c => c.id === cat.id ? { ...c, entryCount: c.entryCount + 1 } : c));
+    }
     showToast('Merma Registrada', `Se registró merma de ${entry.quantity} ${entry.unit} de ${entry.insumoName}.`);
   };
 
@@ -1285,16 +1432,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addLedgerEntry = (entryData: Omit<LedgerEntry, 'id'>) => {
     const newEntry: LedgerEntry = {
       ...entryData,
-      id: `led-${Date.now()}`
+      id: `led-${Date.now()}`,
+      createdAt: new Date().toISOString()
     };
     setLedgerEntries(prev => [newEntry, ...prev]);
     setLedgerCategories(prev => prev.map(c => c.id === entryData.categoryId ? { ...c, entryCount: c.entryCount + 1 } : c));
-
-    // financialSummary ya no se mantiene a mano acá: se deriva en vivo de
-    // ledgerEntries (ver components/accounting/accountingMeta.ts), así que
-    // este asiento queda reflejado en los KPIs de Contabilidad sin ningún
-    // paso adicional.
     showToast('Asiento Contable', `Registro contable guardado (${entryData.type.toUpperCase()}: S/ ${entryData.amount.toFixed(2)}).`);
+  };
+
+  const updateLedgerEntry = (id: string, data: Partial<LedgerEntry>, reason: string) => {
+    setLedgerEntries(prev => prev.map(e => {
+      if (e.id === id && !e.isReversal && !e.reversedBy) {
+        return {
+          ...e,
+          ...data,
+          editedAt: new Date().toISOString(),
+          editReason: reason
+        };
+      }
+      return e;
+    }));
+    showToast('Asiento Actualizado', `Asiento modificado. Motivo: ${reason}`, 'info');
+  };
+
+  const reverseLedgerEntry = (id: string, reason: string) => {
+    const original = ledgerEntries.find(e => e.id === id);
+    if (!original) return;
+    const reversedAmount = original.type === 'ingreso' ? -original.amount : original.amount;
+    const reversalEntry: LedgerEntry = {
+      id: `led-rev-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      type: original.type === 'ingreso' ? 'egreso' : 'ingreso',
+      categoryId: original.categoryId,
+      categoryName: original.categoryName,
+      description: `Reversión de: ${original.description}`,
+      amount: Math.abs(reversedAmount),
+      reference: `REV-${original.reference}`,
+      createdAt: new Date().toISOString(),
+      isReversal: true,
+      reversalOfId: original.id
+    };
+    setLedgerEntries(prev => [reversalEntry, ...prev]);
+    setLedgerEntries(prev => prev.map(e => e.id === id ? { ...e, reversedBy: reversalEntry.id } : e));
+    showToast('Asiento Revertido', `Se generó asiento de reversión. Motivo: ${reason}`, 'warning');
   };
 
   return (
@@ -1391,6 +1571,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ledgerEntries,
         ledgerCategories,
         addLedgerEntry,
+        updateLedgerEntry,
+        reverseLedgerEntry,
         addLedgerCategory,
         updateLedgerCategory,
         deleteLedgerCategory

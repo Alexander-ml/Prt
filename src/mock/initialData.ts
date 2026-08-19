@@ -643,7 +643,8 @@ export const initialLedgerCategories: LedgerCategory[] = [
   { id: 'ledcat-3', name: 'Insumos & Proveedores', kind: 'egreso', description: 'Compra de insumos, ingredientes y abastecimiento a proveedores', entryCount: 2 },
   { id: 'ledcat-4', name: 'Servicios Básicos', kind: 'egreso', description: 'Luz, agua, gas industrial e internet del local', entryCount: 1 },
   { id: 'ledcat-5', name: 'Personal y Planilla', kind: 'egreso', description: 'Sueldos, propinas consolidadas y beneficios del personal', entryCount: 0 },
-  { id: 'ledcat-6', name: 'Mantenimiento y Equipos', kind: 'egreso', description: 'Reparación y mantenimiento de cocina, mobiliario y equipos', entryCount: 0 }
+  { id: 'ledcat-6', name: 'Mantenimiento y Equipos', kind: 'egreso', description: 'Reparación y mantenimiento de cocina, mobiliario y equipos', entryCount: 0 },
+  { id: 'ledcat-7', name: 'Faltantes y Ajustes', kind: 'egreso', description: 'Faltantes de arqueo de caja, mermas no contabilizadas y ajustes', entryCount: 0 }
 ];
 
 // Asientos manuales/consolidados (led-1 a led-5, ya existentes) + un asiento

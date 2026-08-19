@@ -349,6 +349,12 @@ export interface LedgerEntry {
   description: string;
   amount: number;
   reference: string;
+  createdAt?: string;
+  editedAt?: string;
+  editReason?: string;
+  isReversal?: boolean;
+  reversalOfId?: string;
+  reversedBy?: string;
 }
 
 // FinancialSummary ya NO es un estado que haya que mantener sincronizado a

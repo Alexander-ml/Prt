@@ -4,6 +4,13 @@ interface SectionCardProps {
   title?: string;
   subtitle?: string;
   icon?: string;
+  /**
+   * Color opcional del ícono, para los casos (poco frecuentes) donde el
+   * ícono lleva un color semántico propio en vez del color de marca por
+   * defecto — ej. un acento de urgencia/alerta en un card de resumen.
+   * Si se omite, el ícono usa el color de marca estándar (`.section-card-title i`).
+   */
+  iconColor?: string;
   actions?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
@@ -27,6 +34,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   title,
   subtitle,
   icon,
+  iconColor,
   actions,
   children,
   className = '',
@@ -42,7 +50,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
           <div className="flex-grow-1 min-w-0">
             {(title || icon) && (
               <h2 className="section-card-title">
-                {icon && <i className={`bi ${icon}`} aria-hidden="true"></i>}
+                {icon && <i className={`bi ${icon}`} aria-hidden="true" style={iconColor ? { color: iconColor } : undefined}></i>}
                 {title}
               </h2>
             )}

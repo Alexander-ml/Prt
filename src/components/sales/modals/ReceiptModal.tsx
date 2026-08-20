@@ -14,12 +14,13 @@ import { COMPROBANTE_LABELS } from './salesModalsShared';
 interface ReceiptModalProps {
   sale: Sale | null;
   onClose: () => void;
+  onPrint: () => void;
   restaurantName: string;
   restaurantRuc: string;
   restaurantAddress: string;
 }
 
-export const ReceiptModal: React.FC<ReceiptModalProps> = ({ sale, onClose, restaurantName, restaurantRuc, restaurantAddress }) => {
+export const ReceiptModal: React.FC<ReceiptModalProps> = ({ sale, onClose, onPrint, restaurantName, restaurantRuc, restaurantAddress }) => {
   if (!sale) return null;
 
   const estadoBadge = sale.isCancelled
@@ -121,7 +122,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ sale, onClose, resta
         <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={onClose}>
           Cerrar
         </button>
-        <button type="button" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }} onClick={() => alert('Comprobante enviado a impresora POS.')}>
+        <button type="button" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }} onClick={onPrint}>
           <i className="bi bi-printer me-1"></i> Imprimir
         </button>
       </div>

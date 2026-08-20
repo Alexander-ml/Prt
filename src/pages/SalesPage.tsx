@@ -14,6 +14,7 @@ import type {
 } from '../types';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { PageHeader } from '../components/common/PageHeader';
+import { ResponsiveSectionNav } from '../components/common/ResponsiveSectionNav';
 import { BillingView } from '../components/sales/BillingView';
 import { HistoryView } from '../components/sales/HistoryView';
 import { SplitBillModal } from '../components/sales/modals/SplitBillModal';
@@ -27,6 +28,11 @@ import { ReceiptModal } from '../components/sales/modals/ReceiptModal';
 import { round2, sumMoney } from '../utils/money';
 import { calculateSaleTotals, resolveIgvPercentLabel } from '../utils/saleTotals';
 import { evaluarRequisitosComprobante } from '../utils/comprobante';
+
+const SALES_TAB_ITEMS = [
+  { value: 'billing', label: 'Cobro', icon: 'bi-credit-card' },
+  { value: 'history', label: 'Historial', icon: 'bi-graph-up' },
+];
 
 export const SalesPage: React.FC = () => {
   const {
@@ -47,6 +53,7 @@ export const SalesPage: React.FC = () => {
     closeCashSession,
     registerManualCashMovement,
     currentRole,
+    showToast,
   } = useApp();
 
   const location = useLocation();
@@ -281,34 +288,12 @@ export const SalesPage: React.FC = () => {
         title="Ventas, Cobro y Facturación"
         subtitle="Caja, resumen de cuenta, comprobante, división de pago y reportes de ventas."
         actions={
-          <div className="d-flex w-100 gap-2" role="tablist" aria-label="Cambiar vista de ventas">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'billing'}
-              className={`btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1 ${
-                activeTab === 'billing' ? 'btn-primary' : 'btn-outline-primary'
-              }`}
-              style={{ minHeight: 44, borderRadius: 8, fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)' }}
-              onClick={() => setActiveTab('billing')}
-            >
-              <i className="bi bi-credit-card" aria-hidden="true"></i>
-              <span>Cobro</span>
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'history'}
-              className={`btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1 ${
-                activeTab === 'history' ? 'btn-primary' : 'btn-outline-primary'
-              }`}
-              style={{ minHeight: 44, borderRadius: 8, fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)' }}
-              onClick={() => setActiveTab('history')}
-            >
-              <i className="bi bi-graph-up" aria-hidden="true"></i>
-              <span>Historial</span>
-            </button>
-          </div>
+          <ResponsiveSectionNav
+            items={SALES_TAB_ITEMS}
+            value={activeTab}
+            onChange={value => setActiveTab(value as 'billing' | 'history')}
+            ariaLabel="Cambiar vista de ventas"
+          />
         }
       />
 
@@ -382,6 +367,7 @@ export const SalesPage: React.FC = () => {
           onOpenReceipt={setViewReceiptSale}
           onOpenReopen={setReopenSaleObj}
           onOpenCancel={setCancelSaleObj}
+          onExportReport={() => showToast('Reporte Exportado', 'El historial de ventas fue exportado en Excel/PDF.', 'info')}
         />
       )}
 
@@ -449,6 +435,7 @@ export const SalesPage: React.FC = () => {
       <ReceiptModal
         sale={viewReceiptSale}
         onClose={() => setViewReceiptSale(null)}
+        onPrint={() => showToast('Comprobante Enviado', 'El comprobante fue enviado a la impresora POS.', 'info')}
         restaurantName={restaurantInfo.name}
         restaurantRuc={restaurantInfo.taxId.replace(/^RUC\s*/i, '')}
         restaurantAddress={restaurantInfo.address}

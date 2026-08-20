@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { StatCard } from '../components/common/StatCard';
 import { Badge } from '../components/common/Badge';
 import { PageHeader } from '../components/common/PageHeader';
+import { SectionCard } from '../components/common/SectionCard';
 
 export const DashboardPage: React.FC = () => {
   const { tables, orders, sales, insumos, currentRole } = useApp();
@@ -36,11 +37,33 @@ export const DashboardPage: React.FC = () => {
         icon="bi-speedometer2"
         title="Panel de Control"
         subtitle="Visión en tiempo real de la operación, sala, cocina y situación financiera del restaurante."
-        
+
       />
 
       {/* KPI Cards */}
-      <div className="row g-3 mb-4 stagger-children">
+      {/* Resumen compacto solo-mobile — mismo patrón "hero + pills" que
+          TableMetricsSummary (Mesas), OrdersStatsRow (Pedidos), CatalogStatsRow
+          y UsersStatsRow: 1 métrica principal + 3 secundarias, sin ocultar
+          ningún dato (las 4 StatCards completas se conservan a partir de
+          576px vía d-none d-sm-flex). Ocupación de mesas se eligió como
+          "hero" por ser la referencia directa de TableMetricsSummary y la
+          lectura más inmediata del estado de la sala; las otras 3 conservan
+          su valor real en las pills, no solo un ícono decorativo. */}
+      <section className="dashboard-mobile-summary d-sm-none mb-4" aria-label="Resumen general del panel">
+        <div className="dashboard-mobile-summary-main">
+          <p>Ocupación de mesas</p>
+          <strong>{occupiedTables} / {totalTables}</strong>
+        </div>
+        <div className="dashboard-mobile-summary-states">
+          <span className="is-orders"><i className="bi bi-receipt" aria-hidden="true"></i>{activeOrders.length} pedidos activos</span>
+          <span className="is-sales"><i className="bi bi-cash-stack" aria-hidden="true"></i>S/ {todaySalesTotal.toFixed(2)} vendido hoy</span>
+          <span className={lowStockInsumos.length > 0 ? 'is-stock-alert' : 'is-stock-ok'}>
+            <i className="bi bi-box-seam-fill" aria-hidden="true"></i>{lowStockInsumos.length} alertas de stock
+          </span>
+        </div>
+      </section>
+
+      <div className="row g-3 mb-4 stagger-children d-none d-sm-flex">
         <div className="col-12 col-md-6 col-lg-3">
           <StatCard
             title="Mesas Ocupadas"
@@ -96,12 +119,11 @@ export const DashboardPage: React.FC = () => {
       <div className="row g-4">
         {/* Left: Floorplan Mini — segunda prioridad visual en móvil */}
         <div className="col-12 col-lg-7 order-2 order-lg-1">
-          <div className="section-card h-100">
-            <div className="section-card-header flex-wrap gap-2">
-              <h2 className="section-card-title">
-                <i className="bi bi-grid-fill" aria-hidden="true"></i>
-                Estado de Mesas en Sala
-              </h2>
+          <SectionCard
+            icon="bi-grid-fill"
+            title="Estado de Mesas en Sala"
+            className="dashboard-summary-card h-100"
+            actions={
               <button
                 className="btn btn-sm btn-outline-primary fw-semibold"
                 style={{ borderRadius: 8, fontSize: '0.78rem' }}
@@ -110,8 +132,8 @@ export const DashboardPage: React.FC = () => {
                 Ver plano completo
                 <i className="bi bi-arrow-right ms-1" aria-hidden="true"></i>
               </button>
-            </div>
-            <div className="section-card-body">
+            }
+          >
               <div className="row g-2">
                 {tables.slice(0, 8).map(table => (
                   <div key={table.id} className="col-12 col-md-6">
@@ -173,8 +195,7 @@ export const DashboardPage: React.FC = () => {
                   {tables.length - 8} mesas más en el plano completo
                 </div>
               )}
-            </div>
-          </div>
+          </SectionCard>
         </div>
 
         {/* Right: Kitchen + Stock — primera prioridad visual en móvil (accionable/urgente) */}
@@ -182,12 +203,13 @@ export const DashboardPage: React.FC = () => {
           <div className="d-flex flex-column gap-4 h-100">
 
             {/* Kitchen Feed */}
-            <div className="section-card flex-shrink-0">
-              <div className="section-card-header flex-wrap gap-2">
-                <h2 className="section-card-title">
-                  <i className="bi bi-fire" style={{ color: '#d97706' }} aria-hidden="true"></i>
-                  Pedidos en Preparación
-                </h2>
+            <SectionCard
+              icon="bi-fire"
+              iconColor="#d97706"
+              title="Pedidos en Preparación"
+              className="dashboard-summary-card flex-shrink-0"
+              bodyClassName="p-3"
+              actions={
                 <button
                   className="btn btn-sm btn-outline-secondary fw-semibold"
                   style={{ borderRadius: 8, fontSize: '0.75rem' }}
@@ -195,8 +217,8 @@ export const DashboardPage: React.FC = () => {
                 >
                   Ver KDS <i className="bi bi-arrow-right ms-1" aria-hidden="true"></i>
                 </button>
-              </div>
-              <div className="section-card-body p-3">
+              }
+            >
                 {activeOrders.filter(o => o.status === 'en_preparacion').length === 0 ? (
                   <div className="text-center py-3" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                     <i className="bi bi-check-circle d-block mb-2" style={{ fontSize: '1.75rem', color: '#10b981' }} aria-hidden="true"></i>
@@ -232,17 +254,17 @@ export const DashboardPage: React.FC = () => {
                     }
                   </div>
                 )}
-              </div>
-            </div>
+            </SectionCard>
 
             {/* Stock Alerts */}
-            <div className="section-card flex-grow-1">
-              <div className="section-card-header flex-wrap gap-2">
-                <h2 className="section-card-title">
-                  <i className="bi bi-exclamation-triangle-fill" style={{ color: '#e11d48' }} aria-hidden="true"></i>
-                  Alertas de Insumos
-                </h2>
-                {currentRole === 'Administrador' && (
+            <SectionCard
+              icon="bi-exclamation-triangle-fill"
+              iconColor="#e11d48"
+              title="Alertas de Insumos"
+              className="dashboard-summary-card flex-grow-1"
+              bodyClassName="p-3"
+              actions={
+                currentRole === 'Administrador' && (
                   <button
                     className="btn btn-sm btn-outline-danger fw-semibold"
                     style={{ borderRadius: 8, fontSize: '0.75rem' }}
@@ -250,9 +272,9 @@ export const DashboardPage: React.FC = () => {
                   >
                     Gestionar <i className="bi bi-arrow-right ms-1" aria-hidden="true"></i>
                   </button>
-                )}
-              </div>
-              <div className="section-card-body p-3">
+                )
+              }
+            >
                 {lowStockInsumos.length === 0 ? (
                   <div className="text-center py-3" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                     <i className="bi bi-shield-check d-block mb-2" style={{ fontSize: '1.75rem', color: '#10b981' }} aria-hidden="true"></i>
@@ -286,8 +308,7 @@ export const DashboardPage: React.FC = () => {
                     })}
                   </div>
                 )}
-              </div>
-            </div>
+            </SectionCard>
           </div>
         </div>
       </div>

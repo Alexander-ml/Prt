@@ -42,6 +42,7 @@ interface HistoryViewProps {
   onOpenReceipt: (sale: Sale) => void;
   onOpenReopen: (sale: Sale) => void;
   onOpenCancel: (sale: Sale) => void;
+  onExportReport: () => void;
 }
 
 const PAYMENT_METHOD_OPTIONS = [
@@ -95,6 +96,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   onOpenReceipt,
   onOpenReopen,
   onOpenCancel,
+  onExportReport,
 }) => {
   const hasActiveFilters = !!(filterDate || filterPaymentMethod || filterStatus || filterSearch);
 
@@ -200,7 +202,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
       <SectionCard icon="bi-funnel" title="Filtros de Historial">
         <div className="row g-3">
           <div className="col-12 col-lg-4">
-            <label className="form-label" htmlFor="filterSearch">Buscar</label>
+            <label className="filter-label" htmlFor="filterSearch">Buscar</label>
             <SearchBar
               value={filterSearch}
               onChange={setFilterSearch}
@@ -208,7 +210,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             />
           </div>
           <div className="col-6 col-lg-3">
-            <label id="filterPaymentLabel" className="form-label">Forma de pago</label>
+            <label id="filterPaymentLabel" className="filter-label">Forma de pago</label>
             <CustomDropdownSelect
               id="filterPayment"
               labelId="filterPaymentLabel"
@@ -218,7 +220,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             />
           </div>
           <div className="col-6 col-lg-3">
-            <label id="filterStatusLabel" className="form-label">Estado</label>
+            <label id="filterStatusLabel" className="filter-label">Estado</label>
             <CustomDropdownSelect
               id="filterStatus"
               labelId="filterStatusLabel"
@@ -228,7 +230,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             />
           </div>
           <div className="col-12 col-lg-2">
-            <label className="form-label" htmlFor="filterDateInput">Fecha</label>
+            <label className="filter-label" htmlFor="filterDateInput">Fecha</label>
             <input
               id="filterDateInput"
               type="date"
@@ -267,7 +269,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
               type="button"
               className="btn btn-sm btn-outline-primary fw-semibold"
               style={{ borderRadius: 8, fontSize: '0.78rem' }}
-              onClick={() => alert('Reporte exportado en Excel/PDF.')}
+              onClick={onExportReport}
             >
               <i className="bi bi-download me-1"></i> Exportar
             </button>

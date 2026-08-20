@@ -674,6 +674,70 @@ html, body {
 
 .glass-card:hover { box-shadow: var(--shadow-sm); }
 
+/* Panel de Control: mismo criterio de wrap que .table-config-section-card /
+   .users-list-card — el título cede espacio antes que recortar el botón de
+   acción secundaria ("Ver plano completo", etc.). No se fuerza ancho 100%
+   en el botón porque, a diferencia de "Nueva Mesa"/"Registrar Personal",
+   son enlaces secundarios de navegación, no la acción principal de la card. */
+.dashboard-summary-card .section-card-header { flex-wrap: wrap; gap: 0.5rem; }
+
+/* Panel de Control — resumen compacto solo-mobile, mismo esqueleto que
+   .orders-mobile-summary / .catalog-mobile-summary / .users-mobile-summary
+   (hero + 3 pills). Se define aparte en vez de reutilizar esas clases
+   porque cada una ya está acoplada 1:1 a su propio módulo; unificarlas en
+   una sola clase base es una limpieza válida pero más amplia, pendiente de
+   una pasada aparte que toque los 4 módulos a la vez. */
+.dashboard-mobile-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-xs);
+}
+.dashboard-mobile-summary-main p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.dashboard-mobile-summary-main strong {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 850;
+  line-height: 1;
+}
+.dashboard-mobile-summary-states {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+.dashboard-mobile-summary-states span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.dashboard-mobile-summary-states i { font-size: 0.9rem; }
+.dashboard-mobile-summary-states .is-orders { color: var(--brand-primary-hover); }
+.dashboard-mobile-summary-states .is-sales { color: var(--color-sky-text); }
+.dashboard-mobile-summary-states .is-stock-alert { color: var(--color-rose-text); }
+.dashboard-mobile-summary-states .is-stock-ok { color: var(--color-emerald-text); }
+
+@media (max-width: 359.98px) {
+  .dashboard-mobile-summary { grid-template-columns: 1fr; }
+}
+
 /* ───────────────────────────────────────────
    11. METRIC / STAT CARDS
    ─────────────────────────────────────────── */
@@ -1411,6 +1475,22 @@ html, body {
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 0.35rem;
+}
+
+/* Etiqueta "eyebrow" de filtro (LABEL → CONTROL), versión canónica del
+   patrón que ya existía repetido como .catalog-filter-label /
+   .users-filter-label / .table-floorplan-filter-label. Nuevos filtros
+   (ej. Historial de Ventas) deben usar esta clase en vez de duplicarla de
+   nuevo; las tres existentes se dejan intactas para no tocar módulos que
+   ya están correctos. */
+.filter-label {
+  display: block;
+  margin: 0 0 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .form-text {

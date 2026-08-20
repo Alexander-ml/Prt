@@ -8,6 +8,7 @@ import { OrderTakeView } from '../components/orders/OrderTakeView';
 import { OrderHistoryView } from '../components/orders/OrderHistoryView';
 import { OrdersStatsRow } from '../components/orders/OrdersStatsRow';
 import { ObservationModal, AdditionalItemsModal, CancelOrderModal } from '../components/orders/OrderModals';
+import { TABLE_STATUS_META } from '../components/tables/tableStatusMeta';
 
 type OrdersTab = 'take_order' | 'history';
 
@@ -27,7 +28,8 @@ export const OrdersPage: React.FC = () => {
     sendOrderToKitchen,
     addItemsToExistingOrder,
     cancelOrder,
-    currentRole
+    currentRole,
+    showToast,
   } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
@@ -111,7 +113,7 @@ export const OrdersPage: React.FC = () => {
   // Cart operations
   const handleAddToCart = (dish: Dish) => {
     if (!dish.isAvailableToday) {
-      alert(`El plato "${dish.name}" ha sido notificado como AGOTADO por cocina.`);
+      showToast('Plato No Disponible', `"${dish.name}" fue notificado como AGOTADO por cocina.`, 'warning');
       return;
     }
     setCartItems(prev => {
@@ -235,14 +237,19 @@ export const OrdersPage: React.FC = () => {
   const selectedTableObj = tables.find(t => t.id === selectedTableId);
   const cartSubtotal = cartItems.reduce((sum, item) => sum + item.dish.price * item.quantity, 0);
 
-  const statusMeta: Record< 
+  // Icono y color de cada estado se derivan de TABLE_STATUS_META (fuente única
+  // de verdad ya usada en Áreas y Mesas) para no mantener una segunda copia
+  // que pueda desincronizarse. El label (plural, para encabezado de grupo del
+  // selector "Elija mesa...") y el order (orden de agrupación propio de este
+  // flujo) son específicos de Pedidos y se conservan tal cual.
+  const statusMeta: Record<
     string,
     { label: string; icon: string; badgeVariant: 'success' | 'warning' | 'info' | 'danger'; order: number }
   > = {
-    disponible: { label: 'Mesas Disponibles', icon: 'bi-check-circle-fill', badgeVariant: 'success', order: 0 },
-    reservada:  { label: 'Mesas Reservadas',  icon: 'bi-bookmark-star-fill', badgeVariant: 'warning', order: 1 },
-    limpieza:   { label: 'En Limpieza',       icon: 'bi-droplet-fill',      badgeVariant: 'info',    order: 2 },
-    ocupada:    { label: 'Mesas Ocupadas',    icon: 'bi-people-fill',       badgeVariant: 'danger',  order: 3 },
+    disponible: { label: 'Mesas Disponibles', icon: TABLE_STATUS_META.disponible.icon, badgeVariant: TABLE_STATUS_META.disponible.colorVariant, order: 0 },
+    reservada:  { label: 'Mesas Reservadas',  icon: TABLE_STATUS_META.reservada.icon,  badgeVariant: TABLE_STATUS_META.reservada.colorVariant,  order: 1 },
+    limpieza:   { label: 'En Limpieza',       icon: TABLE_STATUS_META.limpieza.icon,   badgeVariant: TABLE_STATUS_META.limpieza.colorVariant,   order: 2 },
+    ocupada:    { label: 'Mesas Ocupadas',    icon: TABLE_STATUS_META.ocupada.icon,    badgeVariant: TABLE_STATUS_META.ocupada.colorVariant,    order: 3 },
   };
 
   const sortedTables = [...tables].sort((a, b) => {

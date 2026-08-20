@@ -42,7 +42,7 @@ export const CatalogPage: React.FC = () => {
             items={CATALOG_VIEW_ITEMS}
             value={viewMode}
             onChange={value => setViewMode(value as CatalogViewMode)}
-            ariaLabel="Cambiar vista del setViewModetálogo"
+            ariaLabel="Cambiar vista del catálogo"
           />
         }
       />

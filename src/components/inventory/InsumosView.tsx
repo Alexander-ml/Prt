@@ -34,7 +34,7 @@ interface InsumosViewProps {
  * `TablesConfigView` en Mesas.
  */
 export const InsumosView: React.FC<InsumosViewProps> = ({ lowStockRequestId }) => {
-  const { insumos, insumoCategories, addInsumo, updateInsumo, registerInsumoMovement } = useApp();
+  const { insumos, insumoCategories, addInsumo, updateInsumo, deleteInsumo, registerInsumoMovement } = useApp();
 
   // Search & Filter state (RF-70, RF-71)
   const [searchQuery, setSearchQuery] = useState('');
@@ -139,6 +139,10 @@ export const InsumosView: React.FC<InsumosViewProps> = ({ lowStockRequestId }) =
     setIsMovementModalOpen(false);
   };
 
+  const handleDeleteInsumo = (ins: Insumo) => {
+    deleteInsumo(ins.id);
+  };
+
   return (
     <>
       {lowStockInsumos.length > 0 && (
@@ -183,6 +187,7 @@ export const InsumosView: React.FC<InsumosViewProps> = ({ lowStockRequestId }) =
           insumos={filteredInsumos}
           onEdit={handleOpenModal}
           onRegisterMovement={handleOpenMovementModal}
+          onDelete={handleDeleteInsumo}
         />
       </SectionCard>
 

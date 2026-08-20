@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Dish } from '../../types';
 import { Badge } from '../common/Badge';
+import { formatMoney } from '../../utils/money';
 import { KITCHEN_STATION_META } from '../kitchen/kitchenMeta';
 
 interface DishCardProps {
@@ -55,7 +56,7 @@ export const DishCard: React.FC<DishCardProps> = ({
       <div className="card-body d-flex flex-column p-3">
         <div className="d-flex align-items-start justify-content-between gap-2 mb-1">
           <h3 className="fw-bold mb-0 text-truncate fs-6 text-dark">{dish.name}</h3>
-          <span className="fw-bold flex-shrink-0 text-primary fs-6">S/ {dish.price.toFixed(2)}</span>
+          <span className="fw-bold flex-shrink-0 text-primary fs-6">{formatMoney(dish.price)}</span>
         </div>
         <p
           className="mb-3 flex-grow-1 small text-muted"

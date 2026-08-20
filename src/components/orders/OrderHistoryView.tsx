@@ -4,6 +4,7 @@ import type { Order, OrderItemStatus, OrderStatus } from '../../types';
 import { SectionCard } from '../common/SectionCard';
 import { Badge } from '../common/Badge';
 import { EmptyState } from '../common/EmptyState';
+import { formatMoney } from '../../utils/money';
 import { SERVICE_TYPE_META } from '../kitchen/kitchenMeta';
 import { OrderPreparationStepper } from './OrderPreparationStepper';
 
@@ -213,7 +214,7 @@ export const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
                           </span>
                         </td>
                         <td><span className="fw-bold">{item.quantity}</span></td>
-                        <td>S/ {item.price.toFixed(2)}</td>
+                         <td><span className="fw-bold">{formatMoney(item.price)}</span></td>
                         <td>
                           {isCancelled ? (
                             <span className="d-flex align-items-center gap-1" style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>

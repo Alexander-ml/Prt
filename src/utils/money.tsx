@@ -12,7 +12,7 @@ export const round2 = (value: number): number => Math.round((value + Number.EPSI
 export const formatMoney = (value: number, currency = 'S/'): string => {
   const rounded = round2(value);
   const sign = rounded < 0 ? '-' : '';
-  return `${sign}${currency} ${Math.abs(rounded).toFixed(2)}`;
+  return `${sign}${currency}\u00A0${Math.abs(rounded).toFixed(2)}`;
 };
 
 /**

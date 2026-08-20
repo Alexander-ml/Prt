@@ -6,6 +6,7 @@ interface TopbarProps {
   onMenuClick: () => void;
 }
 
+
 const ROLE_CONFIG: Record<UserRole, { icon: string; color: string; surface: string; border: string; label: string; userName: string }> = {
   Administrador: { icon: 'bi-shield-lock-fill', color: 'var(--brand-black)', surface: 'var(--brand-black-soft)', border: 'var(--brand-black)', label: 'Administrador', userName: 'Carlos Mendoza' },
   Mesero:        { icon: 'bi-person-walking', color: 'var(--brand-primary)', surface: 'var(--brand-primary-soft)', border: 'var(--brand-primary-subtle)', label: 'Mesero (Sala)', userName: 'Juan Pérez' },

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type {
   UserRole,
   UserAccount,
@@ -25,7 +25,12 @@ import type {
   InsumoCategory,
   DishRecipeItem,
   LedgerEntry,
-  LedgerCategory
+  LedgerCategory,
+  StockMovement,
+  WasteEntry,
+  Supplier,
+  SupplierPriceHistory,
+  InventoryAlert
 } from '../types';
 import { resolvePaymentCategory } from '../utils/payments';
 import { round2, sumMoney } from '../utils/money';
@@ -49,8 +54,14 @@ import {
   initialInsumos,
   initialInsumoCategories,
   initialLedger,
-  initialLedgerCategories
+  initialLedgerCategories,
+  initialSuppliers,
+  initialSupplierPriceHistory,
+  initialStockMovements,
+  initialWasteEntries,
+  initialInventoryAlerts
 } from '../mock/initialData';
+import { getStockLevel } from '../components/inventory/inventoryMeta';
 
 const COMPROBANTE_SERIES: Record<TipoComprobante, string> = {
   ticket: 'T001',
@@ -169,10 +180,29 @@ export interface AppContextType {
   insumoCategories: InsumoCategory[];
   addInsumo: (insumo: Omit<Insumo, 'id' | 'lastRestockDate' | 'categoryName'>) => void;
   updateInsumo: (id: string, data: Partial<Insumo>) => void;
+  deleteInsumo: (id: string) => boolean;
   registerInsumoMovement: (id: string, quantityDelta: number, isRestock: boolean) => void;
   addInsumoCategory: (name: string, description: string) => void;
   updateInsumoCategory: (id: string, name: string, description: string) => void;
   deleteInsumoCategory: (id: string) => boolean;
+
+  stockMovements: StockMovement[];
+  addStockMovement: (movement: Omit<StockMovement, 'id' | 'createdAt'>) => void;
+
+  wasteEntries: WasteEntry[];
+  addWasteEntry: (entry: Omit<WasteEntry, 'id' | 'createdAt'>) => void;
+
+  suppliers: Supplier[];
+  addSupplier: (supplier: Omit<Supplier, 'id'>) => void;
+  updateSupplier: (id: string, data: Partial<Supplier>) => void;
+  toggleSupplierActive: (id: string) => void;
+
+  supplierPriceHistory: SupplierPriceHistory[];
+  addSupplierPriceHistory: (entry: Omit<SupplierPriceHistory, 'id' | 'recordedAt'>) => void;
+
+  inventoryAlerts: InventoryAlert[];
+  addInventoryAlert: (alert: Omit<InventoryAlert, 'id' | 'createdAt'>) => void;
+  clearInventoryAlert: (id: string) => void;
 
   // Accounting Module
   // financialSummary YA NO vive acá como estado: es un valor siempre
@@ -183,6 +213,8 @@ export interface AppContextType {
   ledgerEntries: LedgerEntry[];
   ledgerCategories: LedgerCategory[];
   addLedgerEntry: (entry: Omit<LedgerEntry, 'id'>) => void;
+  updateLedgerEntry: (id: string, data: Partial<LedgerEntry>, reason: string) => void;
+  reverseLedgerEntry: (id: string, reason: string) => void;
   addLedgerCategory: (name: string, kind: LedgerCategory['kind'], description: string) => void;
   updateLedgerCategory: (id: string, name: string, kind: LedgerCategory['kind'], description: string) => void;
   deleteLedgerCategory: (id: string) => boolean;
@@ -223,8 +255,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [comprobanteCounters, setComprobanteCounters] = useState(initialComprobanteCounters);
   const [insumos, setInsumos] = useState<Insumo[]>(initialInsumos);
   const [insumoCategories, setInsumoCategories] = useState<InsumoCategory[]>(initialInsumoCategories);
-  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>(initialLedger);
-  const [ledgerCategories, setLedgerCategories] = useState<LedgerCategory[]>(initialLedgerCategories);
+  const [stockMovements, setStockMovements] = useState<StockMovement[]>(initialStockMovements);
+  const [wasteEntries, setWasteEntries] = useState<WasteEntry[]>(initialWasteEntries);
+  const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
+  const [supplierPriceHistory, setSupplierPriceHistory] = useState<SupplierPriceHistory[]>(initialSupplierPriceHistory);
+  const [inventoryAlerts, setInventoryAlerts] = useState<InventoryAlert[]>(initialInventoryAlerts);
+  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>(() => {
+    try {
+      const saved = localStorage.getItem('prt_ledgerEntries');
+      return saved ? JSON.parse(saved) : initialLedger;
+    } catch { return initialLedger; }
+  });
+  const [ledgerCategories, setLedgerCategories] = useState<LedgerCategory[]>(() => {
+    try {
+      const saved = localStorage.getItem('prt_ledgerCategories');
+      return saved ? JSON.parse(saved) : initialLedgerCategories;
+    } catch { return initialLedgerCategories; }
+  });
+
+  // --- LOCALSTORAGE PERSISTENCE ---
+  useEffect(() => {
+    localStorage.setItem('prt_ledgerEntries', JSON.stringify(ledgerEntries));
+  }, [ledgerEntries]);
+  useEffect(() => {
+    localStorage.setItem('prt_ledgerCategories', JSON.stringify(ledgerCategories));
+  }, [ledgerCategories]);
+  useEffect(() => {
+    localStorage.setItem('prt_sales', JSON.stringify(sales));
+  }, [sales]);
+  useEffect(() => {
+    localStorage.setItem('prt_cashSession', JSON.stringify(cashSession));
+  }, [cashSession]);
+  useEffect(() => {
+    localStorage.setItem('prt_cashSessionHistory', JSON.stringify(cashSessionHistory));
+  }, [cashSessionHistory]);
 
   // --- USER ACTIONS ---
   const addUser = (userData: Omit<UserAccount, 'id' | 'createdAt'>) => {
@@ -924,6 +988,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
     setSales(prev => prev.map(s => s.id === saleId ? { ...s, isCancelled: true, estadoPago: 'anulada', cancellationReason: reason } : s));
+    // Reversión automática del asiento contable asociado a la venta
+    const originalEntry = ledgerEntries.find(e => e.reference === saleId && !e.isReversal && !e.reversedBy);
+    if (originalEntry) {
+      const reversalEntry: LedgerEntry = {
+        id: `led-rev-${Date.now()}`,
+        date: new Date().toISOString().split('T')[0],
+        type: originalEntry.type === 'ingreso' ? 'egreso' : 'ingreso',
+        categoryId: originalEntry.categoryId,
+        categoryName: originalEntry.categoryName,
+        description: `Reversión automática por anulación de venta: ${originalEntry.description}. Motivo: ${reason}`,
+        amount: originalEntry.amount,
+        reference: `REV-${originalEntry.reference}`,
+        createdAt: new Date().toISOString(),
+        isReversal: true,
+        reversalOfId: originalEntry.id
+      };
+      setLedgerEntries(prev => [reversalEntry, ...prev]);
+      setLedgerEntries(prev => prev.map(e => e.id === originalEntry.id ? { ...e, reversedBy: reversalEntry.id } : e));
+    }
     showToast('Venta Anulada', `La venta ${saleId} fue cancelada. Motivo: ${reason}`, 'warning');
   };
 
@@ -991,6 +1074,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const difference = round2(countedCash - cashSession.expectedCash);
     const closedSession: CashSession = { ...cashSession, closedAt, closedBy, countedCash, difference, status: 'cerrada' };
     setCashSessionHistory(prev => [closedSession, ...prev]);
+    // Asiento contable por sobrante/faltante de arqueo
+    if (difference !== 0) {
+      const isSobrante = difference > 0;
+      const cat = isSobrante
+        ? ledgerCategories.find(c => c.name === 'Otros Ingresos')
+        : ledgerCategories.find(c => c.name === 'Faltantes y Ajustes');
+      const newEntry: LedgerEntry = {
+        id: `led-${Date.now()}`,
+        date: new Date().toISOString().split('T')[0],
+        type: isSobrante ? 'ingreso' : 'egreso',
+        categoryId: cat?.id ?? '',
+        categoryName: cat?.name ?? (isSobrante ? 'Otros Ingresos' : 'Faltantes y Ajustes'),
+        description: `${isSobrante ? 'Sobrante' : 'Faltante'} de arqueo de caja (${closedSession.id}) — Esperado: S/ ${cashSession.expectedCash.toFixed(2)}, Contado: S/ ${countedCash.toFixed(2)}`,
+        amount: Math.abs(difference),
+        reference: `arqueo-${closedSession.id}`
+      };
+      setLedgerEntries(prev => [newEntry, ...prev]);
+      if (cat) {
+        setLedgerCategories(prev => prev.map(c => c.id === cat.id ? { ...c, entryCount: c.entryCount + 1 } : c));
+      }
+    }
     setCashSession(null);
     showToast(
       'Caja Cerrada',
@@ -1018,6 +1122,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       expectedCash: round2(prev.expectedCash + (type === 'ingreso_manual' ? amount : -amount)),
       movements: [...prev.movements, movement]
     } : prev);
+    // Asiento contable automático
+    const cat = type === 'ingreso_manual'
+      ? ledgerCategories.find(c => c.name === 'Otros Ingresos')
+      : ledgerCategories.find(c => c.name === 'Personal y Planilla');
+    const newEntry: LedgerEntry = {
+      id: `led-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      type: type === 'ingreso_manual' ? 'ingreso' : 'egreso',
+      categoryId: cat?.id ?? '',
+      categoryName: cat?.name ?? (type === 'ingreso_manual' ? 'Otros Ingresos' : 'Personal y Planilla'),
+      description: `${description} (Caja: ${cashSession.id})`,
+      amount,
+      reference: `caja-${cashSession.id}-${movement.id}`
+    };
+    setLedgerEntries(prev => [newEntry, ...prev]);
+    if (cat) {
+      setLedgerCategories(prev => prev.map(c => c.id === cat.id ? { ...c, entryCount: c.entryCount + 1 } : c));
+    }
     showToast(
       type === 'ingreso_manual' ? 'Ingreso Registrado' : 'Retiro Registrado',
       `${description} — S/ ${amount.toFixed(2)}`,
@@ -1084,6 +1206,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('Insumo Actualizado', 'Los datos del insumo han sido guardados.');
   };
 
+  const deleteInsumo = (id: string): boolean => {
+    const insumo = insumos.find(i => i.id === id);
+    if (!insumo) return false;
+    const usedInRecipes = dishes.some(d => d.recipe?.some(r => r.insumoId === id));
+    if (usedInRecipes) {
+      showToast('No se puede eliminar', `El insumo "${insumo.name}" está asociado a una receta. Reasigne o elimine la receta primero.`, 'danger');
+      return false;
+    }
+    setInsumos(prev => prev.filter(i => i.id !== id));
+    setInsumoCategories(prev => prev.map(c => c.id === insumo.categoryId ? { ...c, insumoCount: Math.max(0, c.insumoCount - 1) } : c));
+    showToast('Insumo Eliminado', `Insumo "${insumo.name}" eliminado del sistema.`, 'info');
+    return true;
+  };
+
   const registerInsumoMovement = (id: string, quantityDelta: number, isRestock: boolean) => {
     setInsumos(prev => prev.map(i => {
       if (i.id === id) {
@@ -1096,11 +1232,192 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return i;
     }));
+    // Asiento contable por reposición de inventario
+    if (isRestock) {
+      const insumo = insumos.find(i => i.id === id);
+      if (insumo) {
+        const totalCost = Number((quantityDelta * insumo.costPerUnit).toFixed(2));
+        const cat = ledgerCategories.find(c => c.name === 'Insumos & Proveedores');
+        const newEntry: LedgerEntry = {
+          id: `led-${Date.now()}`,
+          date: new Date().toISOString().split('T')[0],
+          type: 'egreso',
+          categoryId: cat?.id ?? '',
+          categoryName: cat?.name ?? 'Insumos & Proveedores',
+          description: `Compra ${insumo.name}: +${quantityDelta} ${insumo.unit} @ S/ ${insumo.costPerUnit.toFixed(2)}`,
+          amount: totalCost,
+          reference: `restock-${id}`
+        };
+        setLedgerEntries(prev => [newEntry, ...prev]);
+        if (cat) {
+          setLedgerCategories(prev => prev.map(c => c.id === cat.id ? { ...c, entryCount: c.entryCount + 1 } : c));
+        }
+      }
+    }
     showToast(
       isRestock ? 'Ingreso a Inventario' : 'Consumo / Ajuste de Insumo',
       `Se registró ${isRestock ? '+' : '-'}${quantityDelta} en el stock.`
     );
   };
+
+  // --- INVENTORY ADVANCED ACTIONS ---
+  const addStockMovement = (movement: Omit<StockMovement, 'id' | 'createdAt'>) => {
+    const newMovement: StockMovement = {
+      ...movement,
+      id: `sm-${Date.now()}`,
+      createdAt: new Date().toLocaleString('es-ES')
+    };
+    setStockMovements(prev => [newMovement, ...prev]);
+    setInsumos(prev => prev.map(i => i.id === movement.insumoId ? { ...i, currentStock: movement.newStock } : i));
+    // Asiento contable automático por compras
+    if (movement.type === 'compra' && movement.quantity > 0) {
+      const insumo = insumos.find(i => i.id === movement.insumoId);
+      const totalCost = Number((movement.quantity * (insumo?.costPerUnit ?? 0)).toFixed(2));
+      if (totalCost > 0) {
+        const cat = ledgerCategories.find(c => c.name === 'Insumos & Proveedores');
+        const entry: LedgerEntry = {
+          id: `led-${Date.now()}`,
+          date: new Date().toISOString().split('T')[0],
+          type: 'egreso',
+          categoryId: cat?.id ?? '',
+          categoryName: cat?.name ?? 'Insumos & Proveedores',
+          description: `Compra ${movement.insumoName}: +${movement.quantity} ${movement.unit} — ${movement.reason || 'Compra registrada'}`,
+          amount: totalCost,
+          reference: movement.referenceId ?? `sm-${newMovement.id}`
+        };
+        setLedgerEntries(prev => [entry, ...prev]);
+        if (cat) {
+          setLedgerCategories(prev => prev.map(c => c.id === cat.id ? { ...c, entryCount: c.entryCount + 1 } : c));
+        }
+      }
+    }
+  };
+
+  const addWasteEntry = (entry: Omit<WasteEntry, 'id' | 'createdAt'>) => {
+    const insumo = insumos.find(i => i.id === entry.insumoId);
+    if (!insumo) return;
+    const totalCost = Number((entry.quantity * entry.costPerUnit).toFixed(2));
+    const newEntry: WasteEntry = {
+      ...entry,
+      id: `waste-${Date.now()}`,
+      totalCost,
+      createdAt: new Date().toLocaleString('es-ES')
+    };
+    setWasteEntries(prev => [newEntry, ...prev]);
+    setInsumos(prev => prev.map(i => {
+      if (i.id === entry.insumoId) {
+        const nextStock = Math.max(0, i.currentStock - entry.quantity);
+        return { ...i, currentStock: nextStock };
+      }
+      return i;
+    }));
+    // Asiento contable por merma (pérdida de inventario)
+    const cat = ledgerCategories.find(c => c.name === 'Insumos & Proveedores');
+    const ledgerEntry: LedgerEntry = {
+      id: `led-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      type: 'egreso',
+      categoryId: cat?.id ?? '',
+      categoryName: cat?.name ?? 'Insumos & Proveedores',
+      description: `Merma: ${entry.insumoName} (${entry.quantity} ${entry.unit}) — ${entry.reason} — Pérdida: S/ ${totalCost.toFixed(2)}`,
+      amount: totalCost,
+      reference: `waste-${newEntry.id}`
+    };
+    setLedgerEntries(prev => [ledgerEntry, ...prev]);
+    if (cat) {
+      setLedgerCategories(prev => prev.map(c => c.id === cat.id ? { ...c, entryCount: c.entryCount + 1 } : c));
+    }
+    showToast('Merma Registrada', `Se registró merma de ${entry.quantity} ${entry.unit} de ${entry.insumoName}.`);
+  };
+
+  const addSupplier = (supplierData: Omit<Supplier, 'id'>) => {
+    const newSupplier: Supplier = { ...supplierData, id: `sup-${Date.now()}` };
+    setSuppliers(prev => [newSupplier, ...prev]);
+    showToast('Proveedor Registrado', `Proveedor "${newSupplier.name}" agregado exitosamente.`);
+  };
+
+  const updateSupplier = (id: string, data: Partial<Supplier>) => {
+    setSuppliers(prev => prev.map(s => (s.id === id ? { ...s, ...data } : s)));
+    showToast('Proveedor Actualizado', 'Los datos del proveedor fueron actualizados.');
+  };
+
+  const toggleSupplierActive = (id: string) => {
+    setSuppliers(prev => prev.map(s => {
+      if (s.id === id) {
+        const next = !s.active;
+        showToast('Proveedor Actualizado', `Proveedor "${s.name}" ${next ? 'activado' : 'desactivado'}.`, next ? 'success' : 'warning');
+        return { ...s, active: next };
+      }
+      return s;
+    }));
+  };
+
+  const addSupplierPriceHistory = (entry: Omit<SupplierPriceHistory, 'id' | 'recordedAt'>) => {
+    const newEntry: SupplierPriceHistory = {
+      ...entry,
+      id: `sph-${Date.now()}`,
+      recordedAt: new Date().toISOString().split('T')[0]
+    };
+    setSupplierPriceHistory(prev => [newEntry, ...prev]);
+  };
+
+  const addInventoryAlert = (alert: Omit<InventoryAlert, 'id' | 'createdAt'>) => {
+    const newAlert: InventoryAlert = {
+      ...alert,
+      id: `alert-${Date.now()}`,
+      createdAt: new Date().toLocaleString('es-ES')
+    };
+    setInventoryAlerts(prev => [newAlert, ...prev]);
+  };
+
+  const clearInventoryAlert = (id: string) => {
+    setInventoryAlerts(prev => prev.filter(a => a.id !== id));
+  };
+
+  // --- AUTO-ALERT MECHANISM (Recalculate when stock changes) ---
+  useEffect(() => {
+    // Generar alertas automáticas basadas en el nivel de stock actual
+    const newAlerts: InventoryAlert[] = [];
+    
+    insumos.forEach(ins => {
+      const level = getStockLevel(ins);
+      if (level !== 'optimo') {
+        const type: 'stock_critico' | 'stock_bajo' = level === 'critico' ? 'stock_critico' : 'stock_bajo';
+        const existingAlert = inventoryAlerts.find(
+          a => a.insumoId === ins.id && a.type === type
+        );
+        
+        if (!existingAlert) {
+          newAlerts.push({
+            id: `alert-${Date.now()}-${ins.id}`,
+            insumoId: ins.id,
+            insumoName: ins.name,
+            type,
+            message: `${ins.name}: ${type === 'stock_critico' ? 'CRÍTICO' : 'Bajo'} (${ins.currentStock} ${ins.unit} de ${ins.minStock} mín.)`,
+            createdAt: new Date().toLocaleString('es-ES')
+          });
+        }
+      }
+    });
+    
+    // Limpiar alertas para insumos que ya tienen stock óptimo
+    const alertsToKeep = inventoryAlerts.filter(alert => {
+      const insumo = insumos.find(i => i.id === alert.insumoId);
+      return insumo && getStockLevel(insumo) !== 'optimo';
+    });
+    
+    // Combinar alertas existentes + nuevas (evitar duplicados)
+    if (newAlerts.length > 0) {
+      setInventoryAlerts(prev => {
+        const ids = new Set(prev.map(a => `${a.insumoId}-${a.type}`));
+        const toAdd = newAlerts.filter(a => !ids.has(`${a.insumoId}-${a.type}`));
+        return [...prev.filter(a => inventoryAlerts.find(x => x.id === a.id)), ...toAdd];
+      });
+    } else if (alertsToKeep.length < inventoryAlerts.length) {
+      // Si hay menos alertas a mantener, limpiar las que se resolvieron
+      setInventoryAlerts(alertsToKeep);
+    }
+  }, [insumos, stockMovements]);
 
   // --- ACCOUNTING CATEGORY ACTIONS ---
   // Réplica exacta de addInsumoCategory/updateInsumoCategory/deleteInsumoCategory
@@ -1135,16 +1452,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addLedgerEntry = (entryData: Omit<LedgerEntry, 'id'>) => {
     const newEntry: LedgerEntry = {
       ...entryData,
-      id: `led-${Date.now()}`
+      id: `led-${Date.now()}`,
+      createdAt: new Date().toISOString()
     };
     setLedgerEntries(prev => [newEntry, ...prev]);
     setLedgerCategories(prev => prev.map(c => c.id === entryData.categoryId ? { ...c, entryCount: c.entryCount + 1 } : c));
-
-    // financialSummary ya no se mantiene a mano acá: se deriva en vivo de
-    // ledgerEntries (ver components/accounting/accountingMeta.ts), así que
-    // este asiento queda reflejado en los KPIs de Contabilidad sin ningún
-    // paso adicional.
     showToast('Asiento Contable', `Registro contable guardado (${entryData.type.toUpperCase()}: S/ ${entryData.amount.toFixed(2)}).`);
+  };
+
+  const updateLedgerEntry = (id: string, data: Partial<LedgerEntry>, reason: string) => {
+    setLedgerEntries(prev => prev.map(e => {
+      if (e.id === id && !e.isReversal && !e.reversedBy) {
+        return {
+          ...e,
+          ...data,
+          editedAt: new Date().toISOString(),
+          editReason: reason
+        };
+      }
+      return e;
+    }));
+    showToast('Asiento Actualizado', `Asiento modificado. Motivo: ${reason}`, 'info');
+  };
+
+  const reverseLedgerEntry = (id: string, reason: string) => {
+    const original = ledgerEntries.find(e => e.id === id);
+    if (!original) return;
+    const reversedAmount = original.type === 'ingreso' ? -original.amount : original.amount;
+    const reversalEntry: LedgerEntry = {
+      id: `led-rev-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      type: original.type === 'ingreso' ? 'egreso' : 'ingreso',
+      categoryId: original.categoryId,
+      categoryName: original.categoryName,
+      description: `Reversión de: ${original.description}`,
+      amount: Math.abs(reversedAmount),
+      reference: `REV-${original.reference}`,
+      createdAt: new Date().toISOString(),
+      isReversal: true,
+      reversalOfId: original.id
+    };
+    setLedgerEntries(prev => [reversalEntry, ...prev]);
+    setLedgerEntries(prev => prev.map(e => e.id === id ? { ...e, reversedBy: reversalEntry.id } : e));
+    showToast('Asiento Revertido', `Se generó asiento de reversión. Motivo: ${reason}`, 'warning');
   };
 
   return (
@@ -1220,13 +1570,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         insumoCategories,
         addInsumo,
         updateInsumo,
+        deleteInsumo,
         registerInsumoMovement,
         addInsumoCategory,
         updateInsumoCategory,
         deleteInsumoCategory,
+        stockMovements,
+        addStockMovement,
+        wasteEntries,
+        addWasteEntry,
+        suppliers,
+        addSupplier,
+        updateSupplier,
+        toggleSupplierActive,
+        supplierPriceHistory,
+        addSupplierPriceHistory,
+        inventoryAlerts,
+        addInventoryAlert,
+        clearInventoryAlert,
         ledgerEntries,
         ledgerCategories,
         addLedgerEntry,
+        updateLedgerEntry,
+        reverseLedgerEntry,
         addLedgerCategory,
         updateLedgerCategory,
         deleteLedgerCategory

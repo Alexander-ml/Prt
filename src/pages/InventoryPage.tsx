@@ -5,28 +5,16 @@ import { EmptyState } from '../components/common/EmptyState';
 import { InventoryStatsRow } from '../components/inventory/InventoryStatsRow';
 import { InsumosView } from '../components/inventory/InsumosView';
 import { InsumoCategoriesView } from '../components/inventory/InsumoCategoriesView';
+import { StockMovementsView } from '../components/inventory/StockMovementsView';
+import { WastesView } from '../components/inventory/WastesView';
+import { SuppliersView } from '../components/inventory/SuppliersView';
+import { AlertsView } from '../components/inventory/AlertsView';
 
-/**
- * InventoryPage — Inventario e Insumos (RF-66 a RF-72).
- *
- * Orquestador delgado: solo decide qué pestaña mostrar, igual que
- * `CatalogPage`. Toda la lógica de cada vista vive en su propio
- * componente bajo `components/inventory/`:
- *  - InsumosView           → alta, edición, movimientos y filtrado de insumos
- *  - InsumoCategoriesView  → alta, edición y borrado de categorías de insumo
- *
- * El `PageHeader` queda reservado para el cambio de pestaña Insumos /
- * Categorías — el botón "Registrar Insumo" ya no vive acá, vive en
- * `InsumoFilterBar`, pegado a la lista que crea (mismo criterio que
- * `CatalogPage` con "Platos y Carta" / "Categorías").
- */
+type InventoryTab = 'insumos' | 'movimientos' | 'mermas' | 'proveedores' | 'alertas' | 'categorias';
+
 export const InventoryPage: React.FC = () => {
   const { currentRole } = useApp();
-  const [activeTab, setActiveTab] = useState<'insumos' | 'categorias'>('insumos');
-
-  // Se incrementa cuando el StatCard "Bajo Stock Mínimo" recibe un clic —
-  // fuerza a InsumosView a activar su filtro de bajo stock aunque ya
-  // estuviera en la pestaña de Insumos.
+  const [activeTab, setActiveTab] = useState<InventoryTab>('insumos');
   const [lowStockRequestId, setLowStockRequestId] = useState(0);
 
   const handleLowStockClick = () => {
@@ -46,52 +34,53 @@ export const InventoryPage: React.FC = () => {
     );
   }
 
+  const tabs: { id: InventoryTab; label: string; icon: string }[] = [
+    { id: 'insumos', label: 'Insumos', icon: 'bi-boxes' },
+    { id: 'movimientos', label: 'Kardex', icon: 'bi-arrow-repeat' },
+    { id: 'mermas', label: 'Mermas', icon: 'bi-box-seam' },
+    { id: 'proveedores', label: 'Proveedores', icon: 'bi-truck' },
+    { id: 'alertas', label: 'Alertas', icon: 'bi-bell' },
+    { id: 'categorias', label: 'Categorías', icon: 'bi-tags-fill' }
+  ];
+
   return (
     <div className="container-fluid p-0 animate-fadeinup">
       <PageHeader
         icon="bi-boxes"
         title="Inventario e Insumos"
-        subtitle="Control de insumos disponibles, alertas de reposición y movimientos de stock."
+        subtitle="Control de stock, movimientos, mermas, proveedores y alertas de reposición."
         actions={
           <div
-            className="d-flex w-100 gap-2"
+            className="d-flex w-100 gap-2 flex-wrap"
             role="tablist"
             aria-label="Cambiar vista del inventario"
           >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'insumos'}
-              className={`btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1 ${activeTab === 'insumos' ? 'btn-primary' : 'btn-outline-primary'}`}
-              style={{ minHeight: 44, borderRadius: 8, fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)' }}
-              onClick={() => setActiveTab('insumos')}
-            >
-              <i className="bi bi-boxes me-1" aria-hidden="true"></i>
-              Insumos
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'categorias'}
-              className={`btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1 ${activeTab === 'categorias' ? 'btn-primary' : 'btn-outline-primary'}`}
-              style={{ minHeight: 44, borderRadius: 8, fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)' }}
-              onClick={() => setActiveTab('categorias')}
-            >
-              <i className="bi bi-tags-fill me-1" aria-hidden="true"></i>
-              Categorías
-            </button>
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                className={`btn fw-semibold flex-grow-1 flex-fill d-flex align-items-center justify-content-center gap-1 ${activeTab === tab.id ? 'btn-primary' : 'btn-outline-primary'}`}
+                style={{ minHeight: 44, borderRadius: 8, fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)', whiteSpace: 'nowrap' }}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <i className={`bi ${tab.icon} me-1`} aria-hidden="true"></i>
+                {tab.label}
+              </button>
+            ))}
           </div>
         }
       />
 
       <InventoryStatsRow onLowStockClick={handleLowStockClick} />
 
-      {activeTab === 'insumos' ? (
-        <InsumosView lowStockRequestId={lowStockRequestId} />
-      ) : (
-        <InsumoCategoriesView />
-      )}
+      {activeTab === 'insumos' && <InsumosView lowStockRequestId={lowStockRequestId} />}
+      {activeTab === 'movimientos' && <StockMovementsView />}
+      {activeTab === 'mermas' && <WastesView />}
+      {activeTab === 'proveedores' && <SuppliersView />}
+      {activeTab === 'alertas' && <AlertsView />}
+      {activeTab === 'categorias' && <InsumoCategoriesView />}
     </div>
   );
 };

@@ -7,38 +7,11 @@ import { LedgerView } from '../components/accounting/LedgerView';
 import { LedgerCategoriesView } from '../components/accounting/LedgerCategoriesView';
 import type { PeriodFilter } from '../components/accounting/accountingMeta';
 
-/**
- * AccountingPage — Contabilidad Formal (RF-73 a RF-75).
- *
- * Orquestador delgado: solo decide qué pestaña mostrar y guarda el
- * período elegido (compartido entre los KPIs de arriba y el Libro
- * Diario), igual que `CatalogPage`/`InventoryPage`. Toda la lógica de
- * cada vista vive en su propio componente bajo `components/accounting/`:
- *  - FinancialKpisRow      → 4 StatCards derivados en vivo del período
- *  - LedgerView            → distribución, desgloses, libro diario y modal de asiento
- *  - LedgerCategoriesView  → alta, edición y borrado de categorías contables
- *
- * El `PageHeader` queda reservado para el cambio de pestaña Resumen /
- * Categorías — los botones "Exportar Reporte" y "Nuevo Asiento" ya no
- * viven acá, viven en `LedgerFilterBar`, pegados a la lista que exportan
- * y crean (mismo criterio que `CatalogPage` con "Platos y Carta" /
- * "Categorías" y que `HistoryView` con su botón "Exportar").
- *
- * `financialSummary` ya NO se lee de `useApp()` en ningún lugar de este
- * módulo: se deriva en vivo de `ledgerEntries` + `sales` para el período
- * elegido (ver components/accounting/accountingMeta.ts), así que anular
- * una venta en Ventas se refleja acá sin que ningún código tenga que
- * "acordarse" de actualizar Contabilidad.
- */
 export const AccountingPage: React.FC = () => {
   const { currentRole } = useApp();
   const [activeTab, setActiveTab] = useState<'resumen' | 'categorias'>('resumen');
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('este_mes');
 
-  // Se incrementa cuando el StatCard "Egresos Registrados" recibe un clic —
-  // fuerza a LedgerView a activar su filtro de solo egresos aunque ya
-  // estuviera en la pestaña de Resumen (mismo criterio que InventoryPage
-  // con el StatCard "Bajo Stock Mínimo").
   const [expenseFilterRequestId, setExpenseFilterRequestId] = useState(0);
 
   const handleExpenseClick = () => {

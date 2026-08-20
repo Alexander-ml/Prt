@@ -54,23 +54,22 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="modal fade show d-block"
+      className="modal fade show"
       tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modalTitleHeading"
       onMouseDown={e => {
-        // Cerrar al hacer clic en el backdrop (fuera del modal-dialog)
         if (e.target === e.currentTarget) onClose();
       }}
-      style={{ backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', zIndex: 1060 }}
+      style={{ backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', zIndex: 1060, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '40rem' }}
     >
-      <div className={`modal-dialog ${modalWidthClass} modal-dialog-centered`}>
+      <div className={`modal-dialog ${modalWidthClass}`} style={{ margin: '0 auto' }}>
         <div
           className="modal-content modal-content-custom border-0 shadow-lg"
           style={{ maxHeight: 'calc(100vh - 3.5rem)' }}
         >
-          <div className="modal-header border-bottom px-4 py-3 bg-light flex-shrink-0">
+          <div className="modal-header border-bottom px-4 py-2 bg-light flex-shrink-0">
             <div className="text-truncate">
               <h5 id="modalTitleHeading" className="modal-title fw-bold text-dark mb-0 text-truncate">
                 {title}
@@ -86,14 +85,14 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
 
           <div
-            className="modal-body p-4"
+            className="modal-body px-4 py-3"
             style={{ overflowY: 'auto', overflowX: 'visible' }}
           >
             {children}
           </div>
 
           {footer && (
-            <div className="modal-footer border-top bg-light px-4 py-3 flex-shrink-0">
+            <div className="modal-footer border-top bg-light px-4 py-2 flex-shrink-0">
               {footer}
             </div>
           )}

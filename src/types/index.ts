@@ -102,7 +102,7 @@ export interface Promotion {
   targetName?: string;
   discountPercentage: number;
   active: boolean;
-  startDate: string; 
+  startDate: string;
   endDate: string;
 }
 
@@ -372,6 +372,12 @@ export interface LedgerEntry {
   description: string;
   amount: number;
   reference: string;
+  createdAt?: string;
+  editedAt?: string;
+  editReason?: string;
+  isReversal?: boolean;
+  reversalOfId?: string;
+  reversedBy?: string;
 }
 
 // FinancialSummary ya NO es un estado que haya que mantener sincronizado a
@@ -388,4 +394,92 @@ export interface FinancialSummary {
   totalExpenses: number;
   netProfit: number;
   taxCollected: number;
+}
+
+// RF-76 - RF-84: Inventory advanced — kardex, mermas, proveedores y alertas
+export type StockMovementType =
+  | 'compra'
+  | 'consumo_venta'
+  | 'consumo_receta'
+  | 'merma'
+  | 'ajuste_entrada'
+  | 'ajuste_salida'
+  | 'devolucion'
+  | 'transferencia';
+
+export interface StockMovement {
+  id: string;
+  insumoId: string;
+  insumoName: string;
+  type: StockMovementType;
+  quantity: number;
+  unit: string;
+  previousStock: number;
+  newStock: number;
+  reason?: string;
+  referenceId?: string;
+  createdAt: string;
+}
+
+export type WasteReason =
+  | 'caducidad'
+  | 'rotura'
+  | 'preparacion'
+  | 'devolucion_cliente'
+  | 'ajuste_inventario'
+  | 'otro';
+
+export interface WasteEntry {
+  id: string;
+  insumoId: string;
+  insumoName: string;
+  quantity: number;
+  unit: string;
+  reason: WasteReason;
+  costPerUnit: number;
+  totalCost: number;
+  createdAt: string;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contactName?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  ruc?: string;
+  active: boolean;
+}
+
+export interface SupplierPriceHistory {
+  id: string;
+  supplierId: string;
+  supplierName: string;
+  insumoId: string;
+  insumoName: string;
+  costPerUnit: number;
+  recordedAt: string;
+}
+
+export type AlertType = 'stock_critico' | 'stock_bajo' | 'sin_movimiento' | 'costo_creciente';
+
+export interface InventoryAlert {
+  id: string;
+  insumoId: string;
+  insumoName: string;
+  type: AlertType;
+  message: string;
+  createdAt: string;
+}
+
+export interface PurchaseSuggestion {
+  insumoId: string;
+  insumoName: string;
+  unit: string;
+  currentStock: number;
+  minStock: number;
+  maxStock: number;
+  suggestedQuantity: number;
+  reason: string;
 }

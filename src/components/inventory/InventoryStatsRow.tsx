@@ -4,29 +4,20 @@ import { StatCard } from '../common/StatCard';
 import { formatMoney } from '../../utils/money';
 
 interface InventoryStatsRowProps {
-  /** StatCard ya soporta `onClick` — al hacer clic en "Bajo Stock Mínimo",
-   *  InventoryPage cambia a la pestaña Insumos y filtra la tabla a solo
-   *  los insumos por debajo de su mínimo. */
   onLowStockClick: () => void;
 }
 
-/**
- * InventoryStatsRow — Fila de 4 StatCards con el resumen del inventario
- * (Total Insumos, Valor Total en Stock, Bajo Stock Mínimo, Platos Sin
- * Receta Vinculada). Lee `useApp()` directamente, igual que
- * `CatalogStatsRow`, para que InventoryPage no tenga que calcular ni pasar
- * estos datos hacia abajo. Layout de 4 columnas, mismo patrón que
- * `OrdersStatsRow` (no el de 3 columnas de Catálogo).
- */
 export const InventoryStatsRow: React.FC<InventoryStatsRowProps> = ({ onLowStockClick }) => {
-  const { insumos, dishes } = useApp();
+  const { insumos, dishes, wasteEntries, inventoryAlerts } = useApp();
 
   const lowStockCount = insumos.filter(i => i.currentStock <= i.minStock).length;
   const totalStockValue = insumos.reduce((sum, i) => sum + i.currentStock * i.costPerUnit, 0);
   const dishesWithoutRecipe = dishes.filter(d => !d.recipe?.length).length;
+  const totalWasteCost = wasteEntries.reduce((sum, w) => sum + w.totalCost, 0);
+  const activeAlerts = inventoryAlerts.length;
 
   return (
-    <div className="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3 mb-4 stagger-children">
+    <div className="row row-cols-1 row-cols-sm-2 row-cols-lg-4 row-cols-xl-6 g-3 mb-4 stagger-children">
       <div className="col">
         <StatCard
           title="Total Insumos"
@@ -57,11 +48,29 @@ export const InventoryStatsRow: React.FC<InventoryStatsRowProps> = ({ onLowStock
       </div>
       <div className="col">
         <StatCard
-          title="Platos Sin Receta Vinculada"
+          title="Platos Sin Receta"
           value={dishesWithoutRecipe}
           subtitle="Aún no descuentan stock al venderse"
           icon="bi-egg-fried"
           colorTheme="amber"
+        />
+      </div>
+      <div className="col">
+        <StatCard
+          title="Mermas del Mes"
+          value={`S/ ${totalWasteCost.toFixed(2)}`}
+          subtitle={`${wasteEntries.length} registros`}
+          icon="bi-box-seam"
+          colorTheme="rose"
+        />
+      </div>
+      <div className="col">
+        <StatCard
+          title="Alertas Activas"
+          value={activeAlerts}
+          subtitle="Ver pestaña Alertas"
+          icon="bi-bell"
+          colorTheme="violet"
         />
       </div>
     </div>

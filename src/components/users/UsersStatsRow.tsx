@@ -8,11 +8,10 @@ import { StatCard } from '../common/StatCard';
  * `UsersPage` no tenga que calcular ni pasar estos datos hacia abajo.
  *
  * En móvil, las 3 StatCards ceden el paso a un resumen horizontal
- * compacto (RF Mobile de indicadores) — mismo patrón ya resuelto en el
- * proyecto para Áreas y Mesas (`TableMetricsSummary` /
- * `.table-mobile-summary`) y Catálogo (`CatalogStatsRow` /
- * `.catalog-mobile-summary`): se prioriza el listado sin ocultar
- * información, solo se compacta su presentación.
+ * compacto (clases compartidas `.mobile-summary*`, ver custom.css) — mismo
+ * patrón ya resuelto en el proyecto para Áreas y Mesas, Pedidos, Catálogo
+ * y Panel de Control: se prioriza el listado sin ocultar información,
+ * solo se compacta su presentación.
  */
 export const UsersStatsRow: React.FC = () => {
   const { users } = useApp();
@@ -22,12 +21,12 @@ export const UsersStatsRow: React.FC = () => {
 
   return (
     <>
-      <section className="users-mobile-summary d-sm-none mb-4" aria-label="Resumen de personal">
-        <div className="users-mobile-summary-main">
+      <section className="mobile-summary users-mobile-summary d-sm-none mb-4" aria-label="Resumen de personal">
+        <div className="mobile-summary-main">
           <p>Total Personal</p>
           <strong>{users.length}</strong>
         </div>
-        <div className="users-mobile-summary-states">
+        <div className="mobile-summary-states users-mobile-summary-states">
           <span className="is-active"><i className="bi bi-person-check-fill" aria-hidden="true"></i>{activeUsersCount} activos</span>
           <span className="is-inactive"><i className="bi bi-person-dash-fill" aria-hidden="true"></i>{inactiveUsersCount} inactivos</span>
         </div>

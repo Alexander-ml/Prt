@@ -5,7 +5,6 @@ import { Badge } from '../common/Badge';
 import { SearchBar } from '../common/SearchBar';
 import { EmptyState } from '../common/EmptyState';
 import { CustomDropdownSelect } from '../common/CustomDropdownSelect';
-import { formatMoney } from '../../utils/money';
 import { SERVICE_TYPE_META } from '../kitchen/kitchenMeta';
 
 type CartLine = { dish: Dish; quantity: number; observation: string };
@@ -89,7 +88,7 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
       <div className="border-bottom pb-3 mb-3">
         <div className="row g-3">
           <div className={activeWaiters.length > 1 ? 'col-12 col-sm-6' : 'col-12'}>
-            <label className="form-label fw-bold mb-1" id={`serviceTypeSelectLabel-${idSuffix}`}>
+            <label className="form-label mb-1" id={`serviceTypeSelectLabel-${idSuffix}`}>
               Tipo de Servicio
             </label>
             <CustomDropdownSelect
@@ -108,7 +107,7 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
           </div>
           {activeWaiters.length > 1 && (
             <div className="col-12 col-sm-6">
-              <label className="form-label fw-bold mb-1" id={`waiterSelectLabel-${idSuffix}`}>
+              <label className="form-label mb-1" id={`waiterSelectLabel-${idSuffix}`}>
                 Atendido por
               </label>
               <CustomDropdownSelect
@@ -131,7 +130,7 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
 
       <div className="border-bottom pb-3 mb-3">
         <div className="d-flex align-items-center justify-content-between mb-1">
-          <label className="form-label fw-bold mb-0" id={`mesaSelectLabel-${idSuffix}`}>
+          <label className="form-label mb-0" id={`mesaSelectLabel-${idSuffix}`}>
             {includeStepNumber ? '1. Seleccionar Mesa' : 'Seleccionar Mesa'}
           </label>
           {selectedTableObj && (
@@ -253,7 +252,7 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
                           {!dish.isAvailableToday && <Badge status="AGOTADO" variant="danger" />}
                         </div>
                         <div className="d-flex align-items-center gap-2 mb-1">
-                          <small style={{ color: 'var(--color-brand)', fontWeight: 700 }}>{formatMoney(dish.price)}</small>
+                          <small style={{ color: 'var(--color-brand)', fontWeight: 700 }}>S/ {dish.price.toFixed(2)}</small>
                           {/* Tiempo de prep. discreto: informa al mesero sin competir con el precio */}
                           <small className="text-muted" style={{ fontSize: '0.7rem' }}>
                             <i className="bi bi-stopwatch me-1" aria-hidden="true"></i>
@@ -322,9 +321,9 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
                       <span className="fw-bold" style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                         {item.dish.name}
                       </span>
-                         <span className="fw-bold" style={{ fontSize: '0.85rem', color: 'var(--color-brand)' }}>
-                           {formatMoney(item.dish.price * item.quantity)}
-                         </span>
+                      <span className="fw-bold" style={{ fontSize: '0.85rem', color: 'var(--color-brand)' }}>
+                        S/ {(item.dish.price * item.quantity).toFixed(2)}
+                      </span>
                     </div>
                     {item.observation && (
                       <div className="p-2 rounded mb-2" style={{ background: 'var(--color-amber-bg)', color: 'var(--color-amber-text)', fontSize: '0.75rem' }}>
@@ -384,7 +383,7 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
           <div className="pt-3 border-top mt-auto">
             <div className="d-flex justify-content-between align-items-center mb-3">
               <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>Subtotal Estimado:</span>
-              <span className="fw-bold" style={{ fontSize: '1.4rem', color: 'var(--text-primary)' }}>{formatMoney(cartSubtotal)}</span>
+              <span className="fw-bold" style={{ fontSize: '1.4rem', color: 'var(--text-primary)' }}>S/ {cartSubtotal.toFixed(2)}</span>
             </div>
             <button
               type="button"

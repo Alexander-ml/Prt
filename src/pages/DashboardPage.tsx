@@ -41,20 +41,21 @@ export const DashboardPage: React.FC = () => {
       />
 
       {/* KPI Cards */}
-      {/* Resumen compacto solo-mobile — mismo patrón "hero + pills" que
-          TableMetricsSummary (Mesas), OrdersStatsRow (Pedidos), CatalogStatsRow
-          y UsersStatsRow: 1 métrica principal + 3 secundarias, sin ocultar
-          ningún dato (las 4 StatCards completas se conservan a partir de
-          576px vía d-none d-sm-flex). Ocupación de mesas se eligió como
-          "hero" por ser la referencia directa de TableMetricsSummary y la
-          lectura más inmediata del estado de la sala; las otras 3 conservan
-          su valor real en las pills, no solo un ícono decorativo. */}
-      <section className="dashboard-mobile-summary d-sm-none mb-4" aria-label="Resumen general del panel">
-        <div className="dashboard-mobile-summary-main">
+      {/* Resumen compacto solo-mobile — usa las clases compartidas
+          .mobile-summary* (ver custom.css, sección consolidada junto a
+          TableMetricsSummary/OrdersStatsRow/CatalogStatsRow/UsersStatsRow):
+          1 métrica principal + 3 secundarias, sin ocultar ningún dato (las
+          4 StatCards completas se conservan a partir de 576px vía
+          d-none d-sm-flex). Ocupación de mesas se eligió como "hero" por
+          ser la referencia directa de TableMetricsSummary y la lectura más
+          inmediata del estado de la sala; las otras 3 conservan su valor
+          real en las pills, no solo un ícono decorativo. */}
+      <section className="mobile-summary dashboard-mobile-summary d-sm-none mb-4" aria-label="Resumen general del panel">
+        <div className="mobile-summary-main">
           <p>Ocupación de mesas</p>
           <strong>{occupiedTables} / {totalTables}</strong>
         </div>
-        <div className="dashboard-mobile-summary-states">
+        <div className="mobile-summary-states dashboard-mobile-summary-states">
           <span className="is-orders"><i className="bi bi-receipt" aria-hidden="true"></i>{activeOrders.length} pedidos activos</span>
           <span className="is-sales"><i className="bi bi-cash-stack" aria-hidden="true"></i>S/ {todaySalesTotal.toFixed(2)} vendido hoy</span>
           <span className={lowStockInsumos.length > 0 ? 'is-stock-alert' : 'is-stock-ok'}>

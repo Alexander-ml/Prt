@@ -115,7 +115,7 @@ export const KitchenOrderItemRow: React.FC<KitchenOrderItemRowProps> = ({
             </button>
           )}
           <button type="button" className="btn kds-item-cancel-action" onClick={onRequestCancel}>
-            <i className="bi bi-x-circle" aria-hidden="true"> </i>
+            <i className="bi bi-x-circle" aria-hidden="true"></i>
             Cancelar ítem
           </button>
         </div>

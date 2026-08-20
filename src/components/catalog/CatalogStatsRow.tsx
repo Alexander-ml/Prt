@@ -16,12 +16,12 @@ export const CatalogStatsRow: React.FC = () => {
 
   return (
     <>
-      <section className="catalog-mobile-summary d-sm-none mb-4" aria-label="Resumen del catálogo">
-        <div className="catalog-mobile-summary-main">
+      <section className="mobile-summary catalog-mobile-summary d-sm-none mb-4" aria-label="Resumen del catálogo">
+        <div className="mobile-summary-main">
           <p>Platos registrados</p>
           <strong>{dishes.length}</strong>
         </div>
-        <div className="catalog-mobile-summary-states">
+        <div className="mobile-summary-states catalog-mobile-summary-states">
           <span className="is-categories"><i className="bi bi-tags-fill" aria-hidden="true"></i>{categories.length} categorías</span>
           <span className="is-available"><i className="bi bi-check-circle-fill" aria-hidden="true"></i>{availableDishesCount} disponibles</span>
           <span className="is-unavailable"><i className="bi bi-slash-circle-fill" aria-hidden="true"></i>{unavailableDishesCount} no disponibles</span>

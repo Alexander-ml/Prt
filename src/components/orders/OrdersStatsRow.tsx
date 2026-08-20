@@ -22,12 +22,12 @@ export const OrdersStatsRow: React.FC<OrdersStatsRowProps> = ({
 }) => {
   return (
     <>
-      <section className="orders-mobile-summary d-sm-none mb-4" aria-label="Resumen operativo de pedidos">
-        <div className="orders-mobile-summary-main">
+      <section className="mobile-summary orders-mobile-summary d-sm-none mb-4" aria-label="Resumen operativo de pedidos">
+        <div className="mobile-summary-main">
           <p>Pedidos activos</p>
           <strong>{activeOrders}</strong>
         </div>
-        <div className="orders-mobile-summary-states">
+        <div className="mobile-summary-states orders-mobile-summary-states">
           <span className="is-occupied"><i className="bi bi-people-fill" aria-hidden="true"></i>{occupiedTables} mesas ocupadas</span>
           <span className="is-kitchen"><i className="bi bi-fire" aria-hidden="true"></i>{ordersInKitchen} en camino a listo</span>
           <span className="is-ready"><i className="bi bi-check-circle-fill" aria-hidden="true"></i>{ordersReady} listos para cobro</span>

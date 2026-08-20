@@ -14,12 +14,12 @@ export const TableMetricsSummary: React.FC<TableMetricsSummaryProps> = ({
   occupied,
   reserved,
 }) => (
-  <section className="table-mobile-summary d-sm-none mb-4" aria-label="Resumen de mesas">
-    <div>
-      <p className="table-mobile-summary-label">Total de mesas</p>
-      <p className="table-mobile-summary-total">{total}</p>
+  <section className="mobile-summary table-mobile-summary d-sm-none mb-4" aria-label="Resumen de mesas">
+    <div className="mobile-summary-main">
+      <p>Total de mesas</p>
+      <strong>{total}</strong>
     </div>
-    <div className="table-mobile-summary-states">
+    <div className="mobile-summary-states table-mobile-summary-states">
       <span className="is-available"><i className="bi bi-check-circle-fill" aria-hidden="true"></i>{available} disponibles</span>
       <span className="is-occupied"><i className="bi bi-people-fill" aria-hidden="true"></i>{occupied} ocupadas</span>
       <span className="is-reserved"><i className="bi bi-bookmark-star-fill" aria-hidden="true"></i>{reserved} reservadas</span>

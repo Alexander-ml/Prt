@@ -273,7 +273,7 @@ export const KitchenPage: React.FC = () => {
       >
         <form onSubmit={handleIndisponibleSubmit}>
           <div className="mb-3">
-            <label id="dishToMarkSelectLabel" htmlFor="dishToMarkSelect" className="form-label fw-semibold text-dark">
+            <label id="dishToMarkSelectLabel" htmlFor="dishToMarkSelect" className="form-label">
               Seleccionar Plato Agotado *
             </label>
             <CustomDropdownSelect
@@ -305,7 +305,7 @@ export const KitchenPage: React.FC = () => {
           )}
 
           <div className="mb-4">
-            <label htmlFor="indisponibleNote" className="form-label fw-semibold text-dark">
+            <label htmlFor="indisponibleNote" className="form-label">
               Nota para sala (opcional)
             </label>
             <textarea
@@ -341,7 +341,7 @@ export const KitchenPage: React.FC = () => {
         subtitle={cancelItemTarget ? `${cancelItemTarget.dishName} — se notificará a sala.` : undefined}
       >
         <div className="mb-4">
-          <label className="form-label fw-semibold text-dark" htmlFor="cancelItemReason">
+          <label className="form-label" htmlFor="cancelItemReason">
             Motivo de Cancelación *
           </label>
           <textarea

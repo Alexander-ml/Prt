@@ -1,7 +1,6 @@
 import React from 'react';
 import type { Dish, Order } from '../../types';
 import { Modal } from '../common/Modal';
-import { formatMoney } from '../../utils/money';
 
 /* ─────────────────────────────────────────────────────────────
    ObservationModal — Registrar observación especial de un ítem
@@ -81,13 +80,13 @@ export const AdditionalItemsModal: React.FC<AdditionalItemsModalProps> = ({
     >
       <div className="row g-4 mb-3">
         <div className="col-12 col-md-6">
-          <label className="form-label fw-bold">Seleccionar Plato para Añadir</label>
+          <label className="form-label">Seleccionar Plato para Añadir</label>
           <div className="d-flex flex-column gap-2" style={{ maxHeight: 300, overflowY: 'auto' }}>
             {dishes.filter(d => d.active && d.isAvailableToday).map(d => (
               <div key={d.id} className="p-2 border rounded-3 bg-white d-flex justify-content-between align-items-start">
                 <div style={{ minWidth: 0 }}>
                   <div className="fw-bold" style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>{d.name}</div>
-                  <small style={{ color: 'var(--color-brand)', fontWeight: 700 }}>{formatMoney(d.price)}</small>
+                  <small style={{ color: 'var(--color-brand)', fontWeight: 700 }}>S/ {d.price.toFixed(2)}</small>
                   {/* Alérgenos — mismo badge/tono que Catálogo, Pedidos y Cocina */}
                   {d.allergens && d.allergens.length > 0 && (
                     <div className="kds-allergen-badge" style={{ marginTop: '0.4rem', marginBottom: 0 }}>
@@ -109,7 +108,7 @@ export const AdditionalItemsModal: React.FC<AdditionalItemsModalProps> = ({
           </div>
         </div>
         <div className="col-12 col-md-6 border-start ps-md-4">
-          <label className="form-label fw-bold">Ítems Adicionales por Enviar</label>
+          <label className="form-label">Ítems Adicionales por Enviar</label>
           {additionalCart.length === 0 ? (
             <div className="text-center py-4" style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
               <i className="bi bi-cart d-block mb-1" style={{ fontSize: '1.5rem', color: '#94a3b8' }}></i>
@@ -120,7 +119,7 @@ export const AdditionalItemsModal: React.FC<AdditionalItemsModalProps> = ({
               {additionalCart.map((item, i) => (
                 <div key={i} className="p-2 border rounded-3 bg-light d-flex justify-content-between align-items-center">
                   <span className="fw-bold" style={{ fontSize: '0.8rem' }}>{item.dish.name} (x{item.quantity})</span>
-                  <span className="fw-bold" style={{ color: 'var(--color-brand)' }}>{formatMoney(item.dish.price * item.quantity)}</span>
+                  <span className="fw-bold" style={{ color: 'var(--color-brand)' }}>S/ {(item.dish.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>

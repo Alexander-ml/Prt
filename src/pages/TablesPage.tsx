@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { PageHeader } from '../components/common/PageHeader';
+import { ResponsiveSectionNav } from '../components/common/ResponsiveSectionNav';
 import { TablesFloorplanView } from '../components/tables/TablesFloorplanView';
 import { TablesConfigView } from '../components/tables/TablesConfigView';
+
+type TableViewMode = 'plano' | 'config';
+
+const TABLES_SECTION_ITEMS = [
+  { value: 'plano', label: 'Plano de Sala', icon: 'bi-grid-3x3-gap-fill' },
+  { value: 'config', label: 'Configurar Áreas', icon: 'bi-gear-fill' },
+];
 
 /**
  * TablesPage — Áreas y Plano de Mesas (RF-25 a RF-38).
@@ -17,7 +25,7 @@ export const TablesPage: React.FC = () => {
   const isAdmin = currentRole === 'Administrador';
 
   // View Mode: 'plano' (visual floorplan) vs 'config' (admin areas & table management)
-  const [viewMode, setViewMode] = useState<'plano' | 'config'>('plano');
+  const [viewMode, setViewMode] = useState<TableViewMode>('plano');
 
   return (
     <div className="container-fluid p-0">
@@ -27,35 +35,12 @@ export const TablesPage: React.FC = () => {
         subtitle="Control interactivo de disponibilidad, plano físico de sala, reservas y traslados"
         actions={
           isAdmin && (
-            <div
-              className="d-flex w-100 gap-2"
-              role="tablist"
-              aria-label="Cambiar vista de mesas"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={viewMode === 'plano'}
-                className={`btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1 ${viewMode === 'plano'  ? 'btn-primary'  : 'btn-outline-primary'}`}
-                style={{minHeight: 44,borderRadius: 8,fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)',}}
-                onClick={() => setViewMode('plano')}
-              >
-                <i className="bi bi-grid-3x3-gap-fill me-1" aria-hidden="true"></i>
-                Plano de Sala
-              </button>
-
-              <button
-                type="button"
-                role="tab"
-                aria-selected={viewMode === 'config'}
-                className={`btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1 ${viewMode === 'config'  ? 'btn-primary'  : 'btn-outline-primary'}`}
-                style={{minHeight: 44,borderRadius: 8,fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)',}}
-                onClick={() => setViewMode('config')}
-              >
-                <i className="bi bi-gear-fill me-1" aria-hidden="true"></i>
-                Configurar Áreas
-              </button>
-            </div>
+            <ResponsiveSectionNav
+              items={TABLES_SECTION_ITEMS}
+              value={viewMode}
+              onChange={value => setViewMode(value as TableViewMode)}
+              ariaLabel="Cambiar vista de mesas"
+            />
           )
         }
       />

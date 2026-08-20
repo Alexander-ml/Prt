@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import type { Tax } from '../../types';
 import { SectionCard } from '../common/SectionCard';
 import { TaxTable } from './TaxTable';
+import { TaxMobileList } from './ConfigMobileLists';
 import { TaxFormModal, type TaxFormData } from './TaxFormModal';
 
 const EMPTY_TAX_FORM: TaxFormData = { name: '', percentage: 18, active: true };
@@ -52,6 +53,7 @@ export const TaxesView: React.FC = () => {
         icon="bi-percent"
         title="Impuestos Aplicables a las Ventas"
         noPadding
+        className="config-list-card"
         actions={
           isAdmin && (
             <button
@@ -65,7 +67,12 @@ export const TaxesView: React.FC = () => {
           )
         }
       >
-        <TaxTable taxes={taxes} isAdmin={isAdmin} onEdit={handleOpenTaxModal} />
+        <div className="d-sm-none">
+          <TaxMobileList taxes={taxes} isAdmin={isAdmin} onEdit={handleOpenTaxModal} />
+        </div>
+        <div className="d-none d-sm-block">
+          <TaxTable taxes={taxes} isAdmin={isAdmin} onEdit={handleOpenTaxModal} />
+        </div>
       </SectionCard>
 
       <TaxFormModal

@@ -2,12 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import type { Table } from '../../types';
-import { SectionCard } from '../common/SectionCard';
 import { StatCard } from '../common/StatCard';
 import { Modal } from '../common/Modal';
 import { EmptyState } from '../common/EmptyState';
 import { CustomDropdownSelect } from '../common/CustomDropdownSelect';
 import { TableCard } from './TableCard';
+import { TableMetricsSummary } from './TableMetricsSummary';
 import { TABLE_STATUS_META } from './tableStatusMeta';
 
 /**
@@ -94,56 +94,66 @@ export const TablesFloorplanView: React.FC = () => {
   // Igual fórmula que usa DashboardPage para el % de ocupación: se reutiliza,
   // no se inventa un nuevo cálculo.
   const occupancyPct = tables.length > 0 ? Math.round((occupiedCount / tables.length) * 100) : 0;
+  const hasActiveFilters = selectedAreaFilter !== 'todas' || selectedStatusFilter !== 'todos';
 
   return (
     <>
-      {/* StatCards Row — mismo grid de breakpoints que DashboardPage (col-md-6 col-lg-3) */}
-      <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3 mb-4 stagger-children">
-        <div className="col">
-          <StatCard
-            title="Total Mesas"
-            value={tables.length}
-            subtitle={`${areas.length} áreas registradas`}
-            icon="bi-table"
-            colorTheme="indigo"
-          />
-        </div>
-        <div className="col">
-          <StatCard
-            title="Disponibles"
-            value={availableCount}
-            subtitle="Listas para clientes"
-            icon="bi-check-circle-fill"
-            colorTheme="emerald"
-          />
-        </div>
-        <div className="col">
-          <StatCard
-            title="Ocupadas"
-            value={occupiedCount}
-            subtitle="Con pedido en consumo"
-            icon="bi-people-fill"
-            colorTheme="rose"
-            trend={{ value: `${occupancyPct}% ocupación`, positive: occupancyPct < 90 }}
-          />
-        </div>
-        <div className="col">
-          <StatCard
-            title="Reservadas"
-            value={reservedCount}
-            subtitle="Turnos agendados hoy"
-            icon="bi-bookmark-star-fill"
-            colorTheme="amber"
-          />
+      {/* Desde tablet se preservan las cuatro métricas individuales. */}
+      <TableMetricsSummary
+        total={tables.length}
+        available={availableCount}
+        occupied={occupiedCount}
+        reserved={reservedCount}
+      />
+
+      <div className="d-none d-sm-block">
+        <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3 mb-4 stagger-children">
+          <div className="col">
+            <StatCard
+              title="Total Mesas"
+              value={tables.length}
+              subtitle={`${areas.length} áreas registradas`}
+              icon="bi-table"
+              colorTheme="indigo"
+            />
+          </div>
+          <div className="col">
+            <StatCard
+              title="Disponibles"
+              value={availableCount}
+              subtitle="Listas para clientes"
+              icon="bi-check-circle-fill"
+              colorTheme="emerald"
+            />
+          </div>
+          <div className="col">
+            <StatCard
+              title="Ocupadas"
+              value={occupiedCount}
+              subtitle="Con pedido en consumo"
+              icon="bi-people-fill"
+              colorTheme="rose"
+              trend={{ value: `${occupancyPct}% ocupación`, positive: occupancyPct < 90 }}
+            />
+          </div>
+          <div className="col">
+            <StatCard
+              title="Reservadas"
+              value={reservedCount}
+              subtitle="Turnos agendados hoy"
+              icon="bi-bookmark-star-fill"
+              colorTheme="amber"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <SectionCard icon="bi-funnel" title="Filtros del Plano de Sala" className="mb-4">
-        <div className="row g-3">
-          <div className="col-12 col-md-6">
-            <label htmlFor="areaFilterSelect" id="areaFilterLabel" className="form-label small fw-semibold text-muted text-uppercase mb-1">
-              <i className="bi bi-geo-alt-fill me-1" aria-hidden="true"></i>
+      {/* Filtros sin encabezado redundante: el control y su etiqueta son la jerarquía. */}
+      <section className="table-floorplan-filters mb-4" aria-label="Filtros del plano de sala">
+        <div className="row g-3 align-items-end">
+          <div className="col-12 col-sm-6">
+            <label htmlFor="areaFilterSelect" id="areaFilterLabel" className="table-floorplan-filter-label">
+              <i className="bi bi-geo-alt-fill" aria-hidden="true"></i>
               Área
             </label>
             <CustomDropdownSelect
@@ -151,7 +161,7 @@ export const TablesFloorplanView: React.FC = () => {
               labelId="areaFilterLabel"
               value={selectedAreaFilter}
               onChange={setSelectedAreaFilter}
-              size="sm"
+              size="md"
               options={[
                 { value: 'todas', label: `Todas las Áreas (${tables.length})`, icon: 'bi-grid-fill', colorVariant: 'secondary' },
                 ...areas.map(area => ({
@@ -164,9 +174,9 @@ export const TablesFloorplanView: React.FC = () => {
             />
           </div>
 
-          <div className="col-12 col-md-6">
-            <label htmlFor="statusFilterSelect" id="statusFilterLabel" className="form-label small fw-semibold text-muted text-uppercase mb-1">
-              <i className="bi bi-funnel-fill me-1" aria-hidden="true"></i>
+          <div className="col-12 col-sm-6">
+            <label htmlFor="statusFilterSelect" id="statusFilterLabel" className="table-floorplan-filter-label">
+              <i className="bi bi-funnel-fill" aria-hidden="true"></i>
               Estado
             </label>
             <CustomDropdownSelect
@@ -174,7 +184,7 @@ export const TablesFloorplanView: React.FC = () => {
               labelId="statusFilterLabel"
               value={selectedStatusFilter}
               onChange={setSelectedStatusFilter}
-              size="sm"
+              size="md"
               options={[
                 { value: 'todos', label: 'Todos los Estados', icon: 'bi-grid-fill', colorVariant: 'secondary' },
                 ...Object.entries(TABLE_STATUS_META).map(([status, meta]) => ({
@@ -186,8 +196,16 @@ export const TablesFloorplanView: React.FC = () => {
               ]}
             />
           </div>
+          {hasActiveFilters && (
+            <div className="col-12">
+              <button type="button" className="table-floorplan-reset" onClick={resetFilters}>
+                <i className="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                Limpiar filtros
+              </button>
+            </div>
+          )}
         </div>
-      </SectionCard>
+      </section>
 
       {/* Interactive Floorplan Grid (RF-32) */}
        {filteredTables.length === 0 ? (
@@ -205,7 +223,7 @@ export const TablesFloorplanView: React.FC = () => {
           />
         </div>
       ) : (
-        <div className="row g-3 mb-4 stagger-children">
+        <div className="row g-3 mb-4 stagger-children table-floorplan-grid">
           {filteredTables.map(table => {
             const activeOrder = orders.find(
               o => o.id === table.currentOrderId || (o.tableId === table.id && o.status !== 'cerrado')

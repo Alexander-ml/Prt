@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { Dish, OrderItem, OrderItemStatus } from '../../types';
+import { KDS_ITEM_STATUS_META } from './kitchenMeta';
 
 interface KitchenOrderItemRowProps {
   item: OrderItem;
@@ -10,12 +11,8 @@ interface KitchenOrderItemRowProps {
 }
 
 /**
- * KitchenOrderItemRow — Un plato dentro de un ticket del KDS.
- *
- * Encapsula: alérgenos (dato estructurado del catálogo, no depende de que el
- * mesero haya escrito una observación), el badge "NUEVO" para ítems
- * agregados después del envío original, y un "deshacer" de 5s tras marcar
- * "Listo" para absorber toques accidentales sin bloquear el flujo normal.
+ * Ítem operativo de una comanda. Expone una sola acción principal según el
+ * estado actual y mantiene la cancelación accesible, pero visualmente aparte.
  */
 export const KitchenOrderItemRow: React.FC<KitchenOrderItemRowProps> = ({
   item,
@@ -27,15 +24,14 @@ export const KitchenOrderItemRow: React.FC<KitchenOrderItemRowProps> = ({
   const [showUndo, setShowUndo] = useState(false);
   const undoTimeoutRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (undoTimeoutRef.current) window.clearTimeout(undoTimeoutRef.current);
-    };
+  useEffect(() => () => {
+    if (undoTimeoutRef.current) window.clearTimeout(undoTimeoutRef.current);
   }, []);
 
   const isCancelled = item.status === 'cancelado';
   const isReady = item.status === 'listo' || item.status === 'entregado';
   const isPreparing = item.status === 'preparando';
+  const statusMeta = KDS_ITEM_STATUS_META[item.status];
 
   const handleMarkReady = () => {
     onSetStatus('listo');
@@ -56,102 +52,81 @@ export const KitchenOrderItemRow: React.FC<KitchenOrderItemRowProps> = ({
     ? 'kds-item item-ready'
     : isPreparing
     ? 'kds-item item-preparing'
-    : 'kds-item';
+    : 'kds-item item-pending';
 
   return (
-    <div className={itemClass}>
-      {/* Cantidad + nombre + badges de estado del ítem */}
-      <div className="d-flex align-items-start justify-content-between gap-2 mb-1">
-        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ minWidth: 0 }}>
-          <span className="badge bg-dark rounded-pill fs-6 px-2 py-1 flex-shrink-0">{item.quantity}x</span>
-          <span
-            className={`fw-bold fs-5 ${isCancelled ? 'text-decoration-line-through text-muted' : 'text-dark'}`}
-          >
-            {item.dishName}
-          </span>
+    <article className={itemClass}>
+      <div className="kds-item-heading">
+        <div className="kds-item-title-wrap">
+          <span className="kds-item-quantity">{item.quantity}×</span>
+          <h3 className={isCancelled ? 'is-cancelled' : ''}>{item.dishName}</h3>
           {isNew && !isCancelled && (
             <span className="kds-new-badge" aria-label="Ítem agregado después del envío original">
-              <i className="bi bi-stars me-1" aria-hidden="true"></i>
-              NUEVO
+              <i className="bi bi-stars" aria-hidden="true"></i>
+              Nuevo
             </span>
           )}
         </div>
-
-        {!isCancelled && !isReady && (
-          <button
-            type="button"
-            className="btn-icon btn-icon-danger flex-shrink-0"
-            style={{ width: 30, height: 30 }}
-            title="Cancelar este ítem (agotado / cliente cambió de opinión)"
-            aria-label={`Cancelar ${item.dishName}`}
-            onClick={onRequestCancel}
-          >
-            <i className="bi bi-x-lg" style={{ fontSize: '0.8rem' }} aria-hidden="true"></i>
-          </button>
-        )}
+        <span className={`kds-item-state is-${statusMeta.tone}`}>
+          <i className={`bi ${statusMeta.icon}`} aria-hidden="true"></i>
+          {statusMeta.label}
+        </span>
       </div>
 
-      {/* Alérgenos — dato fijo del catálogo, siempre visible sin depender de la observación */}
       {!isCancelled && dish?.allergens && dish.allergens.length > 0 && (
-        <div className="kds-allergen-badge">
-          <i className="bi bi-exclamation-octagon-fill flex-shrink-0" aria-hidden="true"></i>
-          <span>Contiene: {dish.allergens.join(', ')}</span>
-        </div>
+        <p className="kds-item-allergens">
+          <i className="bi bi-exclamation-octagon-fill" aria-hidden="true"></i>
+          Contiene: {dish.allergens.join(', ')}
+        </p>
       )}
 
-      {/* Observación especial del mesero */}
       {item.observation && !isCancelled && (
-        <div className="d-flex align-items-start gap-2 p-2 mb-2 rounded-3 bg-warning-subtle border border-warning-subtle text-warning-emphasis">
-          <i className="bi bi-exclamation-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
-          <small className="fw-semibold mb-0">{item.observation}</small>
-        </div>
+        <p className="kds-item-observation">
+          <i className="bi bi-chat-left-text-fill" aria-hidden="true"></i>
+          {item.observation}
+        </p>
       )}
 
-      {/* Ítem cancelado: motivo en vez de acciones */}
       {isCancelled && (
-        <div className="d-flex align-items-start gap-2 p-2 rounded-3 bg-secondary-subtle text-secondary-emphasis">
-          <i className="bi bi-slash-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
-          <small className="fw-semibold mb-0">
-            Cancelado{item.cancelReason ? ` — ${item.cancelReason}` : ''}
-          </small>
-        </div>
+        <p className="kds-item-cancel-reason">
+          <i className="bi bi-slash-circle-fill" aria-hidden="true"></i>
+          Cancelado{item.cancelReason ? ` — ${item.cancelReason}` : ''}
+        </p>
       )}
 
-      {/* Deshacer tras marcar "Listo" por error */}
       {showUndo && item.status === 'listo' && (
-        <button
-          type="button"
-          className="kds-undo-bar"
-          onClick={handleUndo}
-        >
-          <i className="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>
+        <button type="button" className="kds-undo-bar" onClick={handleUndo}>
+          <i className="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
           Marcado como listo — Deshacer
         </button>
       )}
 
-      {/* Botones de estado */}
-      {!isCancelled && (
-        <div className="btn-group w-100" role="group" aria-label={`Estado de ${item.dishName}`}>
-          <button
-            type="button"
-            className={`kds-status-btn btn ${item.status === 'preparando' ? 'btn-warning' : 'btn-outline-secondary'}`}
-            aria-pressed={item.status === 'preparando'}
-            onClick={() => onSetStatus('preparando')}
-          >
-            <i className="bi bi-fire me-1" aria-hidden="true"></i>
-            Preparando
-          </button>
-          <button
-            type="button"
-            className={`kds-status-btn btn ${isReady ? 'btn-success' : 'btn-outline-secondary'}`}
-            aria-pressed={isReady}
-            onClick={handleMarkReady}
-          >
-            <i className="bi bi-check-lg me-1" aria-hidden="true"></i>
-            Listo
+      {!isCancelled && !isReady && (
+        <div className="kds-item-actions">
+          {isPreparing ? (
+            <button type="button" className="btn btn-success kds-item-next-action" onClick={handleMarkReady}>
+              <i className="bi bi-check-lg" aria-hidden="true"></i>
+              Marcar listo
+            </button>
+          ) : (
+            <button type="button" className="btn-brand btn kds-item-next-action" onClick={() => onSetStatus('preparando')}>
+              <i className="bi bi-fire" aria-hidden="true"></i>
+              Iniciar preparación
+            </button>
+          )}
+          <button type="button" className="btn kds-item-cancel-action" onClick={onRequestCancel}>
+            <i className="bi bi-x-circle" aria-hidden="true"> </i>
+            Cancelar ítem
           </button>
         </div>
       )}
-    </div>
+
+      {!isCancelled && isReady && !showUndo && (
+        <p className="kds-item-complete mb-0">
+          <i className="bi bi-check2-circle" aria-hidden="true"></i>
+          {item.status === 'entregado' ? 'Entregado a sala' : 'Listo'}
+        </p>
+      )}
+    </article>
   );
 };

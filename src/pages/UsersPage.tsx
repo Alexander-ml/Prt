@@ -8,6 +8,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { UsersStatsRow } from '../components/users/UsersStatsRow';
 import { UsersFilterBar } from '../components/users/UsersFilterBar';
 import { UserTable } from '../components/users/UserTable';
+import { UsersMobileList } from '../components/users/UsersMobileList';
 import { UserFormModal, type UserFormData } from '../components/users/UserFormModal';
 
 const EMPTY_USER_FORM: UserFormData = { name: '', email: '', phone: '', role: 'Mesero' as UserRole };
@@ -18,9 +19,21 @@ const EMPTY_USER_FORM: UserFormData = { name: '', email: '', phone: '', role: 'M
  * Orquestador delgado: la presentación de cada rol vive en `userRoleMeta.ts`
  * y cada pieza de UI (stats, filtro, tabla, formulario) en su propio
  * componente bajo `components/users/`. Esta página solo retiene el estado
- * de búsqueda/filtro y de modales, porque `UsersFilterBar` y `UserTable`
- * comparten un mismo dominio (una sola lista de usuarios filtrada) — mismo
- * criterio que `OrdersStatsRow` frente a `OrdersPage`.
+ * de búsqueda/filtro y de modales, porque `UsersFilterBar`, `UserTable` y
+ * `UsersMobileList` comparten un mismo dominio (una sola lista de usuarios
+ * filtrada) — mismo criterio que `OrdersStatsRow` frente a `OrdersPage`.
+ *
+ * La acción "Registrar Personal" vive en el encabezado del `SectionCard`
+ * de "Listado de Cuentas del Equipo" (vía `actions`), no en el
+ * `PageHeader` — mismo patrón que "Nueva Área"/"Nueva Mesa" en
+ * `TablesConfigView`: la acción principal queda contextualizada junto al
+ * listado que administra, y el `PageHeader` gana espacio en Mobile.
+ *
+ * Desktop y Mobile consumen el mismo `filteredUsers` y los mismos
+ * handlers: `UserTable` (tabla administrativa) se muestra desde `sm` hacia
+ * arriba, `UsersMobileList` (lista compacta tipo Áreas y Mesas) por debajo
+ * — sin duplicar lógica de filtros, permisos ni acciones de negocio entre
+ * ambas vistas.
  */
 export const UsersPage: React.FC = () => {
   const { users, addUser, updateUser, toggleUserStatus, resetUserPassword, currentRole } = useApp();
@@ -43,6 +56,23 @@ export const UsersPage: React.FC = () => {
       return matchesSearch && matchesRole;
     });
   }, [users, searchQuery, selectedRole]);
+
+  // Distingue "no existen usuarios" de "existen usuarios, pero el filtro
+  // actual no encuentra coincidencias" — mismo mensaje para UserTable y
+  // UsersMobileList, calculado una sola vez acá.
+  const listEmptyState = useMemo(() => (
+    users.length === 0
+      ? {
+          icon: 'bi-person-x',
+          title: 'Aún no hay personal registrado',
+          description: 'Registra la primera cuenta de personal para comenzar.',
+        }
+      : {
+          icon: 'bi-search',
+          title: 'No se encontraron usuarios con los filtros actuales',
+          description: 'Ajusta la búsqueda o el filtro de rol para encontrar cuentas.',
+        }
+  ), [users.length]);
 
   const handleOpenCreateModal = () => {
     setEditingUser(null);
@@ -90,12 +120,6 @@ export const UsersPage: React.FC = () => {
         icon="bi-people-fill"
         title="Personal y Usuarios"
         subtitle="Alta, edición, activación y control de acceso del personal del restaurante."
-        actions={
-          <button className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }} onClick={handleOpenCreateModal}>
-            <i className="bi bi-person-plus-fill me-2"></i>
-            Registrar Personal
-          </button>
-        }
       />
 
       <UsersStatsRow />
@@ -107,13 +131,36 @@ export const UsersPage: React.FC = () => {
         onRoleChange={setSelectedRole}
       />
 
-      <SectionCard icon="bi-list-ul" title="Listado de Cuentas del Equipo" noPadding>
-        <UserTable
-          users={filteredUsers}
-          onEdit={handleOpenEditModal}
-          onResetPassword={(user) => resetUserPassword(user.id)}
-          onRequestStatusToggle={setConfirmUser}
-        />
+      <SectionCard
+        icon="bi-list-ul"
+        title="Listado de Cuentas del Equipo"
+        noPadding
+        className="users-list-card"
+        actions={
+          <button className="btn-brand btn btn-sm fw-semibold" onClick={handleOpenCreateModal}>
+            <i className="bi bi-person-plus-fill me-1" aria-hidden="true"></i>
+            Registrar Personal
+          </button>
+        }
+      >
+        <div className="d-sm-none">
+          <UsersMobileList
+            users={filteredUsers}
+            onEdit={handleOpenEditModal}
+            onResetPassword={(user) => resetUserPassword(user.id)}
+            onRequestStatusToggle={setConfirmUser}
+            emptyState={listEmptyState}
+          />
+        </div>
+        <div className="d-none d-sm-block">
+          <UserTable
+            users={filteredUsers}
+            onEdit={handleOpenEditModal}
+            onResetPassword={(user) => resetUserPassword(user.id)}
+            onRequestStatusToggle={setConfirmUser}
+            emptyState={listEmptyState}
+          />
+        </div>
       </SectionCard>
 
       <UserFormModal

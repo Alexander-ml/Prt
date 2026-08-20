@@ -3,10 +3,19 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import type { Dish, ServiceType } from '../types';
 import { PageHeader } from '../components/common/PageHeader';
+import { ResponsiveSectionNav } from '../components/common/ResponsiveSectionNav';
 import { OrderTakeView } from '../components/orders/OrderTakeView';
 import { OrderHistoryView } from '../components/orders/OrderHistoryView';
 import { OrdersStatsRow } from '../components/orders/OrdersStatsRow';
 import { ObservationModal, AdditionalItemsModal, CancelOrderModal } from '../components/orders/OrderModals';
+import { TABLE_STATUS_META } from '../components/tables/tableStatusMeta';
+
+type OrdersTab = 'take_order' | 'history';
+
+const ORDERS_SECTION_ITEMS = [
+  { value: 'take_order', label: 'Tomar Pedido', icon: 'bi-plus-circle' },
+  { value: 'history', label: 'Historial', icon: 'bi-clock-history' },
+];
 
 export const OrdersPage: React.FC = () => {
   const {
@@ -19,14 +28,15 @@ export const OrdersPage: React.FC = () => {
     sendOrderToKitchen,
     addItemsToExistingOrder,
     cancelOrder,
-    currentRole
+    currentRole,
+    showToast,
   } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmin = currentRole === 'Administrador';
 
   // Active view: 'take_order' (active order builder / comanda) vs 'history' (supervision / history RF-48)
-  const [activeTab, setActiveTab] = useState<'take_order' | 'history'>('take_order');
+  const [activeTab, setActiveTab] = useState<OrdersTab>('take_order');
 
   // Selected Order: se guarda solo el ID y el objeto completo se deriva de
   // `orders` en cada render (ver `selectedOrder` más abajo). Esto evita una
@@ -103,7 +113,7 @@ export const OrdersPage: React.FC = () => {
   // Cart operations
   const handleAddToCart = (dish: Dish) => {
     if (!dish.isAvailableToday) {
-      alert(`El plato "${dish.name}" ha sido notificado como AGOTADO por cocina.`);
+      showToast('Plato No Disponible', `"${dish.name}" fue notificado como AGOTADO por cocina.`, 'warning');
       return;
     }
     setCartItems(prev => {
@@ -227,14 +237,19 @@ export const OrdersPage: React.FC = () => {
   const selectedTableObj = tables.find(t => t.id === selectedTableId);
   const cartSubtotal = cartItems.reduce((sum, item) => sum + item.dish.price * item.quantity, 0);
 
-  const statusMeta: Record< 
+  // Icono y color de cada estado se derivan de TABLE_STATUS_META (fuente única
+  // de verdad ya usada en Áreas y Mesas) para no mantener una segunda copia
+  // que pueda desincronizarse. El label (plural, para encabezado de grupo del
+  // selector "Elija mesa...") y el order (orden de agrupación propio de este
+  // flujo) son específicos de Pedidos y se conservan tal cual.
+  const statusMeta: Record<
     string,
     { label: string; icon: string; badgeVariant: 'success' | 'warning' | 'info' | 'danger'; order: number }
   > = {
-    disponible: { label: 'Mesas Disponibles', icon: 'bi-check-circle-fill', badgeVariant: 'success', order: 0 },
-    reservada:  { label: 'Mesas Reservadas',  icon: 'bi-bookmark-star-fill', badgeVariant: 'warning', order: 1 },
-    limpieza:   { label: 'En Limpieza',       icon: 'bi-droplet-fill',      badgeVariant: 'info',    order: 2 },
-    ocupada:    { label: 'Mesas Ocupadas',    icon: 'bi-people-fill',       badgeVariant: 'danger',  order: 3 },
+    disponible: { label: 'Mesas Disponibles', icon: TABLE_STATUS_META.disponible.icon, badgeVariant: TABLE_STATUS_META.disponible.colorVariant, order: 0 },
+    reservada:  { label: 'Mesas Reservadas',  icon: TABLE_STATUS_META.reservada.icon,  badgeVariant: TABLE_STATUS_META.reservada.colorVariant,  order: 1 },
+    limpieza:   { label: 'En Limpieza',       icon: TABLE_STATUS_META.limpieza.icon,   badgeVariant: TABLE_STATUS_META.limpieza.colorVariant,   order: 2 },
+    ocupada:    { label: 'Mesas Ocupadas',    icon: TABLE_STATUS_META.ocupada.icon,    badgeVariant: TABLE_STATUS_META.ocupada.colorVariant,    order: 3 },
   };
 
   const sortedTables = [...tables].sort((a, b) => {
@@ -263,51 +278,12 @@ export const OrdersPage: React.FC = () => {
         title="Gestión de Pedidos y Comandas"
         subtitle="Toma de pedidos en sala, modificaciones, comisionado a cocina y seguimiento de estado."
         actions={
-          <div
-            className="d-flex w-100 gap-2"
-            role="tablist"
-            aria-label="Cambiar vista de pedidos"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'take_order'}
-              className={`btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1 ${
-                activeTab === 'take_order'
-                  ? 'btn-primary'
-                  : 'btn-outline-primary'
-              }`}
-              style={{
-                minHeight: 44,
-                borderRadius: 8,
-                fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)',
-              }}
-              onClick={() => setActiveTab('take_order')}
-            >
-              <i className="bi bi-plus-circle me-1" aria-hidden="true"></i>
-              Tomar Pedido
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'history'}
-              className={`btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1 ${
-                activeTab === 'history'
-                  ? 'btn-primary'
-                  : 'btn-outline-primary'
-              }`}
-              style={{
-                minHeight: 44,
-                borderRadius: 8,
-                fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)',
-              }}
-              onClick={() => setActiveTab('history')}
-            >
-              <i className="bi bi-clock-history me-1" aria-hidden="true"></i>
-              Historial
-            </button>
-          </div>
+          <ResponsiveSectionNav
+            items={ORDERS_SECTION_ITEMS}
+            value={activeTab}
+            onChange={value => setActiveTab(value as OrdersTab)}
+            ariaLabel="Cambiar vista de pedidos"
+          />
         }
       />
 
@@ -350,6 +326,7 @@ export const OrdersPage: React.FC = () => {
           orders={orders}
           selectedOrder={selectedOrder}
           setSelectedOrder={order => setSelectedOrderId(order.id)}
+          onClearSelectedOrder={() => setSelectedOrderId(null)}
           isAdmin={isAdmin}
           navigate={navigate}
           onOpenAddItems={handleOpenAddItemsModal}

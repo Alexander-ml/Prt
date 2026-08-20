@@ -1,6 +1,8 @@
 import React from 'react';
 
 interface SearchBarProps {
+  id?: string;
+  labelledBy?: string;
   value: string;
   onChange: (val: string) => void;
   placeholder?: string;
@@ -8,6 +10,8 @@ interface SearchBarProps {
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
+  id,
+  labelledBy,
   value,
   onChange,
   placeholder = 'Buscar...',
@@ -17,6 +21,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     <div className={`position-relative ${className}`}>
       <i className="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
       <input
+        id={id}
+        aria-labelledby={labelledBy}
         type="text"
         className="form-control ps-5 pe-4 py-2 border-secondary-subtle rounded-3 shadow-none"
         placeholder={placeholder}

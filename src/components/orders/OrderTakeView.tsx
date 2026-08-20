@@ -84,14 +84,115 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
 }) => {
   const totalActiveDishes = dishes.filter(d => d.active).length;
 
+  const orderSetupFields = (idSuffix: string, includeStepNumber: boolean) => (
+    <>
+      <div className="border-bottom pb-3 mb-3">
+        <div className="row g-3">
+          <div className={activeWaiters.length > 1 ? 'col-12 col-sm-6' : 'col-12'}>
+            <label className="form-label fw-bold mb-1" id={`serviceTypeSelectLabel-${idSuffix}`}>
+              Tipo de Servicio
+            </label>
+            <CustomDropdownSelect
+              id={`serviceTypeSelect-${idSuffix}`}
+              labelId={`serviceTypeSelectLabel-${idSuffix}`}
+              value={selectedServiceType}
+              onChange={val => setSelectedServiceType(val as ServiceType)}
+              size="sm"
+              options={(Object.keys(SERVICE_TYPE_META) as ServiceType[]).map(type => ({
+                value: type,
+                label: SERVICE_TYPE_META[type].label,
+                icon: SERVICE_TYPE_META[type].icon,
+                colorVariant: 'primary' as const,
+              }))}
+            />
+          </div>
+          {activeWaiters.length > 1 && (
+            <div className="col-12 col-sm-6">
+              <label className="form-label fw-bold mb-1" id={`waiterSelectLabel-${idSuffix}`}>
+                Atendido por
+              </label>
+              <CustomDropdownSelect
+                id={`waiterSelect-${idSuffix}`}
+                labelId={`waiterSelectLabel-${idSuffix}`}
+                value={resolvedWaiterId}
+                onChange={setSelectedWaiterId}
+                size="sm"
+                options={activeWaiters.map(waiter => ({
+                  value: waiter.id,
+                  label: waiter.name,
+                  icon: 'bi-person-badge-fill',
+                  colorVariant: 'secondary' as const,
+                }))}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="border-bottom pb-3 mb-3">
+        <div className="d-flex align-items-center justify-content-between mb-1">
+          <label className="form-label fw-bold mb-0" id={`mesaSelectLabel-${idSuffix}`}>
+            {includeStepNumber ? '1. Seleccionar Mesa' : 'Seleccionar Mesa'}
+          </label>
+          {selectedTableObj && (
+            <Badge
+              status={selectedTableObj.status.toUpperCase()}
+              variant={statusMeta[selectedTableObj.status]?.badgeVariant ?? 'secondary'}
+              icon={statusMeta[selectedTableObj.status]?.icon}
+            />
+          )}
+        </div>
+        <CustomDropdownSelect
+          id={`mesaSelect-${idSuffix}`}
+          labelId={`mesaSelectLabel-${idSuffix}`}
+          value={selectedTableId}
+          onChange={setSelectedTableId}
+          placeholder="Elija mesa..."
+          size="lg"
+          required
+          groups={Object.entries(statusMeta)
+            .sort((a, b) => a[1].order - b[1].order)
+            .map(([status, meta]) => ({
+              label: `${meta.label} (${(groupedTables[status] ?? []).length})`,
+              icon: meta.icon,
+              options: (groupedTables[status] ?? []).map(table => ({
+                value: table.id,
+                label: `Mesa #${table.number} . . ${table.areaName}`,
+                description: `${table.capacity} personas`,
+                icon: meta.icon,
+                colorVariant: meta.badgeVariant,
+              })),
+            }))
+            .filter(group => group.options.length > 0)}
+        />
+        {selectedTableObj && (
+          <div className="form-text mt-2 mb-0">
+            <i className="bi bi-geo-alt me-1" aria-hidden="true"></i>
+            {selectedTableObj.areaName}
+            {' · '}
+            <i className="bi bi-people-fill me-1" aria-hidden="true"></i>
+            Capacidad para {selectedTableObj.capacity} personas
+          </div>
+        )}
+      </div>
+    </>
+  );
+
   return (
-    <div className="row g-4 mb-4">
+    <>
+      <div className="d-sm-none mb-3">
+        <SectionCard icon="bi-clipboard-check" title="1. Configurar Comanda" className="order-take-mobile-setup">
+          {orderSetupFields('mobile', false)}
+        </SectionCard>
+      </div>
+
+      <div className="row g-4 mb-4 orders-take-layout">
       {/* Left: Catalog Selection */}
-      <div className="col-12 col-lg-7 col-xl-8">
+      <div className="col-12 col-lg-7 col-xl-8 order-take-catalog-pane">
         <SectionCard
           icon="bi-journal-richtext"
           title="Selección de Platos"
-          className="h-100 d-flex flex-column"
+          className="h-100 d-flex flex-column order-take-catalog-card"
           actions={
             <span className="badge bg-secondary-subtle text-secondary-emphasis rounded-pill fw-semibold" style={{ fontSize: '0.72rem' }}>
               {filteredDishes.length} de {totalActiveDishes}
@@ -131,7 +232,7 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
             </div>
           </div>
 
-          <div className="flex-grow-1 overflow-y-auto" style={{ maxHeight: 'clamp(320px, 58vh, 560px)' }}>
+          <div className="flex-grow-1 overflow-y-auto order-take-catalog-scroll" style={{ maxHeight: 'clamp(320px, 58vh, 560px)' }}>
             {filteredDishes.length === 0 ? (
               <EmptyState
                 icon="bi-search"
@@ -143,7 +244,7 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
                 {filteredDishes.map(dish => (
                   <div key={dish.id} className="col-12 col-md-6">
                     <div
-                      className="p-2 border rounded-3 bg-white d-flex justify-content-between align-items-start h-100"
+                      className="p-2 border rounded-3 bg-white d-flex justify-content-between align-items-start h-100 order-dish-item"
                       style={{ opacity: dish.isAvailableToday ? 1 : 0.6 }}
                     >
                       <div style={{ minWidth: 0 }}>
@@ -169,7 +270,7 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
                       </div>
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline-primary flex-shrink-0 ms-2"
+                        className="btn btn-sm btn-outline-primary flex-shrink-0 ms-2 order-dish-add-button"
                         style={{ borderRadius: 6 }}
                         disabled={!dish.isAvailableToday}
                         onClick={() => handleAddToCart(dish)}
@@ -186,11 +287,11 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
       </div>
 
       {/* Right: Comanda Builder */}
-      <div className="col-12 col-lg-5 col-xl-4">
+      <div className="col-12 col-lg-5 col-xl-4 order-take-cart-pane">
         <SectionCard
           icon="bi-receipt"
           title="Comanda de Mesa"
-          className="h-100 d-flex flex-column"
+          className="h-100 d-flex flex-column order-take-cart-card"
           actions={
             cartItems.length > 0 ? (
               <span className="badge bg-primary rounded-pill">
@@ -199,105 +300,14 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
             ) : undefined
           }
         >
-          {/* Tipo de servicio + mesero de turno. La mesa se sigue pidiendo para
-              los 3 tipos de servicio en esta iteración (ver nota de alcance). */}
-          <div className="border-bottom pb-3 mb-3">
-            <div className="row g-3">
-              <div className={activeWaiters.length > 1 ? 'col-12 col-sm-6' : 'col-12'}>
-                <label className="form-label fw-bold mb-1" id="serviceTypeSelectLabel">
-                  Tipo de Servicio
-                </label>
-                <CustomDropdownSelect
-                  id="serviceTypeSelect"
-                  labelId="serviceTypeSelectLabel"
-                  value={selectedServiceType}
-                  onChange={val => setSelectedServiceType(val as ServiceType)}
-                  size="sm"
-                  options={(Object.keys(SERVICE_TYPE_META) as ServiceType[]).map(type => ({
-                    value: type,
-                    label: SERVICE_TYPE_META[type].label,
-                    icon: SERVICE_TYPE_META[type].icon,
-                    colorVariant: 'primary' as const,
-                  }))}
-                />
-              </div>
-              {/* Solo se muestra si hay más de un mesero activo en el turno;
-                  con uno solo, se resuelve automáticamente sin pedir nada. */}
-              {activeWaiters.length > 1 && (
-                <div className="col-12 col-sm-6">
-                  <label className="form-label fw-bold mb-1" id="waiterSelectLabel">
-                    Atendido por
-                  </label>
-                  <CustomDropdownSelect
-                    id="waiterSelect"
-                    labelId="waiterSelectLabel"
-                    value={resolvedWaiterId}
-                    onChange={setSelectedWaiterId}
-                    size="sm"
-                    options={activeWaiters.map(w => ({
-                      value: w.id,
-                      label: w.name,
-                      icon: 'bi-person-badge-fill',
-                      colorVariant: 'secondary' as const,
-                    }))}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="border-bottom pb-3 mb-3">
-            <div className="d-flex align-items-center justify-content-between mb-1">
-              <label className="form-label fw-bold mb-0" id="mesaSelectLabel">
-                1. Seleccionar Mesa
-              </label>
-              {selectedTableObj && (
-                <Badge
-                  status={selectedTableObj.status.toUpperCase()}
-                  variant={statusMeta[selectedTableObj.status]?.badgeVariant ?? 'secondary'}
-                  icon={statusMeta[selectedTableObj.status]?.icon}
-                />
-              )}
-            </div>
-            {/* Select de estado: agrupado por disponibilidad, color semántico por grupo */}
-            <CustomDropdownSelect
-              id="mesaSelect"
-              labelId="mesaSelectLabel"
-              value={selectedTableId}
-              onChange={setSelectedTableId}
-              placeholder="Elija mesa..."
-              size="lg"
-              required
-              groups={Object.entries(statusMeta)
-                .sort((a, b) => a[1].order - b[1].order)
-                .map(([status, meta]) => ({
-                  label: `${meta.label} (${(groupedTables[status] ?? []).length})`,
-                  icon: meta.icon,
-                  options: (groupedTables[status] ?? []).map(t => ({
-                    value: t.id,
-                    label: `Mesa #${t.number} . . ${t.areaName}`,
-                    description: `${t.capacity} personas`,
-                    icon: meta.icon,
-                    colorVariant: meta.badgeVariant,
-                  })),
-                }))
-                .filter(g => g.options.length > 0)}
-            />
-            {selectedTableObj && (
-              <div className="form-text mt-2 mb-0">
-                <i className="bi bi-geo-alt me-1" aria-hidden="true"></i>
-                {selectedTableObj.areaName}
-                {' · '}
-                <i className="bi bi-people-fill me-1" aria-hidden="true"></i>
-                Capacidad para {selectedTableObj.capacity} personas
-              </div>
-            )}
+          <div className="d-none d-sm-block">
+            {orderSetupFields('desktop', true)}
           </div>
 
           {/* Cart List */}
-          <div className="flex-grow-1 overflow-y-auto mb-3" style={{ maxHeight: 'clamp(220px, 38vh, 360px)' }}>
+          <div className="flex-grow-1 overflow-y-auto mb-3 order-take-cart-list" style={{ maxHeight: 'clamp(220px, 38vh, 360px)' }}>
             <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
-              2. Ítems del Pedido no Enviados
+              Ítems del Pedido no Enviados
             </h3>
             {cartItems.length === 0 ? (
               <div className="text-center py-4 border rounded-3" style={{ background: 'var(--surface-muted)', color: 'var(--text-muted)', fontSize: '0.825rem' }}>
@@ -393,6 +403,7 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
           </div>
         </SectionCard>
       </div>
-    </div>
+      </div>
+    </>
   );
 };

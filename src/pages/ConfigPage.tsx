@@ -2,9 +2,18 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { PageHeader } from '../components/common/PageHeader';
 import { EmptyState } from '../components/common/EmptyState';
+import { ResponsiveSectionNav } from '../components/common/ResponsiveSectionNav';
 import { RestaurantInfoView } from '../components/config/RestaurantInfoView';
 import { TaxesView } from '../components/config/TaxesView';
 import { PromotionsView } from '../components/config/PromotionsView';
+
+type ConfigViewMode = 'info' | 'impuestos' | 'promociones';
+
+const CONFIG_VIEW_ITEMS = [
+  { value: 'info', label: 'Datos del Local', icon: 'bi-building' },
+  { value: 'impuestos', label: 'Impuestos', icon: 'bi-percent' },
+  { value: 'promociones', label: 'Promociones', icon: 'bi-ticket-perforated-fill' },
+];
 
 /**
  * ConfigPage — Configuración General del Sistema (RF-17 a RF-24).
@@ -14,15 +23,21 @@ import { PromotionsView } from '../components/config/PromotionsView';
  * `components/config/` (lee `useApp()` directo, sin props hacia abajo) y
  * los 3 dominios no dependen entre sí.
  *
- * Guard de acceso nuevo: antes este módulo solo deshabilitaba campos y
- * ocultaba botones, dejando visibles el RUC, tarifas de impuestos y
- * promociones a cualquier rol que entrara por URL directa. Ahora bloquea
- * igual que `UsersPage`.
+ * La navegación entre pestañas usa `ResponsiveSectionNav` — el mismo
+ * componente que `CatalogPage` (Platos/Categorías/Carta) y `TablesPage` —
+ * en vez de 3 botones armados a mano con ARIA duplicado. Con 3 opciones,
+ * `ResponsiveSectionNav` colapsa automáticamente a un selector en Mobile
+ * (su modo `auto` activa el selector cuando hay más de 2 opciones), igual
+ * que ya ocurre en Catálogo.
+ *
+ * Guard de acceso: antes este módulo solo deshabilitaba campos y ocultaba
+ * botones, dejando visibles el RUC, tarifas de impuestos y promociones a
+ * cualquier rol que entrara por URL directa. Bloquea igual que `UsersPage`.
  */
 export const ConfigPage: React.FC = () => {
   const { currentRole } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'info' | 'impuestos' | 'promociones'>('info');
+  const [viewMode, setViewMode] = useState<ConfigViewMode>('info');
 
   // Guard DESPUÉS de todos los hooks de la página, nunca antes.
   if (currentRole !== 'Administrador') {
@@ -44,53 +59,18 @@ export const ConfigPage: React.FC = () => {
         title="Configuración General del Sistema"
         subtitle="Parámetros comerciales, impuestos, promociones y datos operativos del establecimiento."
         actions={
-          <div
-            className="d-flex w-100 gap-2"
-            role="tablist"
-            aria-label="Cambiar sección de configuración"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'info'}
-              className={`btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1 ${activeTab === 'info' ? 'btn-primary' : 'btn-outline-primary'}`}
-              style={{ minHeight: 44, borderRadius: 8, fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)' }}
-              onClick={() => setActiveTab('info')}
-            >
-              <i className="bi bi-building me-1" aria-hidden="true"></i>
-              Datos del Local
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'impuestos'}
-              className={`btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1 ${activeTab === 'impuestos' ? 'btn-primary' : 'btn-outline-primary'}`}
-              style={{ minHeight: 44, borderRadius: 8, fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)' }}
-              onClick={() => setActiveTab('impuestos')}
-            >
-              <i className="bi bi-percent me-1" aria-hidden="true"></i>
-              Impuestos
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'promociones'}
-              className={`btn fw-semibold flex-fill d-flex align-items-center justify-content-center gap-1 ${activeTab === 'promociones' ? 'btn-primary' : 'btn-outline-primary'}`}
-              style={{ minHeight: 44, borderRadius: 8, fontSize: 'clamp(0.78rem, 3.2vw, 0.9rem)' }}
-              onClick={() => setActiveTab('promociones')}
-            >
-              <i className="bi bi-ticket-perforated-fill me-1" aria-hidden="true"></i>
-              Promociones
-            </button>
-          </div>
+          <ResponsiveSectionNav
+            items={CONFIG_VIEW_ITEMS}
+            value={viewMode}
+            onChange={value => setViewMode(value as ConfigViewMode)}
+            ariaLabel="Cambiar sección de configuración"
+          />
         }
       />
 
-      {activeTab === 'info' && <RestaurantInfoView />}
-      {activeTab === 'impuestos' && <TaxesView />}
-      {activeTab === 'promociones' && <PromotionsView />}
+      {viewMode === 'info' && <RestaurantInfoView />}
+      {viewMode === 'impuestos' && <TaxesView />}
+      {viewMode === 'promociones' && <PromotionsView />}
     </div>
   );
 };

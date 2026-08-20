@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import type { Promotion } from '../../types';
 import { SectionCard } from '../common/SectionCard';
 import { PromotionTable } from './PromotionTable';
+import { PromotionMobileList } from './ConfigMobileLists';
 import { PromotionFormModal, type PromotionFormData } from './PromotionFormModal';
 
 const buildEmptyPromoForm = (): PromotionFormData => ({
@@ -80,6 +81,7 @@ export const PromotionsView: React.FC = () => {
         title="Promociones y Descuentos Vigentes"
         subtitle="Descuentos aplicables durante la liquidación de cuenta en Ventas."
         noPadding
+        className="config-list-card"
         actions={
           isAdmin && (
             <button
@@ -93,12 +95,22 @@ export const PromotionsView: React.FC = () => {
           )
         }
       >
-        <PromotionTable
-          promotions={promotions}
-          isAdmin={isAdmin}
-          onEdit={handleOpenPromoModal}
-          onToggleActive={promo => togglePromotionActive(promo.id)}
-        />
+        <div className="d-sm-none">
+          <PromotionMobileList
+            promotions={promotions}
+            isAdmin={isAdmin}
+            onEdit={handleOpenPromoModal}
+            onToggleActive={promo => togglePromotionActive(promo.id)}
+          />
+        </div>
+        <div className="d-none d-sm-block">
+          <PromotionTable
+            promotions={promotions}
+            isAdmin={isAdmin}
+            onEdit={handleOpenPromoModal}
+            onToggleActive={promo => togglePromotionActive(promo.id)}
+          />
+        </div>
       </SectionCard>
 
       <PromotionFormModal

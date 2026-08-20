@@ -15,34 +15,48 @@ export const CatalogStatsRow: React.FC = () => {
   const unavailableDishesCount = dishes.filter(d => !d.isAvailableToday).length;
 
   return (
-    <div className="row g-3 mb-4 stagger-children">
-      <div className="col-12 col-sm-4">
-        <StatCard
-          title="Total Platos"
-          value={dishes.length}
-          subtitle={`${categories.length} categorías configuradas`}
-          icon="bi-egg-fried"
-          colorTheme="indigo"
-        />
+    <>
+      <section className="catalog-mobile-summary d-sm-none mb-4" aria-label="Resumen del catálogo">
+        <div className="catalog-mobile-summary-main">
+          <p>Platos registrados</p>
+          <strong>{dishes.length}</strong>
+        </div>
+        <div className="catalog-mobile-summary-states">
+          <span className="is-categories"><i className="bi bi-tags-fill" aria-hidden="true"></i>{categories.length} categorías</span>
+          <span className="is-available"><i className="bi bi-check-circle-fill" aria-hidden="true"></i>{availableDishesCount} disponibles</span>
+          <span className="is-unavailable"><i className="bi bi-slash-circle-fill" aria-hidden="true"></i>{unavailableDishesCount} no disponibles</span>
+        </div>
+      </section>
+
+      <div className="row g-3 mb-4 stagger-children d-none d-sm-flex">
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="Total Platos"
+            value={dishes.length}
+            subtitle={`${categories.length} categorías configuradas`}
+            icon="bi-egg-fried"
+            colorTheme="indigo"
+          />
+        </div>
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="Disponibles Hoy"
+            value={availableDishesCount}
+            subtitle="Listos para despacho en cocina"
+            icon="bi-check-circle-fill"
+            colorTheme="emerald"
+          />
+        </div>
+        <div className="col-12 col-sm-4">
+          <StatCard
+            title="No Disponibles"
+            value={unavailableDishesCount}
+            subtitle="Agotados o pausados hoy"
+            icon="bi-x-circle-fill"
+            colorTheme="rose"
+          />
+        </div>
       </div>
-      <div className="col-12 col-sm-4">
-        <StatCard
-          title="Disponibles Hoy"
-          value={availableDishesCount}
-          subtitle="Listos para despacho en cocina"
-          icon="bi-check-circle-fill"
-          colorTheme="emerald"
-        />
-      </div>
-      <div className="col-12 col-sm-4">
-        <StatCard
-          title="No Disponibles"
-          value={unavailableDishesCount}
-          subtitle="Agotados o pausados hoy"
-          icon="bi-x-circle-fill"
-          colorTheme="rose"
-        />
-      </div>
-    </div>
+    </>
   );
 };

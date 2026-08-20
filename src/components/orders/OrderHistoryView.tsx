@@ -1,41 +1,58 @@
 import React from 'react';
 import type { NavigateFunction } from 'react-router-dom';
-import type { Order } from '../../types';
+import type { Order, OrderItemStatus, OrderStatus } from '../../types';
 import { SectionCard } from '../common/SectionCard';
 import { Badge } from '../common/Badge';
 import { EmptyState } from '../common/EmptyState';
 import { formatMoney } from '../../utils/money';
 import { SERVICE_TYPE_META } from '../kitchen/kitchenMeta';
+import { OrderPreparationStepper } from './OrderPreparationStepper';
 
 interface OrderHistoryViewProps {
   orders: Order[];
   selectedOrder: Order | null;
   setSelectedOrder: (order: Order) => void;
+  onClearSelectedOrder: () => void;
   isAdmin: boolean;
   navigate: NavigateFunction;
   onOpenAddItems: () => void;
   onOpenCancel: () => void;
 }
 
+const getOrderStatusVariant = (status: OrderStatus) => {
+  if (status === 'listo') return 'success' as const;
+  if (status === 'en_preparacion') return 'warning' as const;
+  if (status === 'cerrado') return 'secondary' as const;
+  return 'danger' as const;
+};
+
+const getItemStatusVariant = (status: OrderItemStatus) => {
+  if (status === 'listo' || status === 'entregado') return 'success' as const;
+  if (status === 'preparando') return 'warning' as const;
+  if (status === 'cancelado') return 'danger' as const;
+  return 'secondary' as const;
+};
+
+const formatStatus = (status: string) => status.replace(/_/g, ' ').toUpperCase();
+
 /**
- * OrderHistoryView — Vista de supervisión (RF-48): listado de pedidos
- * por mesa a la izquierda, detalle de seguimiento de cocina a la derecha.
- * Puramente presentacional: todo el estado (selectedOrder, modales) vive
- * en OrdersPage y se recibe aquí por props.
+ * OrderHistoryView — Vista de supervisión (RF-48). En móvil sigue el patrón
+ * lista → detalle; en anchos mayores conserva el listado y detalle juntos.
+ * El estado y las mutaciones siguen viviendo en OrdersPage/AppContext.
  */
 export const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
   orders,
   selectedOrder,
   setSelectedOrder,
+  onClearSelectedOrder,
   isAdmin,
   navigate,
   onOpenAddItems,
   onOpenCancel,
 }) => {
   return (
-    <div className="row g-4 mb-4">
-      {/* Order List */}
-      <div className="col-12 col-lg-5 col-xl-4">
+    <div className={`row g-4 mb-4 order-history-layout ${selectedOrder ? 'has-selected-order' : ''}`}>
+      <div className="col-12 col-lg-5 col-xl-4 order-history-list-pane">
         <SectionCard
           icon="bi-clock-history"
           title="Pedidos por Mesa"
@@ -47,7 +64,7 @@ export const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
             ) : undefined
           }
         >
-          <div className="d-flex flex-column gap-2" style={{ maxHeight: 'clamp(320px, 65vh, 600px)', overflowY: 'auto' }}>
+          <div className="d-flex flex-column gap-2 order-history-list-scroll">
             {orders.length === 0 ? (
               <EmptyState
                 icon="bi-inbox"
@@ -55,88 +72,101 @@ export const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
                 description="Aún no se han registrado pedidos en el sistema."
               />
             ) : (
-              orders.map(ord => (
-                <div
-                  key={ord.id}
-                  role="button"
-                  tabIndex={0}
-                  className="p-3 rounded-3 border cursor-pointer"
-                  style={{
-                    background: selectedOrder?.id === ord.id ? 'var(--color-brand-light)' : 'var(--surface-card)',
-                    borderColor: selectedOrder?.id === ord.id ? 'var(--color-brand)' : 'var(--border-color)',
-                    borderWidth: selectedOrder?.id === ord.id ? 2 : 1,
-                    transition: 'all 0.15s ease',
-                  }}
-                  onClick={() => setSelectedOrder(ord)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setSelectedOrder(ord);
-                    }
-                  }}
-                >
-                  <div className="d-flex align-items-center justify-content-between mb-1">
-                    <span className="fw-bold" style={{ color: 'var(--text-primary)' }}>
-                      Mesa #{ord.tableNumber} <small style={{ color: 'var(--text-muted)' }}>({ord.areaName})</small>
-                    </span>
-                    <Badge
-                      status={ord.status.toUpperCase()}
-                      variant={
-                        ord.status === 'listo'
-                          ? 'success'
-                          : ord.status === 'en_preparacion'
-                          ? 'warning'
-                          : ord.status === 'cerrado'
-                          ? 'secondary'
-                          : 'danger'
+              orders.map(ord => {
+                const itemCount = ord.items.reduce((total, item) => total + item.quantity, 0);
+                const orderTotal = ord.items.reduce((total, item) => total + item.price * item.quantity, 0);
+                const isSelected = selectedOrder?.id === ord.id;
+
+                return (
+                  <div
+                    key={ord.id}
+                    role="button"
+                    tabIndex={0}
+                    className={`order-history-list-item ${isSelected ? 'is-selected' : ''}`}
+                    onClick={() => setSelectedOrder(ord)}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setSelectedOrder(ord);
                       }
-                    />
+                    }}
+                  >
+                    <div className="d-flex align-items-start justify-content-between gap-2 mb-1">
+                      <div>
+                        <span className="fw-bold" style={{ color: 'var(--text-primary)' }}>
+                          Mesa #{ord.tableNumber}
+                        </span>
+                        <small className="d-block" style={{ color: 'var(--text-muted)' }}>{ord.areaName}</small>
+                      </div>
+                      <Badge status={formatStatus(ord.status)} variant={getOrderStatusVariant(ord.status)} />
+                    </div>
+                    <div className="order-history-list-summary">
+                      <span><i className="bi bi-receipt me-1" aria-hidden="true"></i>{itemCount} ítem{itemCount === 1 ? '' : 's'} · S/ {orderTotal.toFixed(2)}</span>
+                      <span><i className="bi bi-clock me-1" aria-hidden="true"></i>{ord.createdAt}</span>
+                    </div>
+                    <div className="order-history-list-waiter">
+                      <i className="bi bi-person-fill me-1" aria-hidden="true"></i>{ord.waiterName}
+                    </div>
                   </div>
-                  <div className="d-flex justify-content-between" style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    <span><i className="bi bi-person-fill me-1"></i>{ord.waiterName}</span>
-                    <span><i className="bi bi-clock me-1"></i>{ord.createdAt}</span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </SectionCard>
       </div>
 
-      {/* Order Detail View */}
-      <div className="col-12 col-lg-7 col-xl-8">
+      <div className="col-12 col-lg-7 col-xl-8 order-history-detail-pane">
         {selectedOrder ? (
           <SectionCard
             icon="bi-receipt"
             title={`Detalle del Pedido #${selectedOrder.id} (Mesa #${selectedOrder.tableNumber})`}
+            className="order-history-detail-card"
             actions={
-              <div className="d-flex flex-wrap gap-2">
-                {selectedOrder.status !== 'cerrado' && selectedOrder.status !== 'cancelado' && (
-                  <button
-                    type="button"
-                    className="btn btn-outline-primary btn-sm fw-semibold"
-                    style={{ borderRadius: 8 }}
-                    onClick={onOpenAddItems}
-                  >
-                    <i className="bi bi-plus-lg me-1"></i> Agregar Ítems
-                  </button>
-                )}
-                {isAdmin && selectedOrder.status !== 'cancelado' && selectedOrder.status !== 'cerrado' && (
-                  <button
-                    type="button"
-                    className="btn btn-outline-danger btn-sm fw-semibold"
-                    style={{ borderRadius: 8 }}
-                    onClick={onOpenCancel}
-                  >
-                    <i className="bi bi-x-circle me-1"></i> Cancelar Pedido
-                  </button>
-                )}
+              <div className="order-history-actions">
+                <button
+                  type="button"
+                  className="btn btn-link btn-sm p-0 d-sm-none order-history-back"
+                  onClick={onClearSelectedOrder}
+                >
+                  <i className="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver al historial
+                </button>
+                <div className="d-flex flex-wrap gap-2">
+                  {selectedOrder.status !== 'cerrado' && selectedOrder.status !== 'cancelado' && (
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary btn-sm fw-semibold"
+                      style={{ borderRadius: 8 }}
+                      onClick={onOpenAddItems}
+                    >
+                      <i className="bi bi-plus-lg me-1"></i> Agregar Ítems
+                    </button>
+                  )}
+                  {isAdmin && selectedOrder.status !== 'cancelado' && selectedOrder.status !== 'cerrado' && (
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger btn-sm fw-semibold"
+                      style={{ borderRadius: 8 }}
+                      onClick={onOpenCancel}
+                    >
+                      <i className="bi bi-x-circle me-1"></i> Cancelar Pedido
+                    </button>
+                  )}
+                </div>
               </div>
             }
           >
-            {/* Prioridad / tipo de servicio — mismo badge que ya muestra Cocina
-                (kds-priority-badge / kds-service-badge), para que el mesero/admin
-                vea en Pedidos exactamente lo que Cocina está viendo. */}
+            <section className="order-history-detail-status" aria-label="Estado del pedido">
+              <div>
+                <span>Estado del pedido</span>
+                <Badge status={formatStatus(selectedOrder.status)} variant={getOrderStatusVariant(selectedOrder.status)} />
+              </div>
+              <dl>
+                <div><dt>Mesa</dt><dd>#{selectedOrder.tableNumber} · {selectedOrder.areaName}</dd></div>
+                <div><dt>Mesero</dt><dd>{selectedOrder.waiterName}</dd></div>
+                <div><dt>Registrado</dt><dd>{selectedOrder.createdAt}</dd></div>
+              </dl>
+            </section>
+
             {(selectedOrder.priority || (selectedOrder.serviceType && selectedOrder.serviceType !== 'mesa')) && (
               <div className="d-flex align-items-center flex-wrap gap-2 mb-3">
                 {selectedOrder.serviceType && selectedOrder.serviceType !== 'mesa' && (
@@ -154,11 +184,9 @@ export const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
               </div>
             )}
 
-            {/* Items Preparation Tracking Table */}
-            <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
-              Estado de Preparación por Ítem
-            </h3>
-            <div className="custom-table-container mb-4">
+            <h3 className="order-history-items-title">Estado de Preparación por Ítem</h3>
+
+            <div className="custom-table-container mb-4 d-none d-sm-block">
               <table className="custom-table">
                 <thead>
                   <tr>
@@ -199,18 +227,7 @@ export const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
                             <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>-</span>
                           )}
                         </td>
-                        <td>
-                          <Badge
-                            status={item.status.toUpperCase()}
-                            variant={
-                              item.status === 'listo'
-                                ? 'success'
-                                : item.status === 'preparando'
-                                ? 'warning'
-                                : 'secondary'
-                            }
-                          />
-                        </td>
+                        <td><Badge status={formatStatus(item.status)} variant={getItemStatusVariant(item.status)} /></td>
                       </tr>
                     );
                   })}
@@ -218,7 +235,41 @@ export const OrderHistoryView: React.FC<OrderHistoryViewProps> = ({
               </table>
             </div>
 
-            {/* Notification Banner */}
+            <div className="d-sm-none order-history-mobile-items mb-4">
+              {selectedOrder.items.map(item => {
+                const isCancelled = item.status === 'cancelado';
+                const lineTotal = item.price * item.quantity;
+                return (
+                  <article key={item.id} className={`order-history-mobile-item ${isCancelled ? 'is-cancelled' : ''}`}>
+                    <div className="order-history-mobile-item-heading">
+                      <h4>{item.dishName}</h4>
+                      <Badge status={formatStatus(item.status)} variant={getItemStatusVariant(item.status)} />
+                    </div>
+                    <dl className="order-history-mobile-item-data">
+                      <div><dt>Cantidad</dt><dd>{item.quantity}</dd></div>
+                      <div><dt>Precio un.</dt><dd>S/ {item.price.toFixed(2)}</dd></div>
+                      <div><dt>Subtotal</dt><dd>S/ {lineTotal.toFixed(2)}</dd></div>
+                    </dl>
+                    {isCancelled ? (
+                      <p className="order-history-mobile-note is-cancelled">
+                        <i className="bi bi-slash-circle-fill" aria-hidden="true"></i>
+                        Cancelado{item.cancelReason ? `: ${item.cancelReason}` : ''}
+                      </p>
+                    ) : item.observation ? (
+                      <p className="order-history-mobile-note">
+                        <i className="bi bi-chat-left-text-fill" aria-hidden="true"></i>
+                        {item.observation}
+                      </p>
+                    ) : null}
+                    <div className="order-history-mobile-progress">
+                      <span>Progreso de cocina</span>
+                      <OrderPreparationStepper status={item.status} />
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
             {selectedOrder.status === 'listo' && (
               <div
                 className="p-3 rounded-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2"

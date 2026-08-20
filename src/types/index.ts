@@ -53,6 +53,25 @@ export interface Dish {
 }
 
 // RF-17 - RF-24: Configuration
+// El horario se mantiene como una colección de días para que la interfaz no
+// tenga que interpretar texto libre. `openingHours` sigue existiendo como
+// resumen legible y conserva la retrocompatibilidad con datos anteriores.
+export type Weekday =
+  | 'lunes'
+  | 'martes'
+  | 'miercoles'
+  | 'jueves'
+  | 'viernes'
+  | 'sabado'
+  | 'domingo';
+
+export interface RestaurantOpeningDay {
+  day: Weekday;
+  isOpen: boolean;
+  opensAt: string;
+  closesAt: string;
+}
+
 export interface RestaurantInfo {
   name: string;
   taxId: string;
@@ -61,6 +80,10 @@ export interface RestaurantInfo {
   email: string;
   currency: string;
   openingHours: string;
+  /** Data URL temporal en el prototipo; posteriormente será una URL del backend. */
+  logo?: string;
+  /** Configuración semanal opcional para no romper datos existentes. */
+  openingSchedule?: RestaurantOpeningDay[];
 }
 
 export interface Tax {
@@ -79,7 +102,7 @@ export interface Promotion {
   targetName?: string;
   discountPercentage: number;
   active: boolean;
-  startDate: string; 
+  startDate: string;
   endDate: string;
 }
 

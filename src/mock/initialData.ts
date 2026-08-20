@@ -34,7 +34,7 @@ export const initialUsers: UserAccount[] = [
     lastLogin: '2026-07-27 20:15'
   },
   {
-    id: 'usr-2', 
+    id: 'usr-2',
     name: 'Juan Pérez',
     email: 'juan.perez@gourmetos.com',
     role: 'Mesero',
@@ -289,7 +289,16 @@ export const initialRestaurantInfo: RestaurantInfo = {
   phone: '+51 1 445-8900',
   email: 'contacto@gourmetosbistro.pe',
   currency: 'S/',
-  openingHours: 'Lunes a Domingo: 12:00 PM - 11:30 PM'
+  openingHours: 'Lunes cerrado · Martes a jueves y domingo: 12:00–22:00 · Viernes y sábado: 12:00–23:00',
+  openingSchedule: [
+    { day: 'lunes', isOpen: false, opensAt: '12:00', closesAt: '22:00' },
+    { day: 'martes', isOpen: true, opensAt: '12:00', closesAt: '22:00' },
+    { day: 'miercoles', isOpen: true, opensAt: '12:00', closesAt: '22:00' },
+    { day: 'jueves', isOpen: true, opensAt: '12:00', closesAt: '22:00' },
+    { day: 'viernes', isOpen: true, opensAt: '12:00', closesAt: '23:00' },
+    { day: 'sabado', isOpen: true, opensAt: '12:00', closesAt: '23:00' },
+    { day: 'domingo', isOpen: true, opensAt: '12:00', closesAt: '22:00' },
+  ],
 };
 
 export const initialTaxes: Tax[] = [
@@ -662,6 +671,8 @@ export const initialLedger: LedgerEntry[] = [
   { id: 'led-7', date: '2026-07-27', type: 'ingreso', categoryId: 'ledcat-1', categoryName: 'Ventas Restobar', description: 'Cobro B001-1 - Mesa #8', amount: 166.32, reference: 'ven-1002' },
   { id: 'led-8', date: '2026-07-27', type: 'ingreso', categoryId: 'ledcat-1', categoryName: 'Ventas Restobar', description: 'Cobro T001-1 - Mesa #12', amount: 113.28, reference: 'ven-1003' }
 ];
+
+// Datos para inventario o cantabilidad
 
 export const initialSuppliers: Supplier[] = [
   { id: 'sup-1', name: 'Distribuidora del Mar', contactName: 'Roberto Fernández', phone: '+51 999 111 222', email: 'ventas@distribuidoradelmar.pe', address: 'Av. Argentina 1234, Callao', ruc: '20511122233', active: true },

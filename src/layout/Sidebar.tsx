@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { RestaurantBrand } from '../components/branding/RestaurantBrand';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -53,7 +54,7 @@ const NAV_SECTIONS = [
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const { currentRole } = useApp();
+  const { currentRole, restaurantInfo } = useApp();
   const navigate = useNavigate();
 
   const handleLinkClick = () => {
@@ -70,23 +71,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       <div className="sidebar-header">
         <button
           className="sidebar-logo"
-          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
           onClick={() => { navigate('/'); handleLinkClick(); }}
           aria-label="Ir al Panel de Control"
         >
-          <div
-            style={{
-              width: 34, height: 34, borderRadius: 8,
-              background: 'linear-gradient(135deg, #f97316, #fb923c)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <i className="bi bi-fire" style={{ color: '#fff', fontSize: '1.1rem' }}></i>
-          </div>
-          <span>
-            Gourmet<span style={{ color: '#818cf8' }}>OS</span>
-          </span>
+          <RestaurantBrand name={restaurantInfo.name} logo={restaurantInfo.logo} />
         </button>
 
         {/* Close button (mobile) */}
@@ -142,21 +130,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       <div className="sidebar-footer">
         <div className="d-flex align-items-center gap-2">
           <div
-            style={{
-              width: 32, height: 32, borderRadius: 6,
-              background: 'rgba(99, 102, 241, 0.2)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}
+            className="sidebar-footer-icon"
           >
-            <i className="bi bi-shield-lock-fill" style={{ color: '#818cf8', fontSize: '0.85rem' }}></i>
+            <i className="bi bi-shield-lock-fill"></i>
           </div>
           <div className="overflow-hidden">
             <div
               className="text-truncate fw-semibold"
               style={{ fontSize: '0.78rem', color: '#e2e8f0', lineHeight: 1.2 }}
             >
-              GourmetOS v1.0
+              Sistema de gestión
             </div>
             <div style={{ fontSize: '0.68rem', color: '#475569', lineHeight: 1.2 }}>
               Modo Prototipo Visual

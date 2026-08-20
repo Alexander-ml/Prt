@@ -5,6 +5,7 @@ import { EmptyState } from '../common/EmptyState';
 import { DishFilterBar } from './DishFilterBar';
 import { DishCard } from './DishCard';
 import { DishFormModal, type DishFormData } from './DishFormModal';
+import { DishIngredientsModal } from './DishIngredientsModal';
 import { DEFAULT_DISH_IMAGE } from './catalogMeta';
 import { hasInsufficientStock } from '../inventory/inventoryMeta';
 
@@ -44,6 +45,7 @@ export const DishesView: React.FC = () => {
   const [isDishModalOpen, setIsDishModalOpen] = useState(false);
   const [editingDish, setEditingDish] = useState<Dish | null>(null);
   const [dishFormData, setDishFormData] = useState<DishFormData>(EMPTY_DISH_FORM);
+  const [ingredientsDish, setIngredientsDish] = useState<Dish | null>(null);
 
   // Filtered Dishes (RF-14, RF-15, RF-16)
   const filteredDishes = useMemo(() => {
@@ -173,14 +175,15 @@ export const DishesView: React.FC = () => {
           }
         />
       ) : (
-        <div className="row g-3 mb-4">
+        <div className="row g-3 mb-4 catalog-dishes-grid">
           {filteredDishes.map(dish => (
-            <div key={dish.id} className="col-12 col-sm-6 col-lg-4 col-xl-3">
+            <div key={dish.id} className="col-12 col-sm-6 col-lg-4 col-xxl-3">
               <DishCard
                 dish={dish}
                 isAdmin={isAdmin}
                 onEdit={handleOpenDishModal}
                 onToggleActive={toggleDishActive}
+                onViewIngredients={setIngredientsDish}
                 insufficientStock={hasInsufficientStock(dish, insumos)}
               />
             </div>
@@ -197,6 +200,13 @@ export const DishesView: React.FC = () => {
         onChange={handleDishFormChange}
         categories={categories}
         insumos={insumos}
+      />
+
+      <DishIngredientsModal
+        dish={ingredientsDish}
+        insumos={insumos}
+        isOpen={!!ingredientsDish}
+        onClose={() => setIngredientsDish(null)}
       />
     </>
   );

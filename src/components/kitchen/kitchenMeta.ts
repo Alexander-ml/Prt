@@ -1,4 +1,4 @@
-import type { Dish, KitchenStation, Order, OrderItem, ServiceType } from '../../types';
+import type { Dish, KitchenStation, Order, OrderItem, OrderItemStatus, ServiceType } from '../../types';
 
 /**
  * kitchenMeta — Metadatos y helpers puros del Kitchen Display System.
@@ -26,6 +26,18 @@ export const SERVICE_TYPE_META: Record<ServiceType, { label: string; icon: strin
   mesa:         { label: 'Mesa', icon: 'bi-cup-hot-fill' },
   para_llevar:  { label: 'Para Llevar', icon: 'bi-bag-fill' },
   delivery:     { label: 'Delivery', icon: 'bi-bicycle' },
+};
+
+/** Metadatos de estado de ítem compartidos por el tablero de cocina. */
+export const KDS_ITEM_STATUS_META: Record<
+  OrderItemStatus,
+  { label: string; icon: string; tone: 'neutral' | 'warning' | 'success' | 'danger' }
+> = {
+  pendiente:   { label: 'Pendiente',   icon: 'bi-hourglass-split', tone: 'neutral' },
+  preparando:  { label: 'Preparando',  icon: 'bi-fire',            tone: 'warning' },
+  listo:       { label: 'Listo',       icon: 'bi-check-circle',   tone: 'success' },
+  entregado:   { label: 'Entregado',   icon: 'bi-box-seam',       tone: 'success' },
+  cancelado:   { label: 'Cancelado',   icon: 'bi-slash-circle',   tone: 'danger' },
 };
 
 /** Estado visual de urgencia de un ticket u ítem, relativo a su tiempo esperado. */
@@ -70,6 +82,28 @@ export function getTimeStatus(elapsedMinutes: number | null, expectedMinutes: nu
   if (ratio >= 1) return 'urgent';
   if (ratio >= 0.7) return 'warning';
   return 'ok';
+}
+
+/**
+ * Señal exclusivamente visual para destacar la llegada inmediata de una
+ * comanda. No interviene en sus estados ni en las alertas sonoras existentes.
+ */
+export function isRecentlySentToKitchen(order: Order): boolean {
+  const elapsedMinutes = getElapsedMinutes(order.sentToKitchenAt);
+  return elapsedMinutes !== null && elapsedMinutes <= 2;
+}
+
+/**
+ * Orden de trabajo del tablero: urgencia temporal primero, prioridad manual
+ * después, comandas normales por antigüedad y, al final, las listas. Mantiene
+ * separados los conceptos de urgencia automática y prioridad manual.
+ */
+export function getKdsQueueRank(order: Order, dishes: Dish[]): number {
+  if (order.status === 'listo') return 3;
+  const timeStatus = getTimeStatus(getElapsedMinutes(order.sentToKitchenAt), getExpectedMinutes(order, dishes));
+  if (timeStatus === 'urgent') return 0;
+  if (order.priority) return 1;
+  return 2;
 }
 
 /**

@@ -681,13 +681,17 @@ html, body {
    son enlaces secundarios de navegación, no la acción principal de la card. */
 .dashboard-summary-card .section-card-header { flex-wrap: wrap; gap: 0.5rem; }
 
-/* Panel de Control — resumen compacto solo-mobile, mismo esqueleto que
-   .orders-mobile-summary / .catalog-mobile-summary / .users-mobile-summary
-   (hero + 3 pills). Se define aparte en vez de reutilizar esas clases
-   porque cada una ya está acoplada 1:1 a su propio módulo; unificarlas en
-   una sola clase base es una limpieza válida pero más amplia, pendiente de
-   una pasada aparte que toque los 4 módulos a la vez. */
-.dashboard-mobile-summary {
+/* Resumen compacto mobile (hero + pills): patrón compartido por Mesas,
+   Pedidos, Catálogo, Usuarios y Panel de Control. Antes vivía duplicado
+   ~40 líneas por módulo (5 copias casi idénticas); se consolidó aquí tras
+   confirmar que estructura, tipografía y espaciado eran los mismos en los
+   5 casos — la copia de Usuarios tenía además un bug real de doble margen
+   entre el label y el valor (0.35rem + 0.15rem en vez de 0.15rem), que
+   quedó corregido al unificar. Lo único que sigue siendo responsabilidad
+   de cada módulo es el color semántico de sus pills (.is-*) y, en el caso
+   de Usuarios, que .mobile-summary-states use 2 columnas en vez de 3
+   porque ese módulo solo tiene 2 estados (activo/inactivo). */
+.mobile-summary {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
@@ -698,7 +702,7 @@ html, body {
   background: var(--surface-card);
   box-shadow: var(--shadow-xs);
 }
-.dashboard-mobile-summary-main p {
+.mobile-summary-main p {
   margin: 0;
   color: var(--text-muted);
   font-size: 0.68rem;
@@ -706,7 +710,7 @@ html, body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.dashboard-mobile-summary-main strong {
+.mobile-summary-main strong {
   display: block;
   margin-top: 0.15rem;
   color: var(--text-primary);
@@ -714,12 +718,12 @@ html, body {
   font-weight: 850;
   line-height: 1;
 }
-.dashboard-mobile-summary-states {
+.mobile-summary-states {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.45rem;
 }
-.dashboard-mobile-summary-states span {
+.mobile-summary-states span {
   display: flex;
   flex-direction: column;
   gap: 0.18rem;
@@ -728,15 +732,38 @@ html, body {
   font-weight: 700;
   line-height: 1.25;
 }
-.dashboard-mobile-summary-states i { font-size: 0.9rem; }
+.mobile-summary-states i { font-size: 0.9rem; }
+
+@media (max-width: 359.98px) {
+  .mobile-summary { grid-template-columns: 1fr; }
+}
+
+/* Colores semánticos por módulo — la única parte que realmente varía.
+   Cada bloque de abajo reemplaza al que antes vivía junto a su propio
+   módulo (Áreas y Mesas, Pedidos, Catálogo, Usuarios, Panel de Control),
+   agrupado aquí para que sea fácil comparar y detectar duplicados reales
+   (ej. is-available/is-occupied ya usaban el mismo color en más de un
+   módulo antes de esta limpieza). */
+.table-mobile-summary-states .is-available { color: var(--color-emerald-text); }
+.table-mobile-summary-states .is-occupied { color: var(--brand-red-text); }
+.table-mobile-summary-states .is-reserved { color: var(--brand-yellow-text); }
+
+.orders-mobile-summary-states .is-occupied { color: var(--brand-red-text); }
+.orders-mobile-summary-states .is-kitchen { color: var(--brand-yellow-text); }
+.orders-mobile-summary-states .is-ready { color: var(--color-emerald-text); }
+
+.catalog-mobile-summary-states .is-categories { color: var(--brand-primary-hover); }
+.catalog-mobile-summary-states .is-available { color: var(--color-emerald-text); }
+.catalog-mobile-summary-states .is-unavailable { color: var(--color-rose-text); }
+
+.users-mobile-summary-states { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.users-mobile-summary-states .is-active { color: var(--color-emerald-text); }
+.users-mobile-summary-states .is-inactive { color: var(--color-rose-text); }
+
 .dashboard-mobile-summary-states .is-orders { color: var(--brand-primary-hover); }
 .dashboard-mobile-summary-states .is-sales { color: var(--color-sky-text); }
 .dashboard-mobile-summary-states .is-stock-alert { color: var(--color-rose-text); }
 .dashboard-mobile-summary-states .is-stock-ok { color: var(--color-emerald-text); }
-
-@media (max-width: 359.98px) {
-  .dashboard-mobile-summary { grid-template-columns: 1fr; }
-}
 
 /* ───────────────────────────────────────────
    11. METRIC / STAT CARDS
@@ -1034,51 +1061,6 @@ html, body {
 }
 
 /* ÁREAS Y MESAS — patrón de referencia responsive del proyecto. */
-.table-mobile-summary {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--surface-card);
-  box-shadow: var(--shadow-xs);
-}
-.table-mobile-summary-label {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.table-mobile-summary-total {
-  margin: 0.15rem 0 0;
-  color: var(--text-primary);
-  font-size: 2rem;
-  font-weight: 850;
-  line-height: 1;
-}
-.table-mobile-summary-states {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.45rem;
-}
-.table-mobile-summary-states span {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-  font-size: 0.68rem;
-  font-weight: 700;
-  line-height: 1.25;
-}
-.table-mobile-summary-states i { font-size: 0.9rem; }
-.table-mobile-summary-states .is-available { color: var(--color-emerald-text); }
-.table-mobile-summary-states .is-occupied { color: var(--brand-red-text); }
-.table-mobile-summary-states .is-reserved { color: var(--brand-yellow-text); }
-
 .table-floorplan-filters {
   padding: 1rem 1.1rem;
   border: 1px solid var(--border-color);

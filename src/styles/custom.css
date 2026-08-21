@@ -1870,6 +1870,43 @@ html, body {
    ─────────────────────────────────────────── */
 .order-dish-item { transition: var(--transition-fast); }
 .order-dish-item:hover { border-color: var(--brand-primary-subtle) !important; box-shadow: var(--shadow-xs); }
+.order-dish-item-unavailable { opacity: 0.6; }
+.order-dish-item-name { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); }
+.order-dish-item-price { color: var(--color-brand); font-weight: 700; }
+.order-dish-item-preptime { font-size: 0.7rem; }
+.order-dish-add-button { border-radius: 6px; }
+.order-take-catalog-scroll { max-height: clamp(320px, 58vh, 560px); }
+.order-count-badge { font-size: 0.72rem; }
+
+.order-cart-heading { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+.order-take-cart-list { max-height: clamp(220px, 38vh, 360px); }
+.order-cart-empty { background: var(--surface-muted); color: var(--text-muted); font-size: 0.825rem; }
+.order-cart-empty i { font-size: 1.75rem; color: #94a3b8; }
+.order-cart-item { padding: 0.65rem; }
+.order-cart-item-name { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); }
+.order-cart-item-price { font-size: 0.85rem; font-weight: 700; color: var(--color-brand); }
+.order-cart-item-note { background: var(--color-amber-bg); color: var(--color-amber-text); font-size: 0.75rem; }
+.order-cart-item-qty { font-size: 0.85rem; min-width: 16px; text-align: center; }
+.order-cart-subtotal-label { color: var(--text-muted); font-weight: 600; font-size: 0.85rem; }
+.order-cart-subtotal-value { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); }
+.order-take-send-button { border-radius: 10px; font-size: 0.95rem; padding-block: 0.65rem; }
+.order-take-send-hint { color: var(--text-muted); font-size: 0.75rem; }
+
+/* AdditionalItemsModal (enviar ítems adicionales a un pedido ya en cocina):
+   mismo lenguaje visual que la lista de platos/carrito de OrderTakeView,
+   pero a escala de modal (0.8rem en vez de 0.85rem), por eso son clases
+   propias en vez de compartir las de arriba. */
+.order-additional-dish-list { max-height: 300px; overflow-y: auto; }
+.order-additional-dish-name { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); }
+.order-additional-dish-price { color: var(--color-brand); font-weight: 700; }
+.order-additional-dish-allergen { margin-top: 0.4rem; margin-bottom: 0; }
+.order-additional-add-button { border-radius: 6px; }
+.order-additional-cart-empty { color: var(--text-muted); font-size: 0.8rem; }
+.order-additional-cart-empty i { font-size: 1.5rem; color: #94a3b8; }
+.order-additional-cart-item-name { font-size: 0.8rem; font-weight: 700; }
+.order-additional-cart-item-price { color: var(--color-brand); font-weight: 700; }
+.order-additional-send-button { border-radius: 8px; }
+
 .order-history-list-scroll { max-height: clamp(320px, 65vh, 600px); overflow-y: auto; }
 .order-history-list-item {
   padding: 0.75rem;
@@ -1881,6 +1918,8 @@ html, body {
 }
 .order-history-list-item:hover { border-color: var(--brand-primary-subtle); background: var(--brand-primary-soft); }
 .order-history-list-item.is-selected { border: 2px solid var(--brand-primary); background: var(--brand-primary-soft); }
+.order-history-list-item-title { color: var(--text-primary); }
+.order-history-list-item-subtitle { color: var(--text-muted); }
 .order-history-list-summary {
   display: flex;
   align-items: center;
@@ -1890,6 +1929,16 @@ html, body {
   font-size: 0.76rem;
 }
 .order-history-list-waiter { margin-top: 0.3rem; color: var(--text-muted); font-size: 0.76rem; }
+
+.order-history-item-name { color: var(--text-primary); }
+.order-history-item-name.is-cancelled { color: var(--text-muted); text-decoration: line-through; }
+.order-history-items-table tr.is-cancelled { background: var(--surface-muted); }
+.order-history-item-note-empty { color: var(--text-muted); font-size: 0.78rem; }
+
+.order-history-ready-banner { background: var(--color-emerald-bg); border: 1px solid #6ee7b7; }
+.order-history-ready-banner-icon { color: var(--color-emerald); }
+.order-history-ready-banner-title { color: var(--color-emerald-text); font-size: 0.9rem; }
+.order-history-ready-banner-text { color: var(--color-emerald-text); font-size: 0.825rem; }
 
 .order-history-detail-status {
   display: grid;

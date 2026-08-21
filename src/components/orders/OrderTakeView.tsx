@@ -193,7 +193,7 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
           title="Selección de Platos"
           className="h-100 d-flex flex-column order-take-catalog-card"
           actions={
-            <span className="badge bg-secondary-subtle text-secondary-emphasis rounded-pill fw-semibold" style={{ fontSize: '0.72rem' }}>
+            <span className="badge bg-secondary-subtle text-secondary-emphasis rounded-pill fw-semibold order-count-badge">
               {filteredDishes.length} de {totalActiveDishes}
             </span>
           }
@@ -231,7 +231,7 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
             </div>
           </div>
 
-          <div className="flex-grow-1 overflow-y-auto order-take-catalog-scroll" style={{ maxHeight: 'clamp(320px, 58vh, 560px)' }}>
+          <div className="flex-grow-1 overflow-y-auto order-take-catalog-scroll">
             {filteredDishes.length === 0 ? (
               <EmptyState
                 icon="bi-search"
@@ -243,25 +243,24 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
                 {filteredDishes.map(dish => (
                   <div key={dish.id} className="col-12 col-md-6">
                     <div
-                      className="p-2 border rounded-3 bg-white d-flex justify-content-between align-items-start h-100 order-dish-item"
-                      style={{ opacity: dish.isAvailableToday ? 1 : 0.6 }}
+                      className={`p-2 border rounded-3 bg-white d-flex justify-content-between align-items-start h-100 order-dish-item${!dish.isAvailableToday ? ' order-dish-item-unavailable' : ''}`}
                     >
                       <div style={{ minWidth: 0 }}>
-                        <div className="fw-bold d-flex align-items-center gap-2" style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                        <div className="order-dish-item-name">
                           {dish.name}
                           {!dish.isAvailableToday && <Badge status="AGOTADO" variant="danger" />}
                         </div>
                         <div className="d-flex align-items-center gap-2 mb-1">
-                          <small style={{ color: 'var(--color-brand)', fontWeight: 700 }}>S/ {dish.price.toFixed(2)}</small>
+                          <small className="order-dish-item-price">S/ {dish.price.toFixed(2)}</small>
                           {/* Tiempo de prep. discreto: informa al mesero sin competir con el precio */}
-                          <small className="text-muted" style={{ fontSize: '0.7rem' }}>
+                          <small className="text-muted order-dish-item-preptime">
                             <i className="bi bi-stopwatch me-1" aria-hidden="true"></i>
                             {dish.prepTimeMinutes} min
                           </small>
                         </div>
                         {/* Alérgenos — mismo badge/tono que Catálogo y Cocina */}
                         {dish.allergens && dish.allergens.length > 0 && (
-                          <div className="kds-allergen-badge" style={{ marginBottom: 0 }}>
+                          <div className="kds-allergen-badge mb-0">
                             <i className="bi bi-exclamation-octagon-fill flex-shrink-0" aria-hidden="true"></i>
                             <span>Contiene: {dish.allergens.join(', ')}</span>
                           </div>
@@ -270,7 +269,6 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-primary flex-shrink-0 ms-2 order-dish-add-button"
-                        style={{ borderRadius: 6 }}
                         disabled={!dish.isAvailableToday}
                         onClick={() => handleAddToCart(dish)}
                       >
@@ -304,29 +302,29 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
           </div>
 
           {/* Cart List */}
-          <div className="flex-grow-1 overflow-y-auto mb-3 order-take-cart-list" style={{ maxHeight: 'clamp(220px, 38vh, 360px)' }}>
-            <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
+          <div className="flex-grow-1 overflow-y-auto mb-3 order-take-cart-list">
+            <h3 className="order-cart-heading">
               Ítems del Pedido no Enviados
             </h3>
             {cartItems.length === 0 ? (
-              <div className="text-center py-4 border rounded-3" style={{ background: 'var(--surface-muted)', color: 'var(--text-muted)', fontSize: '0.825rem' }}>
-                <i className="bi bi-cart-plus d-block mb-1" style={{ fontSize: '1.75rem', color: '#94a3b8' }}></i>
+              <div className="text-center py-4 border rounded-3 order-cart-empty">
+                <i className="bi bi-cart-plus d-block mb-1" aria-hidden="true"></i>
                 Selecciona platos de la lista para armar la comanda.
               </div>
             ) : (
               <div className="d-flex flex-column gap-2">
                 {cartItems.map((item, idx) => (
-                  <div key={idx} className="rounded-3 border bg-white shadow-sm" style={{ padding: '0.65rem' }}>
+                  <div key={idx} className="rounded-3 border bg-white shadow-sm order-cart-item">
                     <div className="d-flex align-items-center justify-content-between mb-1">
-                      <span className="fw-bold" style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                      <span className="order-cart-item-name">
                         {item.dish.name}
                       </span>
-                      <span className="fw-bold" style={{ fontSize: '0.85rem', color: 'var(--color-brand)' }}>
+                      <span className="order-cart-item-price">
                         S/ {(item.dish.price * item.quantity).toFixed(2)}
                       </span>
                     </div>
                     {item.observation && (
-                      <div className="p-2 rounded mb-2" style={{ background: 'var(--color-amber-bg)', color: 'var(--color-amber-text)', fontSize: '0.75rem' }}>
+                      <div className="p-2 rounded mb-2 order-cart-item-note">
                         <i className="bi bi-chat-left-text-fill me-1"></i> Obs: {item.observation}
                       </div>
                     )}
@@ -341,7 +339,7 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
                         >
                           -
                         </button>
-                        <span className="fw-bold" style={{ fontSize: '0.85rem', minWidth: 16, textAlign: 'center' }}>
+                        <span className="fw-bold order-cart-item-qty">
                           {item.quantity}
                         </span>
                         <button
@@ -382,20 +380,19 @@ export const OrderTakeView: React.FC<OrderTakeViewProps> = ({
           {/* Total & Send Action */}
           <div className="pt-3 border-top mt-auto">
             <div className="d-flex justify-content-between align-items-center mb-3">
-              <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>Subtotal Estimado:</span>
-              <span className="fw-bold" style={{ fontSize: '1.4rem', color: 'var(--text-primary)' }}>S/ {cartSubtotal.toFixed(2)}</span>
+              <span className="order-cart-subtotal-label">Subtotal Estimado:</span>
+              <span className="order-cart-subtotal-value">S/ {cartSubtotal.toFixed(2)}</span>
             </div>
             <button
               type="button"
-              className="btn-brand btn w-100 fw-bold"
-              style={{ borderRadius: 10, fontSize: '0.95rem', paddingTop: '0.65rem', paddingBottom: '0.65rem' }}
+              className="btn-brand btn w-100 fw-bold order-take-send-button"
               disabled={cartItems.length === 0 || !selectedTableId}
               onClick={handleConfirmAndSendOrder}
             >
               <i className="bi bi-send-fill me-2"></i> Confirmar y Enviar a Cocina
             </button>
             {(cartItems.length === 0 || !selectedTableId) && (
-              <small className="d-block text-center mt-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+              <small className="d-block text-center mt-2 order-take-send-hint">
                 {!selectedTableId ? 'Selecciona una mesa para continuar.' : 'Agrega al menos un plato a la comanda.'}
               </small>
             )}

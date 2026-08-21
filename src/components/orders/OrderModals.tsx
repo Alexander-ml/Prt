@@ -28,8 +28,7 @@ export const ObservationModal: React.FC<ObservationModalProps> = ({
         <input
           id="obsInput"
           type="text"
-          className="form-control"
-          style={{ borderRadius: 8 }}
+          className="form-control rounded-3"
           placeholder="Ej. Sin picante, término medio, sal reducida..."
           value={tempObs}
           onChange={e => setTempObs(e.target.value)}
@@ -37,10 +36,10 @@ export const ObservationModal: React.FC<ObservationModalProps> = ({
         />
       </div>
       <div className="d-flex justify-content-end gap-2 border-top pt-3">
-        <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={onClose}>
+        <button type="button" className="btn btn-outline-secondary rounded-3" onClick={onClose}>
           Cancelar
         </button>
-        <button type="button" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }} onClick={onSave}>
+        <button type="button" className="btn-brand btn fw-semibold rounded-3" onClick={onSave}>
           Guardar Observación
         </button>
       </div>
@@ -81,15 +80,15 @@ export const AdditionalItemsModal: React.FC<AdditionalItemsModalProps> = ({
       <div className="row g-4 mb-3">
         <div className="col-12 col-md-6">
           <label className="form-label">Seleccionar Plato para Añadir</label>
-          <div className="d-flex flex-column gap-2" style={{ maxHeight: 300, overflowY: 'auto' }}>
+          <div className="d-flex flex-column gap-2 order-additional-dish-list">
             {dishes.filter(d => d.active && d.isAvailableToday).map(d => (
               <div key={d.id} className="p-2 border rounded-3 bg-white d-flex justify-content-between align-items-start">
                 <div style={{ minWidth: 0 }}>
-                  <div className="fw-bold" style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>{d.name}</div>
-                  <small style={{ color: 'var(--color-brand)', fontWeight: 700 }}>S/ {d.price.toFixed(2)}</small>
+                  <div className="order-additional-dish-name">{d.name}</div>
+                  <small className="order-additional-dish-price">S/ {d.price.toFixed(2)}</small>
                   {/* Alérgenos — mismo badge/tono que Catálogo, Pedidos y Cocina */}
                   {d.allergens && d.allergens.length > 0 && (
-                    <div className="kds-allergen-badge" style={{ marginTop: '0.4rem', marginBottom: 0 }}>
+                    <div className="kds-allergen-badge order-additional-dish-allergen">
                       <i className="bi bi-exclamation-octagon-fill flex-shrink-0" aria-hidden="true"></i>
                       <span>Contiene: {d.allergens.join(', ')}</span>
                     </div>
@@ -97,8 +96,7 @@ export const AdditionalItemsModal: React.FC<AdditionalItemsModalProps> = ({
                 </div>
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-primary flex-shrink-0 ms-2"
-                  style={{ borderRadius: 6 }}
+                  className="btn btn-sm btn-outline-primary flex-shrink-0 ms-2 order-additional-add-button"
                   onClick={() => onAddDish(d)}
                 >
                   <i className="bi bi-plus-lg me-1"></i>Añadir
@@ -110,24 +108,23 @@ export const AdditionalItemsModal: React.FC<AdditionalItemsModalProps> = ({
         <div className="col-12 col-md-6 border-start ps-md-4">
           <label className="form-label">Ítems Adicionales por Enviar</label>
           {additionalCart.length === 0 ? (
-            <div className="text-center py-4" style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-              <i className="bi bi-cart d-block mb-1" style={{ fontSize: '1.5rem', color: '#94a3b8' }}></i>
+            <div className="text-center py-4 order-additional-cart-empty">
+              <i className="bi bi-cart d-block mb-1" aria-hidden="true"></i>
               Sin adicionales seleccionados.
             </div>
           ) : (
             <div className="d-flex flex-column gap-2 mb-3">
               {additionalCart.map((item, i) => (
                 <div key={i} className="p-2 border rounded-3 bg-light d-flex justify-content-between align-items-center">
-                  <span className="fw-bold" style={{ fontSize: '0.8rem' }}>{item.dish.name} (x{item.quantity})</span>
-                  <span className="fw-bold" style={{ color: 'var(--color-brand)' }}>S/ {(item.dish.price * item.quantity).toFixed(2)}</span>
+                  <span className="order-additional-cart-item-name">{item.dish.name} (x{item.quantity})</span>
+                  <span className="order-additional-cart-item-price">S/ {(item.dish.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>
           )}
           <button
             type="button"
-            className="btn-brand btn w-100 fw-semibold"
-            style={{ borderRadius: 8 }}
+            className="btn-brand btn w-100 fw-semibold order-additional-send-button"
             disabled={additionalCart.length === 0}
             onClick={onSend}
           >
@@ -164,8 +161,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
         <label className="form-label" htmlFor="cancelReason">Motivo de Cancelación *</label>
         <textarea
           id="cancelReason"
-          className="form-control"
-          style={{ borderRadius: 8 }}
+          className="form-control rounded-3"
           rows={3}
           placeholder="Ej. Solicitud explícita del cliente por demoras..."
           required
@@ -174,13 +170,12 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
         ></textarea>
       </div>
       <div className="d-flex justify-content-end gap-2 border-top pt-3">
-        <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={onClose}>
+        <button type="button" className="btn btn-outline-secondary rounded-3" onClick={onClose}>
           Cancelar
         </button>
         <button
           type="button"
-          className="btn btn-danger fw-semibold"
-          style={{ borderRadius: 8 }}
+          className="btn btn-danger fw-semibold rounded-3"
           disabled={!cancelReason.trim()}
           onClick={onConfirm}
         >

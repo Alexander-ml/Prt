@@ -1,7 +1,6 @@
 import React from 'react';
 import type { Dish } from '../../types';
 import { Badge } from '../common/Badge';
-import { formatMoney } from '../../utils/money';
 import { KITCHEN_STATION_META } from '../kitchen/kitchenMeta';
 
 interface DishCardProps {
@@ -56,17 +55,9 @@ export const DishCard: React.FC<DishCardProps> = ({
       <div className="card-body d-flex flex-column p-3">
         <div className="d-flex align-items-start justify-content-between gap-2 mb-1">
           <h3 className="fw-bold mb-0 text-truncate fs-6 text-dark">{dish.name}</h3>
-          <span className="fw-bold flex-shrink-0 text-primary fs-6">{formatMoney(dish.price)}</span>
+          <span className="fw-bold flex-shrink-0 text-primary fs-6">S/ {dish.price.toFixed(2)}</span>
         </div>
-        <p
-          className="mb-3 flex-grow-1 small text-muted"
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
-        >
+        <p className="mb-3 flex-grow-1 small text-muted dish-card-description">
           {dish.description}
         </p>
 
@@ -82,7 +73,7 @@ export const DishCard: React.FC<DishCardProps> = ({
           ) : (
             <Badge status="Sin Estación" variant="warning" icon="bi-exclamation-triangle-fill" />
           )}
-          <small className="text-muted fw-semibold" style={{ fontSize: '0.72rem' }}>
+          <small className="text-muted fw-semibold dish-card-preptime">
             <i className="bi bi-stopwatch me-1" aria-hidden="true"></i>
             {dish.prepTimeMinutes} min
           </small>
@@ -91,7 +82,7 @@ export const DishCard: React.FC<DishCardProps> = ({
         {/* Alérgenos — mismo tono/ícono que Cocina, para no depender del
             modal de edición para verificar qué se configuró. */}
         {dish.allergens && dish.allergens.length > 0 && (
-          <div className="kds-allergen-badge" style={{ marginBottom: '0.75rem' }}>
+          <div className="kds-allergen-badge dish-card-allergen">
             <i className="bi bi-exclamation-octagon-fill flex-shrink-0" aria-hidden="true"></i>
             <span>Contiene: {dish.allergens.join(', ')}</span>
           </div>
@@ -102,17 +93,7 @@ export const DishCard: React.FC<DishCardProps> = ({
             avisa que la receta configurada ya no alcanza con el stock
             actual de Inventario. */}
         {insufficientStock && (
-          <div
-            className="d-flex align-items-start gap-2 fw-semibold"
-            style={{
-              fontSize: '0.75rem',
-              padding: '0.4rem 0.6rem',
-              marginBottom: '0.75rem',
-              borderRadius: 'var(--radius-sm, 8px)',
-              background: 'var(--color-amber-bg)',
-              color: 'var(--color-amber-text)',
-            }}
-          >
+          <div className="d-flex align-items-start gap-2 fw-semibold dish-card-stock-warning">
             <i className="bi bi-box-seam flex-shrink-0" aria-hidden="true"></i>
             <span>Insumos Insuficientes en Inventario</span>
           </div>

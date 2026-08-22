@@ -160,34 +160,22 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
               const pct = Math.round((qty / max) * 100);
               return (
                 <div key={i} className="d-flex align-items-center gap-3">
-                  <div
-                    style={{
-                      width: 24, height: 24, borderRadius: 6,
-                      background: i === 0 ? '#fef3c7' : 'var(--surface-muted)',
-                      color: i === 0 ? '#d97706' : 'var(--text-muted)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 800, fontSize: '0.75rem', flexShrink: 0,
-                    }}
-                  >
+                  <div className={`top-dish-rank${i === 0 ? ' is-first' : ''}`}>
                     {i + 1}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="top-dish-info">
                     <div className="d-flex justify-content-between mb-1">
-                      <span className="text-truncate" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      <span className="text-truncate top-dish-name">
                         {dish}
                       </span>
-                      <span className="flex-shrink-0 ms-2" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                      <span className="flex-shrink-0 ms-2 top-dish-qty">
                         {qty} un.
                       </span>
                     </div>
-                    <div className="progress" style={{ height: 6, borderRadius: 99 }}>
+                    <div className="progress top-dish-progress">
                       <div
-                        className="progress-bar"
-                        style={{
-                          width: `${pct}%`,
-                          background: i === 0 ? '#d97706' : i === 1 ? '#64748b' : '#cbd5e1',
-                          borderRadius: 99,
-                        }}
+                        className={`progress-bar top-dish-progress-bar ${i === 0 ? 'is-rank-0' : i === 1 ? 'is-rank-1' : 'is-rank-rest'}`}
+                        style={{ width: `${pct}%` }}
                       ></div>
                     </div>
                   </div>
@@ -234,16 +222,15 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             <input
               id="filterDateInput"
               type="date"
-              className="form-control"
-              style={{ borderRadius: 8 }}
+              className="form-control rounded-3"
               value={filterDate}
               onChange={e => setFilterDate(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 pt-3" style={{ borderTop: '1px solid var(--border-muted)' }}>
-          <span className="badge rounded-pill text-bg-light border" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 pt-3 history-filters-footer">
+          <span className="badge rounded-pill text-bg-light border history-results-badge">
             {filteredSales.length} resultado{filteredSales.length !== 1 ? 's' : ''}
           </span>
           {hasActiveFilters && (
@@ -267,8 +254,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           isAdmin && (
             <button
               type="button"
-              className="btn btn-sm btn-outline-primary fw-semibold"
-              style={{ borderRadius: 8, fontSize: '0.78rem' }}
+              className="btn btn-sm btn-outline-primary fw-semibold rounded-3 history-export-btn"
               onClick={onExportReport}
             >
               <i className="bi bi-download me-1"></i> Exportar
@@ -287,13 +273,11 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
               {filteredSales.map(sale => (
                 <div
                   key={sale.id}
-                  className="p-3 rounded-3"
-                  style={{ border: '1px solid var(--border-color)', background: 'var(--surface-card)' }}
+                  className="p-3 rounded-3 history-sale-card"
                 >
                   <div className="d-flex align-items-center justify-content-between gap-2 mb-2">
                     <span
-                      className="text-truncate"
-                      style={{ fontFamily: 'monospace', fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-brand)', minWidth: 0 }}
+                      className="text-truncate history-sale-card-code"
                     >
                       {sale.serie}-{String(sale.correlativo).padStart(4, '0')}
                     </span>
@@ -303,29 +287,27 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                   </div>
 
                   <div className="d-flex align-items-baseline justify-content-between gap-2">
-                    <span className="fw-bold" style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                    <span className="fw-bold history-sale-card-table">
                       Mesa #{sale.tableNumber}
                     </span>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-brand)' }}>
+                    <span className="history-sale-card-total">
                       {formatMoney(sale.total)}
                     </span>
                   </div>
 
-                  <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-1" style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                  <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-1 history-sale-card-meta">
                     <span className="text-truncate"><i className="bi bi-person me-1"></i>{sale.waiterName}</span>
                     <span className="flex-shrink-0">{sale.closedAt}</span>
                   </div>
 
                   <div
-                    className="d-flex align-items-center justify-content-between gap-2 mt-2 pt-2"
-                    style={{ borderTop: '1px dashed var(--border-color)' }}
+                    className="d-flex align-items-center justify-content-between gap-2 mt-2 pt-2 history-sale-card-footer"
                   >
                     <Badge status={CATEGORY_LABELS[sale.paymentMethod]} variant={CATEGORY_BADGE_VARIANTS[sale.paymentMethod]} />
                     <div className="d-flex gap-2">
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline-primary fw-semibold"
-                        style={{ borderRadius: 8, minHeight: 36 }}
+                        className="btn btn-sm btn-outline-primary fw-semibold rounded-3 history-sale-card-btn"
                         aria-label={`Ver comprobante ${sale.id}`}
                         onClick={() => onOpenReceipt(sale)}
                       >
@@ -335,8 +317,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                         <>
                           <button
                             type="button"
-                            className="btn btn-sm btn-outline-secondary"
-                            style={{ borderRadius: 8, minHeight: 36 }}
+                            className="btn btn-sm btn-outline-secondary rounded-3 history-sale-card-btn"
                             aria-label={`Corregir venta ${sale.id}`}
                             onClick={() => onOpenReopen(sale)}
                           >
@@ -344,8 +325,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                           </button>
                           <button
                             type="button"
-                            className="btn btn-sm btn-outline-danger"
-                            style={{ borderRadius: 8, minHeight: 36 }}
+                            className="btn btn-sm btn-outline-danger rounded-3 history-sale-card-btn"
                             aria-label={`Anular venta ${sale.id}`}
                             onClick={() => onOpenCancel(sale)}
                           >
@@ -361,7 +341,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
 
             {/* Tablet / Desktop: tabla tradicional */}
             <div className="d-none d-lg-block table-responsive-x">
-              <table className="custom-table" style={{ minWidth: 760 }}>
+              <table className="custom-table history-table">
                 <thead>
                   <tr>
                     <th>N° Comprobante</th>
@@ -378,24 +358,19 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                   {filteredSales.map(sale => (
                     <tr key={sale.id}>
                       <td>
-                        <span
-                          style={{
-                            fontFamily: 'monospace', fontSize: '0.8rem',
-                            fontWeight: 700, color: 'var(--color-brand)',
-                          }}
-                        >
+                        <span className="history-table-code">
                           {sale.serie}-{String(sale.correlativo).padStart(4, '0')}
                         </span>
                       </td>
-                      <td className="fw-bold" style={{ color: 'var(--text-primary)' }}>
+                      <td className="fw-bold history-table-mesa">
                         Mesa #{sale.tableNumber}
                       </td>
-                      <td style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>{sale.waiterName}</td>
-                      <td style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{sale.closedAt}</td>
+                      <td className="history-table-muted-sm">{sale.waiterName}</td>
+                      <td className="history-table-muted-xs">{sale.closedAt}</td>
                       <td>
                         <Badge status={CATEGORY_LABELS[sale.paymentMethod]} variant={CATEGORY_BADGE_VARIANTS[sale.paymentMethod]} />
                       </td>
-                      <td className="text-end fw-bold" style={{ color: 'var(--color-brand)', fontSize: '1rem' }}>
+                      <td className="text-end fw-bold history-table-total">
                         {formatMoney(sale.total)}
                       </td>
                       <td>
@@ -404,7 +379,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                           variant={sale.isCancelled ? 'danger' : sale.estadoPago === 'facturada' ? 'primary' : 'success'}
                         />
                         {sale.editedAt && !sale.isCancelled && (
-                          <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                          <div className="history-table-corrected-note">
                             <i className="bi bi-pencil-fill me-1"></i>Corregida
                           </div>
                         )}
@@ -457,7 +432,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
       {isAdmin && cashSessionHistory.length > 0 && (
         <SectionCard icon="bi-archive" title="Turnos de Caja Anteriores" noPadding>
           <div className="table-responsive-x">
-            <table className="custom-table" style={{ minWidth: 640 }}>
+            <table className="custom-table history-sessions-table">
               <thead>
                 <tr>
                   <th>Turno</th>
@@ -472,10 +447,10 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                 {cashSessionHistory.map(session => (
                   <tr key={session.id}>
                     <td>
-                      <div className="fw-semibold" style={{ color: 'var(--text-primary)', fontSize: '0.83rem' }}>{session.openedAt}</div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>hasta {session.closedAt}</div>
+                      <div className="fw-semibold session-history-opened-at">{session.openedAt}</div>
+                      <div className="session-history-closed-at">hasta {session.closedAt}</div>
                     </td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>{session.openedBy}</td>
+                    <td className="history-table-muted-sm">{session.openedBy}</td>
                     <td className="text-end">{formatMoney(session.initialAmount)}</td>
                     <td className="text-end">{formatMoney(session.expectedCash)}</td>
                     <td className="text-end fw-semibold">{formatMoney(session.countedCash ?? 0)}</td>

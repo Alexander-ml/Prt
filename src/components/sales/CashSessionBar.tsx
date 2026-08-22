@@ -44,20 +44,17 @@ export const CashSessionBar: React.FC<CashSessionBarProps> = ({
 
   if (!isOpen) {
     return (
-      <div
-        className="p-3 rounded-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-4"
-        style={{ background: 'var(--color-rose-bg)', border: '1px solid #fca5a5' }}
-      >
+      <div className="p-3 rounded-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-4 cash-session-bar-closed">
         <div className="d-flex align-items-center gap-2">
-          <i className="bi bi-lock-fill" style={{ fontSize: '1.3rem', color: 'var(--color-rose-text)' }}></i>
+          <i className="bi bi-lock-fill cash-session-bar-icon" aria-hidden="true"></i>
           <div>
-            <div className="fw-bold" style={{ color: 'var(--color-rose-text)', fontSize: '0.9rem' }}>Caja Cerrada</div>
-            <small style={{ color: 'var(--color-rose-text)', opacity: 0.85 }}>
+            <div className="cash-session-bar-title">Caja Cerrada</div>
+            <small className="cash-session-bar-subtitle">
               Debe abrir un turno de caja antes de poder cobrar cualquier mesa.
             </small>
           </div>
         </div>
-        <button type="button" className="btn-brand btn fw-semibold flex-shrink-0" style={{ borderRadius: 8 }} onClick={onOpenClick}>
+        <button type="button" className="btn-brand btn fw-semibold flex-shrink-0 rounded-3" onClick={onOpenClick}>
           <i className="bi bi-unlock-fill me-1"></i> Abrir Caja
         </button>
       </div>
@@ -65,18 +62,15 @@ export const CashSessionBar: React.FC<CashSessionBarProps> = ({
   }
 
   return (
-    <div
-      className="p-3 rounded-3 mb-4"
-      style={{ background: 'var(--color-emerald-bg)', border: '1px solid #6ee7b7' }}
-    >
+    <div className="p-3 rounded-3 mb-4 cash-session-bar-open">
       <div className="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
         <div className="d-flex align-items-center gap-2 min-w-0">
-          <i className="bi bi-unlock-fill flex-shrink-0" style={{ fontSize: '1.3rem', color: 'var(--color-emerald-text)' }}></i>
+          <i className="bi bi-unlock-fill flex-shrink-0 cash-session-bar-icon" aria-hidden="true"></i>
           <div className="min-w-0">
-            <div className="fw-bold" style={{ color: 'var(--color-emerald-text)', fontSize: '0.9rem' }}>
-              Caja Abierta <span className="fw-normal" style={{ opacity: 0.75, fontSize: '0.78rem' }}>· {cashSession!.openedBy}</span>
+            <div className="cash-session-bar-title">
+              Caja Abierta <span className="cash-session-bar-title-meta">· {cashSession!.openedBy}</span>
             </div>
-            <small style={{ color: 'var(--color-emerald-text)', opacity: 0.85 }}>
+            <small className="cash-session-bar-subtitle">
               Desde {cashSession!.openedAt} · Fondo inicial {formatMoney(cashSession!.initialAmount)}
             </small>
           </div>
@@ -84,18 +78,17 @@ export const CashSessionBar: React.FC<CashSessionBarProps> = ({
 
         <div className="d-flex align-items-center gap-3 flex-shrink-0">
           <div className="text-sm-end">
-            <div style={{ fontSize: '0.7rem', color: 'var(--color-emerald-text)', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase' }}>
+            <div className="cash-session-bar-metric-label">
               Efectivo Esperado
             </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--color-emerald-text)' }}>
+            <div className="cash-session-bar-metric-value">
               {formatMoney(cashSession!.expectedCash)}
             </div>
           </div>
           <div className="d-flex gap-2">
             <button
               type="button"
-              className="btn btn-outline-secondary btn-sm fw-semibold bg-white"
-              style={{ borderRadius: 8, minHeight: 36 }}
+              className="btn btn-outline-secondary btn-sm fw-semibold bg-white rounded-3 cash-session-bar-btn"
               onClick={onMovementClick}
               title="Registrar ingreso o retiro manual de efectivo"
             >
@@ -103,8 +96,7 @@ export const CashSessionBar: React.FC<CashSessionBarProps> = ({
             </button>
             <button
               type="button"
-              className="btn btn-outline-danger btn-sm fw-semibold bg-white"
-              style={{ borderRadius: 8, minHeight: 36 }}
+              className="btn btn-outline-danger btn-sm fw-semibold bg-white rounded-3 cash-session-bar-btn"
               onClick={onCloseClick}
             >
               <i className="bi bi-lock-fill me-1"></i> Cerrar Caja
@@ -114,19 +106,18 @@ export const CashSessionBar: React.FC<CashSessionBarProps> = ({
       </div>
 
       {variant === 'summary' && totalVentasTurno > 0 && (
-        <div className="d-flex flex-wrap gap-2 mt-3 pt-3" style={{ borderTop: '1px dashed #6ee7b7' }}>
+        <div className="d-flex flex-wrap gap-2 mt-3 pt-3 cash-session-bar-breakdown">
           {(Object.keys(breakdown) as PaymentMethod[])
             .filter(cat => cat !== 'mixto' && breakdown[cat] > 0)
             .map(cat => (
               <div
                 key={cat}
-                className="px-3 py-2 rounded-3 bg-white flex-fill"
-                style={{ minWidth: 130, border: '1px solid #d1fae5' }}
+                className="px-3 py-2 rounded-3 bg-white flex-fill cash-session-bar-breakdown-chip"
               >
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
+                <div className="cash-session-bar-breakdown-label">
                   {CATEGORY_LABELS[cat]}
                 </div>
-                <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                <div className="cash-session-bar-breakdown-value">
                   {formatMoney(breakdown[cat])}
                 </div>
               </div>

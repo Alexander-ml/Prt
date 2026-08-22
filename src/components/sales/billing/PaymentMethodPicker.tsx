@@ -102,18 +102,14 @@ export const PaymentMethodPicker: React.FC<PaymentMethodPickerProps> = ({
                 disabled={isDisabledOption}
                 aria-pressed={isActive}
                 aria-expanded={cat.group ? expanded === cat.key : undefined}
-                className={`btn w-100 fw-semibold ${isActive ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-                style={{ borderRadius: 8, padding: '0.5rem 0.25rem', fontSize: '0.72rem', minHeight: 56, position: 'relative' }}
+                className={`btn w-100 fw-semibold rounded-3 payment-category-btn ${isActive ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
                 onClick={() => handleCategoryClick(cat)}
                 title={cat.label}
               >
-                <i className={`bi ${cat.icon} d-block mb-1`} style={{ fontSize: '1.05rem' }}></i>
+                <i className={`bi ${cat.icon} d-block mb-1`}></i>
                 <span className="text-truncate d-block">{cat.label}</span>
                 {isGroupAdded && (
-                  <i
-                    className="bi bi-check-circle-fill"
-                    style={{ position: 'absolute', top: 4, right: 6, fontSize: '0.7rem', color: isActive ? '#fff' : 'var(--color-emerald)' }}
-                  ></i>
+                  <i className={`bi bi-check-circle-fill payment-category-check${isActive ? ' is-active' : ''}`}></i>
                 )}
               </button>
             </div>
@@ -123,11 +119,8 @@ export const PaymentMethodPicker: React.FC<PaymentMethodPickerProps> = ({
 
       {/* Nivel 2: sub-tipo, solo aparece si se tocó "Tarjeta" u "Otro" */}
       {expandedCategory?.group && (
-        <div
-          className="p-2 rounded-3 mb-3 d-flex flex-wrap gap-2"
-          style={{ background: 'var(--surface-muted)', border: '1px dashed var(--border-color)' }}
-        >
-          <small className="w-100 fw-semibold" style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>
+        <div className="p-2 rounded-3 mb-3 d-flex flex-wrap gap-2 payment-subgroup-box">
+          <small className="w-100 fw-semibold payment-subgroup-hint">
             <i className="bi bi-arrow-return-right me-1"></i>
             Seleccione tipo de {expandedCategory.label.toLowerCase()}
           </small>
@@ -139,8 +132,7 @@ export const PaymentMethodPicker: React.FC<PaymentMethodPickerProps> = ({
                 key={method}
                 type="button"
                 disabled={added}
-                className={`btn btn-sm fw-semibold ${added ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-                style={{ borderRadius: 20, fontSize: '0.75rem' }}
+                className={`btn btn-sm fw-semibold rounded-pill payment-subgroup-btn ${added ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
                 onClick={() => handleSubOptionClick(method)}
               >
                 <i className={`bi ${meta.icon} me-1`}></i>
@@ -158,15 +150,14 @@ export const PaymentMethodPicker: React.FC<PaymentMethodPickerProps> = ({
           {paymentBreakdown.map(line => (
             <div
               key={line.id}
-              className="p-2 rounded-3 d-flex align-items-center gap-2"
-              style={{ background: 'var(--surface-muted)', border: '1px solid var(--border-color)' }}
+              className="p-2 rounded-3 d-flex align-items-center gap-2 payment-line"
             >
-              <i className={`bi ${getPaymentMethodMeta(line.method).icon} flex-shrink-0`} style={{ color: 'var(--color-brand)' }}></i>
-              <span className="text-truncate flex-grow-1 fw-semibold" style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+              <i className={`bi ${getPaymentMethodMeta(line.method).icon} flex-shrink-0 payment-line-icon`}></i>
+              <span className="text-truncate flex-grow-1 fw-semibold payment-line-label">
                 {getPaymentMethodMeta(line.method).label}
               </span>
-              <div className="input-group input-group-sm flex-shrink-0" style={{ width: 110 }}>
-                <span className="input-group-text py-1 px-2" style={{ fontSize: '0.75rem' }}>S/</span>
+              <div className="input-group input-group-sm flex-shrink-0 payment-line-input-group">
+                <span className="input-group-text py-1 px-2">S/</span>
                 <input
                   type="number"
                   min={0}
@@ -179,12 +170,11 @@ export const PaymentMethodPicker: React.FC<PaymentMethodPickerProps> = ({
               </div>
               <button
                 type="button"
-                className="btn-icon btn-icon-danger flex-shrink-0"
-                style={{ width: 30, height: 30 }}
+                className="btn-icon btn-icon-danger flex-shrink-0 payment-line-remove-btn"
                 aria-label={`Quitar línea de pago ${getPaymentMethodMeta(line.method).label}`}
                 onClick={() => onRemovePaymentLine(line.id)}
               >
-                <i className="bi bi-x-lg" style={{ fontSize: '0.75rem' }}></i>
+                <i className="bi bi-x-lg"></i>
               </button>
             </div>
           ))}
@@ -192,12 +182,12 @@ export const PaymentMethodPicker: React.FC<PaymentMethodPickerProps> = ({
       )}
 
       {hasCashLine && cashLine && (
-        <div className="p-2 rounded-3 mb-2" style={{ background: 'var(--color-emerald-bg)', border: '1px solid #6ee7b7' }}>
-          <label htmlFor="cashReceivedInput" className="form-label fw-semibold mb-1" style={{ fontSize: '0.78rem', color: 'var(--color-emerald-text)' }}>
+        <div className="p-2 rounded-3 mb-2 payment-cash-box">
+          <label htmlFor="cashReceivedInput" className="form-label fw-semibold mb-1">
             Efectivo Recibido (línea de {formatMoney(cashLine.amount)})
           </label>
           <div className="input-group input-group-sm">
-            <span className="input-group-text py-1 px-2" style={{ fontSize: '0.78rem' }}>S/</span>
+            <span className="input-group-text py-1 px-2">S/</span>
             <input
               id="cashReceivedInput"
               type="number"
@@ -209,7 +199,7 @@ export const PaymentMethodPicker: React.FC<PaymentMethodPickerProps> = ({
               onChange={e => setCashReceivedInput(e.target.value)}
             />
           </div>
-          <div className="d-flex justify-content-between mt-1" style={{ fontSize: '0.8rem', color: 'var(--color-emerald-text)' }}>
+          <div className="d-flex justify-content-between mt-1 payment-cash-change-row">
             <span className="fw-semibold">Vuelto:</span>
             <span className="fw-bold">{formatMoney(changeGiven)}</span>
           </div>
@@ -217,12 +207,9 @@ export const PaymentMethodPicker: React.FC<PaymentMethodPickerProps> = ({
       )}
 
       {paymentBreakdown.length > 0 && Math.abs(pendingBalance) > 0.009 && (
-        <div
-          className="p-2 rounded-3 d-flex align-items-center gap-2"
-          style={{ background: 'var(--color-amber-bg)', border: '1px solid #fcd34d' }}
-        >
-          <i className="bi bi-exclamation-triangle-fill" style={{ color: 'var(--color-amber-text)' }}></i>
-          <small className="fw-semibold" style={{ color: 'var(--color-amber-text)' }}>
+        <div className="p-2 rounded-3 d-flex align-items-center gap-2 payment-pending-warning">
+          <i className="bi bi-exclamation-triangle-fill"></i>
+          <small className="fw-semibold">
             {pendingBalance > 0
               ? `Falta cubrir ${formatMoney(pendingBalance)} del total.`
               : `El desglose excede el total en ${formatMoney(Math.abs(pendingBalance))}.`}

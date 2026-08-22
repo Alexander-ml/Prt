@@ -1858,12 +1858,54 @@ html, body {
    sobre el DOM. */
 .dish-card {
   transition: var(--transition-base);
+  border: 1px solid var(--border-color) !important;
+  background: var(--surface-card);
 }
 
 .dish-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.12);
 }
+.dish-card-media {
+  height: 150px;
+  overflow: hidden;
+  background: var(--surface-muted);
+}
+.dish-card-unavailable {
+  background: color-mix(in srgb, var(--color-rose) 88%, #1f2937);
+  color: #ffffff;
+}
+.dish-card-description {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.dish-card-preptime { font-size: 0.72rem; }
+.dish-card-allergen { margin-bottom: 0.75rem; }
+.dish-card-stock-warning {
+  font-size: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.75rem;
+  border-radius: var(--radius-sm, 8px);
+  background: var(--color-amber-bg);
+  color: var(--color-amber-text);
+}
+.dish-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+.catalog-view-ingredients {
+  min-height: 32px;
+  padding: 0.2rem 0;
+  color: var(--brand-primary-hover);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+.catalog-view-ingredients:hover { color: var(--brand-primary-hover); text-decoration: underline; }
 
 /* ───────────────────────────────────────────
    27. GESTIÓN DE PEDIDOS Y COMANDAS
@@ -2392,36 +2434,9 @@ html, body {
 .catalog-filter-search { min-width: 0; }
 .catalog-filter-label { margin-bottom: 0.35rem; }
 
-.dish-card {
-  border: 1px solid var(--border-color) !important;
-  background: var(--surface-card);
-}
-.dish-card-media {
-  height: 150px;
-  overflow: hidden;
-  background: var(--surface-muted);
-}
-.dish-card-unavailable {
-  background: color-mix(in srgb, var(--color-rose) 88%, #1f2937);
-  color: #ffffff;
-}
-.dish-card-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.65rem;
-}
-.catalog-view-ingredients {
-  min-height: 32px;
-  padding: 0.2rem 0;
-  color: var(--brand-primary-hover);
-  font-size: 0.76rem;
-  font-weight: 800;
-  text-decoration: none;
-}
-.catalog-view-ingredients:hover { color: var(--brand-primary-hover); text-decoration: underline; }
-
+.catalog-category-table { min-width: 600px; }
 .catalog-category-mobile-list { display: grid; gap: 0.7rem; padding: 0.75rem; }
+
 .catalog-category-mobile-item {
   padding: 0.9rem;
   border: 1px solid var(--border-color);
@@ -2690,6 +2705,253 @@ html, body {
 @media (max-width: 767.98px) {
   .users-filter-grid { grid-template-columns: 1fr; }
 }
+
+/* ───────────────────────────────────────────
+   31. VENTAS Y COBRO
+   ─────────────────────────────────────────── */
+/* CashSessionBar — compuerta de caja en Cobro (variant="gate") y resumen
+   ampliado en Historial (variant="summary"). Antes vivía 100% en estilos
+   inline; se consolidó aquí con el mismo criterio que el resto del
+   proyecto: estructura en clases, solo el color cambia según el estado
+   (cerrada = rose, abierta = emerald). */
+.cash-session-bar-icon { font-size: 1.3rem; }
+.cash-session-bar-title { font-size: 0.9rem; font-weight: 700; }
+.cash-session-bar-title-meta { opacity: 0.75; font-size: 0.78rem; font-weight: 400; }
+.cash-session-bar-subtitle { opacity: 0.85; }
+.cash-session-bar-btn { min-height: 36px; }
+.cash-session-bar-metric-label { font-size: 0.7rem; opacity: 0.8; font-weight: 700; text-transform: uppercase; }
+.cash-session-bar-metric-value { font-size: 1.25rem; font-weight: 900; }
+.cash-session-bar-breakdown { border-top: 1px dashed #6ee7b7; }
+.cash-session-bar-breakdown-chip { min-width: 130px; border: 1px solid #d1fae5; }
+.cash-session-bar-breakdown-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+.cash-session-bar-breakdown-value { font-size: 1rem; font-weight: 800; color: var(--text-primary); }
+
+.cash-session-bar-closed { background: var(--color-rose-bg); border: 1px solid #fca5a5; }
+.cash-session-bar-closed .cash-session-bar-icon,
+.cash-session-bar-closed .cash-session-bar-title,
+.cash-session-bar-closed .cash-session-bar-title-meta,
+.cash-session-bar-closed .cash-session-bar-subtitle,
+.cash-session-bar-closed .cash-session-bar-metric-label,
+.cash-session-bar-closed .cash-session-bar-metric-value { color: var(--color-rose-text); }
+
+.cash-session-bar-open { background: var(--color-emerald-bg); border: 1px solid #6ee7b7; }
+.cash-session-bar-open .cash-session-bar-icon,
+.cash-session-bar-open .cash-session-bar-title,
+.cash-session-bar-open .cash-session-bar-title-meta,
+.cash-session-bar-open .cash-session-bar-subtitle,
+.cash-session-bar-open .cash-session-bar-metric-label,
+.cash-session-bar-open .cash-session-bar-metric-value { color: var(--color-emerald-text); }
+
+/* BillingSteps — narrativa de progreso del cobro (Mesa → Comprobante → Pago
+   → Cobrar). Antes calculaba color/fondo por estado con records de
+   CSSProperties inline; se pasó a clases modificadoras is-done/is-active/
+   is-pending, mismo criterio que is-available/is-occupied en Mesas. */
+.billing-steps { overflow-x: auto; padding-bottom: 2px; }
+.billing-step { width: 84px; }
+.billing-step-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid;
+  font-size: 0.9rem;
+  transition: all 0.15s ease;
+}
+.billing-step-circle.is-done { background: var(--color-emerald); color: #fff; border-color: var(--color-emerald); }
+.billing-step-circle.is-active { background: var(--color-brand); color: #fff; border-color: var(--color-brand); box-shadow: 0 0 0 4px var(--color-brand-light); }
+.billing-step-circle.is-pending { background: #fff; color: var(--text-muted); border-color: var(--border-color); }
+.billing-step-label { font-size: 0.7rem; max-width: 84px; }
+.billing-step-label.is-done { color: var(--color-emerald-text); }
+.billing-step-label.is-active { color: var(--color-brand); }
+.billing-step-label.is-pending { color: var(--text-muted); }
+.billing-step-connector { height: 2px; min-width: 20px; flex: 1 1 20px; margin-top: 16px; background: var(--color-emerald); }
+.billing-step-connector.is-pending { background: var(--border-color); }
+.billing-step-connector.is-dimmed { opacity: 0.6; }
+
+/* OrderSummaryCard — "Mesa y Pedido" (paso 1 del cobro). */
+.order-summary-empty-hint { color: var(--text-muted); font-size: 0.78rem; }
+.order-summary-items { border: 1px solid var(--border-color); overflow: hidden; }
+.order-summary-item + .order-summary-item { border-top: 1px solid var(--border-color); }
+.order-summary-item:nth-child(even) { background: var(--surface-muted); }
+.order-summary-item-name { color: var(--text-primary); font-size: 0.9rem; }
+.order-summary-item-qty { font-size: 0.78rem; color: var(--text-muted); }
+.order-summary-item-note { font-size: 0.75rem; color: var(--color-amber-text); }
+.order-summary-item-price { color: var(--text-primary); font-size: 0.92rem; }
+.order-summary-extras-toggle { border: 1px dashed var(--border-color); background: transparent; color: var(--text-muted); }
+.order-summary-extras-toggle-label { font-size: 0.8rem; }
+.order-summary-extras-badge { color: var(--color-emerald); }
+.order-summary-extras-box { background: var(--surface-muted); border: 1px solid var(--border-color); }
+.order-summary-hint-sm { color: var(--text-muted); font-size: 0.75rem; }
+.order-summary-success-sm { color: var(--color-emerald-text); font-size: 0.75rem; }
+.order-summary-split-title { font-size: 0.85rem; color: var(--text-primary); }
+.order-summary-split-btn { min-height: 38px; }
+.order-summary-accent-icon { color: var(--color-brand); }
+
+/* CheckoutPanel — "Comprobante, Cliente, Pago y Cierre" (pasos 2-4). */
+.checkout-comprobante-btn { min-height: 56px; font-size: 0.8rem; padding: 0.5rem 0.25rem; }
+.checkout-comprobante-btn i { font-size: 1.1rem; }
+.checkout-hint-sm { color: var(--text-muted); font-size: 0.75rem; }
+.text-size-sm { font-size: 0.75rem; }
+.checkout-add-cliente-btn { min-height: 38px; }
+.checkout-total-row { font-size: 0.875rem; color: var(--text-muted); }
+.checkout-total-row.is-discount { color: var(--color-emerald); }
+.checkout-total-value { color: var(--text-primary); }
+.checkout-rounding-row { font-size: 0.78rem; color: var(--text-muted); }
+.checkout-tip-icon { color: #cd6d9e; }
+.checkout-tip-input-group { max-width: 120px; }
+.checkout-tip-input-group .input-group-text { font-size: 0.8rem; }
+
+.checkout-total-box { background: var(--color-brand-light); border: 1px solid var(--color-brand-subtle); }
+.checkout-total-box-label { font-weight: 800; font-size: 0.85rem; color: var(--text-primary); }
+.checkout-total-box-value { font-size: clamp(1.6rem, 7vw, 2rem); font-weight: 900; color: var(--color-brand); letter-spacing: -0.03em; }
+.checkout-total-box-pending { border-top: 1px dashed var(--color-brand-subtle); }
+.checkout-total-box-pending-label { font-size: 0.8rem; color: var(--text-muted); }
+.checkout-total-box-pending-value { font-size: 1.1rem; color: var(--text-primary); }
+.checkout-total-box-pending-value.is-complete { color: var(--color-emerald-text); }
+
+/* Botón protagonista de "Confirmar Cierre de Venta": el estado habilitado/
+   deshabilitado ya lo maneja el atributo HTML `disabled`, así que en vez de
+   una clase modificadora calculada en JS se usa :disabled/:not(:disabled)
+   directamente — una fuente de verdad menos que mantener sincronizada. */
+.checkout-confirm-btn {
+  border-radius: 10px;
+  padding: 0.75rem;
+  min-height: 52px;
+  font-size: 1rem;
+  border: none;
+  transition: box-shadow 0.15s ease;
+  background: var(--border-color);
+  color: var(--text-subtle);
+}
+.checkout-confirm-btn:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+/* PaymentMethodPicker — Forma de Pago con revelación progresiva. */
+.payment-category-btn { padding: 0.5rem 0.25rem; font-size: 0.72rem; min-height: 56px; position: relative; }
+.payment-category-btn i { font-size: 1.05rem; }
+.payment-category-check { position: absolute; top: 4px; right: 6px; font-size: 0.7rem; color: var(--color-emerald); }
+.payment-category-check.is-active { color: #fff; }
+.payment-subgroup-box { background: var(--surface-muted); border: 1px dashed var(--border-color); }
+.payment-subgroup-hint { color: var(--text-muted); font-size: 0.72rem; }
+.payment-subgroup-btn { font-size: 0.75rem; }
+.payment-line { background: var(--surface-muted); border: 1px solid var(--border-color); }
+.payment-line-icon { color: var(--color-brand); }
+.payment-line-label { font-size: 0.82rem; color: var(--text-primary); }
+.payment-line-input-group { width: 110px; }
+.payment-line-input-group .input-group-text { font-size: 0.75rem; }
+.payment-line-remove-btn { width: 30px; height: 30px; }
+.payment-line-remove-btn i { font-size: 0.75rem; }
+.payment-cash-box { background: var(--color-emerald-bg); border: 1px solid #6ee7b7; }
+.payment-cash-box label { font-size: 0.78rem; color: var(--color-emerald-text); }
+.payment-cash-box .input-group-text { font-size: 0.78rem; }
+.payment-cash-change-row { font-size: 0.8rem; color: var(--color-emerald-text); }
+.payment-pending-warning { background: var(--color-amber-bg); border: 1px solid #fcd34d; }
+.payment-pending-warning i { color: var(--color-amber-text); }
+.payment-pending-warning small { color: var(--color-amber-text); }
+.billing-checkout-sticky { top: 1rem; z-index: 5; }
+
+/* Helpers genéricos reutilizados por los 8 modales de sales/modals/. */
+.modal-footer-divider { border-top: 1px solid var(--border-color); }
+.modal-toggle-btn { min-height: 40px; }
+.modal-info-box { background: var(--surface-muted); border: 1px solid var(--border-color); }
+
+/* CloseCashSessionModal — arqueo de caja. */
+.close-session-expected-label { font-size: 0.85rem; color: var(--text-muted); }
+.close-session-expected-value { font-size: 1.1rem; color: var(--text-primary); }
+.close-session-diff-box.is-balanced { background: var(--color-emerald-bg); border: 1px solid #6ee7b7; }
+.close-session-diff-box.is-off { background: var(--color-rose-bg); border: 1px solid #fca5a5; }
+.close-session-diff-label { font-size: 0.82rem; }
+.close-session-diff-box.is-balanced .close-session-diff-label,
+.close-session-diff-box.is-balanced .close-session-diff-value { color: var(--color-emerald-text); }
+.close-session-diff-box.is-off .close-session-diff-label,
+.close-session-diff-box.is-off .close-session-diff-value { color: var(--color-rose-text); }
+.hint-text-sm { color: var(--text-muted); font-size: 0.78rem; }
+
+/* ConfirmCheckoutModal — último paso antes de mover dinero real. */
+.confirm-checkout-cliente-value { max-width: 220px; }
+.confirm-checkout-payment-list { border-top: 1px dashed var(--border-color); }
+.confirm-checkout-payment-row { font-size: 0.85rem; }
+.confirm-checkout-change-row { font-size: 0.85rem; color: var(--color-emerald-text); }
+.confirm-checkout-total-row { border-top: 2px solid var(--border-color); }
+.confirm-checkout-total-label { font-weight: 800; }
+.confirm-checkout-total-value { font-size: 1.5rem; font-weight: 900; color: var(--color-brand); }
+.confirm-checkout-confirm-btn { background: linear-gradient(135deg, #059669, #10b981); color: #fff; border: none; }
+
+/* ReceiptModal — simulación de comprobante en papel térmico. */
+.receipt-paper { font-family: monospace; background: #fafafa; border: 1px solid var(--border-color); font-size: 0.8rem; }
+.receipt-restaurant-name { font-size: 1rem; }
+.receipt-comprobante-type { font-size: 0.95rem; }
+.receipt-total-row { font-size: 1rem; margin-top: 4px; }
+.receipt-cancel-reason { color: var(--color-rose-text); font-size: 0.72rem; }
+.receipt-footnote { color: var(--text-muted); font-size: 0.7rem; }
+.receipt-thanks { color: var(--text-muted); font-size: 0.75rem; }
+
+/* SplitBillModal — división de cuenta (equitativo / por platos). */
+.split-mode-btn { min-height: 44px; }
+.split-count-btn { width: 40px; height: 40px; padding: 0; }
+.split-guest-name-input { max-width: 220px; }
+.split-guest-amount { color: var(--color-brand); font-size: 1.05rem; }
+.split-items-scroll { max-height: 260px; overflow-y: auto; }
+.split-assign-select { min-width: 150px; }
+.split-sum-box { background: var(--color-brand-light); font-size: 0.8rem; }
+.split-sum-box span { color: var(--color-brand); }
+
+/* Configuración General — Impuestos y Promociones. */
+.tax-table { min-width: 600px; }
+.tax-table-name { color: var(--text-primary); }
+.tax-table-percentage { color: var(--color-brand); }
+.tax-active-label { color: var(--text-primary); }
+
+.promotion-table { min-width: 650px; }
+.promotion-table-name { color: var(--text-primary); }
+.promotion-code-badge { background: var(--surface-bg); color: var(--text-secondary); border: 1px solid #cbd5e1; }
+.promotion-type-label { color: var(--text-secondary); }
+.promotion-discount { color: var(--color-emerald); }
+
+/* HistoryView (Ventas) — ranking de platos, listado de comprobantes
+   (tarjetas mobile / tabla desktop) y turnos de caja anteriores. */
+.top-dish-rank {
+  width: 24px; height: 24px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.75rem; flex-shrink: 0;
+  background: var(--surface-muted); color: var(--text-muted);
+}
+.top-dish-rank.is-first { background: #fef3c7; color: #d97706; }
+.top-dish-info { flex: 1; min-width: 0; }
+.top-dish-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+.top-dish-qty { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+.top-dish-progress { height: 6px; border-radius: 99px; }
+.top-dish-progress-bar { border-radius: 99px; }
+.top-dish-progress-bar.is-rank-0 { background: #d97706; }
+.top-dish-progress-bar.is-rank-1 { background: #64748b; }
+.top-dish-progress-bar.is-rank-rest { background: #cbd5e1; }
+
+.history-filters-footer { border-top: 1px solid var(--border-muted); }
+.history-results-badge { font-size: 0.75rem; color: var(--text-muted); }
+
+.history-sale-card { border: 1px solid var(--border-color); background: var(--surface-card); }
+.history-sale-card-code { font-family: monospace; font-size: 0.78rem; font-weight: 700; color: var(--color-brand); min-width: 0; }
+.history-sale-card-table { color: var(--text-primary); font-size: 0.9rem; }
+.history-sale-card-total { font-size: 1.2rem; font-weight: 800; color: var(--color-brand); }
+.history-sale-card-meta { font-size: 0.76rem; color: var(--text-muted); }
+.history-sale-card-footer { border-top: 1px dashed var(--border-color); }
+.history-sale-card-btn { min-height: 36px; }
+
+.history-table { min-width: 760px; }
+.history-table-code { font-family: monospace; font-size: 0.8rem; font-weight: 700; color: var(--color-brand); }
+.history-table-mesa { color: var(--text-primary); }
+.history-table-muted-sm { color: var(--text-muted); font-size: 0.83rem; }
+.history-table-muted-xs { color: var(--text-muted); font-size: 0.78rem; }
+.history-table-total { color: var(--color-brand); font-size: 1rem; }
+.history-table-corrected-note { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; }
+
+.history-sessions-table { min-width: 640px; }
+.session-history-opened-at { color: var(--text-primary); font-size: 0.83rem; }
+.session-history-closed-at { font-size: 0.72rem; color: var(--text-muted); }
+.history-export-btn { font-size: 0.78rem; }
+
 
 @media (max-width: 575.98px) {
   .users-list-card .section-card-header { flex-wrap: wrap; }

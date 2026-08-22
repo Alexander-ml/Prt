@@ -31,12 +31,12 @@ export const CloseCashSessionModal: React.FC<CloseCashSessionModalProps> = ({ is
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Cerrar Caja y Hacer Arqueo" size="sm">
-      <div className="p-3 rounded-3 mb-3 d-flex justify-content-between align-items-center" style={{ background: 'var(--surface-muted)', border: '1px solid var(--border-color)' }}>
-        <span className="fw-semibold" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Efectivo esperado en caja</span>
-        <span className="fw-bold" style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>{formatMoney(cashSession.expectedCash)}</span>
+      <div className="p-3 rounded-3 mb-3 d-flex justify-content-between align-items-center modal-info-box">
+        <span className="fw-semibold close-session-expected-label">Efectivo esperado en caja</span>
+        <span className="fw-bold close-session-expected-value">{formatMoney(cashSession.expectedCash)}</span>
       </div>
       <div className="mb-3">
-        <label className="form-label fw-bold" htmlFor="efectivoContado">Efectivo Contado Físicamente</label>
+        <label className="form-label" htmlFor="efectivoContado">Efectivo Contado Físicamente</label>
         <div className="input-group">
           <span className="input-group-text">S/</span>
           <input
@@ -54,31 +54,26 @@ export const CloseCashSessionModal: React.FC<CloseCashSessionModalProps> = ({ is
       </div>
       {hasValue && (
         <div
-          className="p-2 rounded-3 d-flex justify-content-between align-items-center mb-3"
-          style={{
-            background: difference === 0 ? 'var(--color-emerald-bg)' : 'var(--color-rose-bg)',
-            border: `1px solid ${difference === 0 ? '#6ee7b7' : '#fca5a5'}`,
-          }}
+          className={`p-2 rounded-3 d-flex justify-content-between align-items-center mb-3 close-session-diff-box ${difference === 0 ? 'is-balanced' : 'is-off'}`}
         >
-          <span className="fw-semibold" style={{ fontSize: '0.82rem', color: difference === 0 ? 'var(--color-emerald-text)' : 'var(--color-rose-text)' }}>
+          <span className="fw-semibold close-session-diff-label">
             {difference === 0 ? 'Cuadra exacto' : difference > 0 ? 'Sobrante de caja' : 'Faltante de caja'}
           </span>
-          <span className="fw-bold" style={{ color: difference === 0 ? 'var(--color-emerald-text)' : 'var(--color-rose-text)' }}>
+          <span className="fw-bold close-session-diff-value">
             {difference === 0 ? formatMoney(0) : formatMoney(Math.abs(difference))}
           </span>
         </div>
       )}
-      <small className="d-block mb-3" style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+      <small className="d-block mb-3 hint-text-sm">
         <i className="bi bi-person-badge me-1"></i>Cierre a nombre de: <strong>{closedByLabel}</strong>
       </small>
-      <div className="d-flex justify-content-end gap-2 pt-2" style={{ borderTop: '1px solid var(--border-color)' }}>
-        <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={onClose}>
+      <div className="d-flex justify-content-end gap-2 pt-2 modal-footer-divider">
+        <button type="button" className="btn btn-outline-secondary rounded-3" onClick={onClose}>
           Cancelar
         </button>
         <button
           type="button"
-          className="btn btn-danger fw-semibold"
-          style={{ borderRadius: 8 }}
+          className="btn btn-danger fw-semibold rounded-3"
           disabled={!isValid}
           onClick={() => { if (isValid) { onConfirm(round2(counted)); onClose(); } }}
         >

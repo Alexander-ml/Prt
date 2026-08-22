@@ -26,7 +26,7 @@ export const OpenCashSessionModal: React.FC<OpenCashSessionModalProps> = ({ isOp
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Abrir Caja" size="sm">
       <div className="mb-3">
-        <label className="form-label fw-bold" htmlFor="fondoInicial">Fondo Inicial de Caja</label>
+        <label className="form-label" htmlFor="fondoInicial">Fondo Inicial de Caja</label>
         <div className="input-group">
           <span className="input-group-text">S/</span>
           <input
@@ -41,18 +41,17 @@ export const OpenCashSessionModal: React.FC<OpenCashSessionModalProps> = ({ isOp
             onChange={e => setAmountInput(e.target.value)}
           />
         </div>
-        <small className="d-block mt-2" style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+        <small className="d-block mt-2 hint-text-sm">
           <i className="bi bi-person-badge me-1"></i>Turno a nombre de: <strong>{openedByLabel}</strong>
         </small>
       </div>
-      <div className="d-flex justify-content-end gap-2 pt-2" style={{ borderTop: '1px solid var(--border-color)' }}>
-        <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={onClose}>
+      <div className="d-flex justify-content-end gap-2 pt-2 modal-footer-divider">
+        <button type="button" className="btn btn-outline-secondary rounded-3" onClick={onClose}>
           Cancelar
         </button>
         <button
           type="button"
-          className="btn-brand btn fw-semibold"
-          style={{ borderRadius: 8 }}
+          className="btn-brand btn fw-semibold rounded-3"
           disabled={!isValid}
           onClick={() => { if (isValid) { onConfirm(round2(amount)); onClose(); } }}
         >

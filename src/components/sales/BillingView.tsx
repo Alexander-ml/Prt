@@ -188,7 +188,7 @@ export const BillingView: React.FC<BillingViewProps> = ({
 
           {/* Right: Comprobante, Cliente, Pago — fijo al hacer scroll (punto #6) */}
           <div className="col-12 col-lg-5">
-            <div className="sticky-lg-top" style={{ top: '1rem', zIndex: 5 }}>
+            <div className="sticky-lg-top billing-checkout-sticky">
               <CheckoutPanel
                 currentOrder={currentOrder}
                 subtotal={subtotal}

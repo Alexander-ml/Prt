@@ -86,8 +86,7 @@ export const PromotionsView: React.FC = () => {
           isAdmin && (
             <button
               type="button"
-              className="btn-brand btn btn-sm fw-semibold"
-              style={{ borderRadius: 8 }}
+              className="btn-brand btn btn-sm fw-semibold rounded-3"
               onClick={() => handleOpenPromoModal()}
             >
               <i className="bi bi-plus-lg me-1"></i> Crear Promoción

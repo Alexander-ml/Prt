@@ -34,16 +34,14 @@ export const CashMovementModal: React.FC<CashMovementModalProps> = ({ isOpen, on
         <div className="d-flex gap-2">
           <button
             type="button"
-            className={`btn flex-fill fw-semibold ${type === 'ingreso_manual' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-            style={{ borderRadius: 8, minHeight: 40 }}
+            className={`btn flex-fill fw-semibold rounded-3 modal-toggle-btn ${type === 'ingreso_manual' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
             onClick={() => setType('ingreso_manual')}
           >
             <i className="bi bi-plus-circle me-1"></i>Ingreso
           </button>
           <button
             type="button"
-            className={`btn flex-fill fw-semibold ${type === 'retiro_manual' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-            style={{ borderRadius: 8, minHeight: 40 }}
+            className={`btn flex-fill fw-semibold rounded-3 modal-toggle-btn ${type === 'retiro_manual' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
             onClick={() => setType('retiro_manual')}
           >
             <i className="bi bi-dash-circle me-1"></i>Retiro
@@ -71,21 +69,19 @@ export const CashMovementModal: React.FC<CashMovementModalProps> = ({ isOpen, on
         <input
           id="movDesc"
           type="text"
-          className="form-control"
-          style={{ borderRadius: 8 }}
+          className="form-control rounded-3"
           placeholder={type === 'ingreso_manual' ? 'Ej. Cambio adicional del banco' : 'Ej. Pago a proveedor de emergencia'}
           value={description}
           onChange={e => setDescription(e.target.value)}
         />
       </div>
-      <div className="d-flex justify-content-end gap-2 pt-2" style={{ borderTop: '1px solid var(--border-color)' }}>
-        <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={onClose}>
+      <div className="d-flex justify-content-end gap-2 pt-2 modal-footer-divider">
+        <button type="button" className="btn btn-outline-secondary rounded-3" onClick={onClose}>
           Cancelar
         </button>
         <button
           type="button"
-          className="btn-brand btn fw-semibold"
-          style={{ borderRadius: 8 }}
+          className="btn-brand btn fw-semibold rounded-3"
           disabled={!isValid}
           onClick={() => { if (isValid) { onConfirm(type, round2(amount), description.trim()); onClose(); } }}
         >

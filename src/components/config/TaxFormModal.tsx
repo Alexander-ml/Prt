@@ -43,8 +43,7 @@ export const TaxFormModal: React.FC<TaxFormModalProps> = ({
           <input
             id="taxNameInput"
             type="text"
-            className="form-control"
-            style={{ borderRadius: 8 }}
+            className="form-control rounded-3"
             placeholder="Ej. IGV (18%)"
             required
             value={formData.name}
@@ -58,8 +57,7 @@ export const TaxFormModal: React.FC<TaxFormModalProps> = ({
             type="number"
             step="0.1"
             min="0"
-            className="form-control"
-            style={{ borderRadius: 8 }}
+            className="form-control rounded-3"
             required
             value={formData.percentage}
             onChange={e => onChange({ percentage: parseFloat(e.target.value) || 0 })}
@@ -73,15 +71,15 @@ export const TaxFormModal: React.FC<TaxFormModalProps> = ({
             checked={formData.active}
             onChange={e => onChange({ active: e.target.checked })}
           />
-          <label className="form-check-label fw-semibold" htmlFor="taxActiveSwitch" style={{ color: 'var(--text-primary)' }}>
+          <label className="form-check-label fw-semibold tax-active-label" htmlFor="taxActiveSwitch">
             Impuesto Activo en Cálculo de Ventas
           </label>
         </div>
         <div className="d-flex justify-content-end gap-2 pt-2 border-top">
-          <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={onClose}>
+          <button type="button" className="btn btn-outline-secondary rounded-3" onClick={onClose}>
             Cancelar
           </button>
-          <button type="submit" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }}>
+          <button type="submit" className="btn-brand btn fw-semibold rounded-3">
             Guardar Impuesto
           </button>
         </div>

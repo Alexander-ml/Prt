@@ -80,7 +80,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
   return (
     <SectionCard icon="bi-receipt" title="1. Mesa y Pedido">
       <div className="mb-3">
-        <label id="mesaLiquidarLabel" className="form-label fw-bold">Mesa a liquidar</label>
+        <label id="mesaLiquidarLabel" className="form-label">Mesa a liquidar</label>
         <CustomDropdownSelect
           id="mesaLiquidar"
           labelId="mesaLiquidarLabel"
@@ -94,7 +94,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
           size="lg"
         />
         {activeOrders.length === 0 && (
-          <small className="d-block mt-2" style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+          <small className="d-block mt-2 order-summary-empty-hint">
             <i className="bi bi-info-circle me-1"></i>No hay mesas con pedidos activos por cobrar.
           </small>
         )}
@@ -111,30 +111,26 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
           </div>
 
           {/* Pedido — filas estilo caja registradora, no tabla de datos */}
-          <div className="rounded-3 mb-3" style={{ border: '1px solid var(--border-color)', overflow: 'hidden' }}>
-            {currentOrder.items.map((item, idx) => (
+          <div className="rounded-3 mb-3 order-summary-items">
+            {currentOrder.items.map((item) => (
               <div
                 key={item.id}
-                className="d-flex align-items-start justify-content-between gap-2 px-3 py-2"
-                style={{
-                  borderTop: idx === 0 ? 'none' : '1px solid var(--border-color)',
-                  background: idx % 2 === 1 ? 'var(--surface-muted)' : 'transparent',
-                }}
+                className="d-flex align-items-start justify-content-between gap-2 px-3 py-2 order-summary-item"
               >
                 <div style={{ minWidth: 0 }}>
-                  <div className="fw-semibold text-truncate" style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                  <div className="fw-semibold text-truncate order-summary-item-name">
                     {item.dishName}
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <div className="order-summary-item-qty">
                     {item.quantity} × {formatMoney(item.price)}
                   </div>
                   {item.observation && (
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-amber-text)' }}>
+                    <div className="order-summary-item-note">
                       <i className="bi bi-pencil-fill me-1"></i>{item.observation}
                     </div>
                   )}
                 </div>
-                <div className="fw-bold flex-shrink-0" style={{ color: 'var(--text-primary)', fontSize: '0.92rem' }}>
+                <div className="fw-bold flex-shrink-0 order-summary-item-price">
                   {formatMoney(item.price * item.quantity)}
                 </div>
               </div>
@@ -144,15 +140,14 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
           {/* Toggle de opciones adicionales — punto #4 */}
           <button
             type="button"
-            className="btn btn-sm w-100 d-flex align-items-center justify-content-between px-3"
-            style={{ borderRadius: 8, border: '1px dashed var(--border-color)', background: 'transparent', color: 'var(--text-muted)' }}
+            className="btn btn-sm w-100 d-flex align-items-center justify-content-between px-3 rounded-3 order-summary-extras-toggle"
             onClick={() => setExtrasOpen(o => !o)}
             aria-expanded={showExtras}
           >
-            <span className="fw-semibold" style={{ fontSize: '0.8rem' }}>
+            <span className="fw-semibold order-summary-extras-toggle-label">
               <i className="bi bi-sliders me-1"></i>
               Promoción y división de cuenta
-              {hasActivePromoOrSplit && <span className="ms-1" style={{ color: 'var(--color-emerald)' }}>· en uso</span>}
+              {hasActivePromoOrSplit && <span className="ms-1 order-summary-extras-badge">· en uso</span>}
             </span>
             <i className={`bi ${showExtras ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
           </button>
@@ -160,9 +155,9 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
           {showExtras && (
             <div className="d-flex flex-column gap-2 mt-2">
               {/* Promo Selector */}
-              <div className="p-3 rounded-3" style={{ background: 'var(--surface-muted)', border: '1px solid var(--border-color)' }}>
-                <label id="promoSelectLabel" className="form-label fw-bold" style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>
-                  <i className="bi bi-tag-fill me-1" style={{ color: 'var(--color-brand)' }}></i>
+              <div className="p-3 rounded-3 order-summary-extras-box">
+                <label id="promoSelectLabel" className="form-label">
+                  <i className="bi bi-tag-fill me-1 order-summary-accent-icon"></i>
                   Aplicar Promoción Vigente
                 </label>
                 <CustomDropdownSelect
@@ -184,12 +179,12 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
                   ]}
                 />
                 {promotions.filter(p => p.active).length === 0 && (
-                  <small className="d-block mt-2" style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                  <small className="d-block mt-2 order-summary-hint-sm">
                     No hay promociones vigentes en este momento.
                   </small>
                 )}
                 {activePromo && (
-                  <small className="d-block mt-2 fw-semibold" style={{ color: 'var(--color-emerald-text)', fontSize: '0.75rem' }}>
+                  <small className="d-block mt-2 fw-semibold order-summary-success-sm">
                     <i className="bi bi-check-circle-fill me-1"></i>{activePromo.discountPercentage}% de descuento aplicado.
                   </small>
                 )}
@@ -197,14 +192,13 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
 
               {/* Split Bill */}
               <div
-                className="p-3 rounded-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2"
-                style={{ background: 'var(--surface-muted)', border: '1px solid var(--border-color)' }}
+                className="p-3 rounded-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 order-summary-extras-box"
               >
                 <div style={{ minWidth: 0 }}>
-                  <div className="fw-bold" style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                    <i className="bi bi-people-fill me-1" style={{ color: 'var(--color-brand)' }}></i>División de Cuenta
+                  <div className="fw-bold order-summary-split-title">
+                    <i className="bi bi-people-fill me-1 order-summary-accent-icon"></i>División de Cuenta
                   </div>
-                  <small style={{ color: 'var(--text-muted)' }}>
+                  <small className="text-muted">
                     {splitMode
                       ? `Dividida en ${splitBills.length} partes (${splitMode === 'equitativo' ? 'iguales' : 'por platos'})`
                       : 'La cuenta se cobra completa a menos que la divida'}
@@ -214,8 +208,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
                   {splitMode && (
                     <button
                       type="button"
-                      className="btn btn-outline-secondary btn-sm fw-semibold bg-white"
-                      style={{ borderRadius: 8, minHeight: 38 }}
+                      className="btn btn-outline-secondary btn-sm fw-semibold bg-white rounded-3 order-summary-split-btn"
                       onClick={onClearSplit}
                     >
                       Quitar
@@ -223,8 +216,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
                   )}
                   <button
                     type="button"
-                    className="btn btn-outline-primary btn-sm fw-semibold"
-                    style={{ borderRadius: 8, minHeight: 38 }}
+                    className="btn btn-outline-primary btn-sm fw-semibold rounded-3 order-summary-split-btn"
                     onClick={onOpenSplitModal}
                   >
                     <i className="bi bi-people-fill me-1"></i> {splitMode ? 'Editar' : 'Dividir'}

@@ -51,14 +51,13 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ isOpen, onClose, def
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Nuevo Cliente" size="sm">
       <div className="mb-3">
-        <label className="form-label fw-bold">Tipo de Documento</label>
+        <label className="form-label">Tipo de Documento</label>
         <div className="d-flex gap-2">
           {(['DNI', 'RUC'] as TipoDocumentoCliente[]).map(t => (
             <button
               key={t}
               type="button"
-              className={`btn flex-fill fw-semibold ${tipoDocumento === t ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-              style={{ borderRadius: 8, minHeight: 40 }}
+              className={`btn flex-fill fw-semibold rounded-3 modal-toggle-btn ${tipoDocumento === t ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
               onClick={() => { setTipoDocumento(t); setNumeroDocumento(''); }}
             >
               {t}
@@ -72,8 +71,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ isOpen, onClose, def
           id="clienteNumDoc"
           type="text"
           inputMode="numeric"
-          className="form-control"
-          style={{ borderRadius: 8 }}
+          className="form-control rounded-3"
           maxLength={expectedLength}
           value={numeroDocumento}
           onChange={e => setNumeroDocumento(e.target.value.replace(/\D/g, ''))}
@@ -84,8 +82,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ isOpen, onClose, def
         <input
           id="clienteNombre"
           type="text"
-          className="form-control"
-          style={{ borderRadius: 8 }}
+          className="form-control rounded-3"
           value={nombreORazonSocial}
           onChange={e => setNombreORazonSocial(e.target.value)}
         />
@@ -96,8 +93,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ isOpen, onClose, def
           <input
             id="clienteDireccion"
             type="text"
-            className="form-control"
-            style={{ borderRadius: 8 }}
+            className="form-control rounded-3"
             value={direccion}
             onChange={e => setDireccion(e.target.value)}
           />
@@ -108,17 +104,16 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ isOpen, onClose, def
         <input
           id="clienteCorreo"
           type="email"
-          className="form-control"
-          style={{ borderRadius: 8 }}
+          className="form-control rounded-3"
           value={correo}
           onChange={e => setCorreo(e.target.value)}
         />
       </div>
-      <div className="d-flex justify-content-end gap-2 pt-2" style={{ borderTop: '1px solid var(--border-color)' }}>
-        <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={onClose}>
+      <div className="d-flex justify-content-end gap-2 pt-2 modal-footer-divider">
+        <button type="button" className="btn btn-outline-secondary rounded-3" onClick={onClose}>
           Cancelar
         </button>
-        <button type="button" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }} disabled={!isValid} onClick={handleSave}>
+        <button type="button" className="btn-brand btn fw-semibold rounded-3" disabled={!isValid} onClick={handleSave}>
           <i className="bi bi-check-lg me-1"></i>Guardar Cliente
         </button>
       </div>

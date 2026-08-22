@@ -24,7 +24,7 @@ export const PromotionTable: React.FC<PromotionTableProps> = ({ promotions, isAd
   return (
     <div className="table-responsive-x">
       <div className="custom-table-container">
-        <table className="custom-table" style={{ minWidth: 650 }}>
+        <table className="custom-table promotion-table">
           <thead>
             <tr>
               <th>Código & Nombre</th>
@@ -48,22 +48,22 @@ export const PromotionTable: React.FC<PromotionTableProps> = ({ promotions, isAd
                 return (
                   <tr key={promo.id}>
                     <td>
-                      <div className="fw-bold" style={{ color: 'var(--text-primary)' }}>{promo.name}</div>
-                      <span className="badge font-monospace fs-8" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}>
+                      <div className="fw-bold promotion-table-name">{promo.name}</div>
+                      <span className="badge font-monospace fs-8 promotion-code-badge">
                         {promo.code}
                       </span>
                     </td>
                     <td>
-                      <span className="fw-semibold d-inline-flex align-items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
+                      <span className="fw-semibold d-inline-flex align-items-center gap-1 promotion-type-label">
                         <i className={`bi ${typeMeta.icon}`} aria-hidden="true"></i>
                         {typeMeta.needsTarget ? `${typeMeta.label}: ${promo.targetName || ''}` : typeMeta.label}
                       </span>
                     </td>
                     <td>
-                      <span className="fw-bold fs-6" style={{ color: 'var(--color-emerald)' }}>{promo.discountPercentage}% OFF</span>
+                      <span className="fw-bold fs-6 promotion-discount">{promo.discountPercentage}% OFF</span>
                     </td>
                     <td>
-                      <small style={{ color: 'var(--text-muted)' }}>{promo.startDate} al {promo.endDate}</small>
+                      <small className="text-muted">{promo.startDate} al {promo.endDate}</small>
                     </td>
                     <td>
                       <Badge

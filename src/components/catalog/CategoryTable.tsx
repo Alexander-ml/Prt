@@ -55,7 +55,7 @@ export const CategoryTable: React.FC<CategoryTableProps> = ({ categories, dishes
       </div>
 
       <div className="d-none d-sm-block table-responsive">
-        <table className="table table-hover align-middle mb-0" style={{ minWidth: 600 }}>
+        <table className="table table-hover align-middle mb-0 catalog-category-table">
           <thead className="table-light">
             <tr>
               <th>Categoría</th>

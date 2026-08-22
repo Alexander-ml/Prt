@@ -141,16 +141,14 @@ export const SplitBillModal: React.FC<SplitBillModalProps> = ({
       <div className="d-flex gap-2 mb-4">
         <button
           type="button"
-          className={`btn flex-fill fw-semibold ${mode === 'equitativo' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-          style={{ borderRadius: 8, minHeight: 44 }}
+          className={`btn flex-fill fw-semibold rounded-3 split-mode-btn ${mode === 'equitativo' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
           onClick={() => setMode('equitativo')}
         >
           <i className="bi bi-people-fill me-1"></i> Partes Iguales
         </button>
         <button
           type="button"
-          className={`btn flex-fill fw-semibold ${mode === 'por_platos' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-          style={{ borderRadius: 8, minHeight: 44 }}
+          className={`btn flex-fill fw-semibold rounded-3 split-mode-btn ${mode === 'por_platos' ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
           disabled={items.length === 0}
           onClick={() => setMode('por_platos')}
         >
@@ -160,12 +158,11 @@ export const SplitBillModal: React.FC<SplitBillModalProps> = ({
 
       {/* Número de comensales (común a ambos modos) */}
       <div className="mb-3">
-        <label className="form-label fw-bold">Número de Comensales</label>
+        <label className="form-label">Número de Comensales</label>
         <div className="d-flex align-items-center gap-3">
           <button
             type="button"
-            className="btn btn-outline-secondary"
-            style={{ borderRadius: 8, width: 40, height: 40, padding: 0 }}
+            className="btn btn-outline-secondary rounded-3 split-count-btn"
             disabled={guestCount <= 2}
             aria-label="Reducir número de comensales"
             onClick={() => handleUpdateGuestCount(guestCount - 1)}
@@ -175,14 +172,13 @@ export const SplitBillModal: React.FC<SplitBillModalProps> = ({
           <span className="fw-bold fs-4 px-2">{guestCount}</span>
           <button
             type="button"
-            className="btn btn-outline-secondary"
-            style={{ borderRadius: 8, width: 40, height: 40, padding: 0 }}
+            className="btn btn-outline-secondary rounded-3 split-count-btn"
             aria-label="Aumentar número de comensales"
             onClick={() => handleUpdateGuestCount(guestCount + 1)}
           >
             <i className="bi bi-plus"></i>
           </button>
-          <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Mínimo 2 comensales</small>
+          <small className="hint-text-sm">Mínimo 2 comensales</small>
         </div>
       </div>
 
@@ -191,18 +187,16 @@ export const SplitBillModal: React.FC<SplitBillModalProps> = ({
           {guestNames.map((name, idx) => (
             <div
               key={idx}
-              className="p-2 rounded-3 d-flex align-items-center justify-content-between gap-2"
-              style={{ background: 'var(--surface-muted)', border: '1px solid var(--border-color)' }}
+              className="p-2 rounded-3 d-flex align-items-center justify-content-between gap-2 modal-info-box"
             >
               <input
                 type="text"
-                className="form-control form-control-sm fw-semibold"
-                style={{ borderRadius: 6, maxWidth: 220, background: 'white' }}
+                className="form-control form-control-sm fw-semibold rounded-2 bg-white split-guest-name-input"
                 value={name}
                 aria-label={`Nombre del comensal ${idx + 1}`}
                 onChange={e => handleRenameGuest(idx, e.target.value)}
               />
-              <span className="fw-bold flex-shrink-0" style={{ color: 'var(--color-brand)', fontSize: '1.05rem' }}>
+              <span className="fw-bold flex-shrink-0 split-guest-amount">
                 {formatMoney(equalAmounts[idx] ?? 0)}
               </span>
             </div>
@@ -210,13 +204,12 @@ export const SplitBillModal: React.FC<SplitBillModalProps> = ({
         </div>
       ) : (
         <div className="mb-3">
-          <div className="d-flex flex-column gap-2 mb-2" style={{ maxHeight: 260, overflowY: 'auto' }}>
+          <div className="d-flex flex-column gap-2 mb-2 split-items-scroll">
             {guestNames.map((name, idx) => (
               <input
                 key={idx}
                 type="text"
-                className="form-control form-control-sm fw-semibold mb-1"
-                style={{ borderRadius: 6, maxWidth: 220 }}
+                className="form-control form-control-sm fw-semibold mb-1 rounded-2 split-guest-name-input"
                 value={name}
                 aria-label={`Nombre del comensal ${idx + 1}`}
                 onChange={e => handleRenameGuest(idx, e.target.value)}
@@ -238,8 +231,7 @@ export const SplitBillModal: React.FC<SplitBillModalProps> = ({
                       <td className="text-end fw-semibold">{formatMoney(it.price * it.quantity)}</td>
                       <td>
                         <select
-                          className="form-select form-select-sm"
-                          style={{ minWidth: 150 }}
+                          className="form-select form-select-sm split-assign-select"
                           value={assignments[it.id] ?? ''}
                           onChange={e => handleAssignItem(it.id, e.target.value === '' ? null : Number(e.target.value))}
                         >
@@ -256,9 +248,9 @@ export const SplitBillModal: React.FC<SplitBillModalProps> = ({
             </div>
           </div>
           {unassignedAmount > 0 && (
-            <div className="p-2 rounded-3 d-flex align-items-center gap-2" style={{ background: 'var(--color-amber-bg)', border: '1px solid #fcd34d' }}>
-              <i className="bi bi-exclamation-triangle-fill" style={{ color: 'var(--color-amber-text)' }}></i>
-              <small className="fw-semibold" style={{ color: 'var(--color-amber-text)' }}>
+            <div className="p-2 rounded-3 d-flex align-items-center gap-2 payment-pending-warning">
+              <i className="bi bi-exclamation-triangle-fill"></i>
+              <small className="fw-semibold">
                 Falta asignar {formatMoney(unassignedAmount)} en platos antes de poder dividir la cuenta.
               </small>
             </div>
@@ -266,22 +258,21 @@ export const SplitBillModal: React.FC<SplitBillModalProps> = ({
         </div>
       )}
 
-      <div className="p-2 rounded-3 d-flex justify-content-between mb-4" style={{ background: 'var(--color-brand-light)', fontSize: '0.8rem' }}>
-        <span className="fw-semibold" style={{ color: 'var(--color-brand)' }}>Suma de partes:</span>
-        <span className="fw-bold" style={{ color: 'var(--color-brand)' }}>
+      <div className="p-2 rounded-3 d-flex justify-content-between mb-4 split-sum-box">
+        <span className="fw-semibold">Suma de partes:</span>
+        <span className="fw-bold">
           {formatMoney((mode === 'equitativo' ? equalSplits : porPlatosSplits).reduce((sum, s) => sum + s.totalAmount, 0))}
           {' '}/ {formatMoney(totalAmount)}
         </span>
       </div>
 
-      <div className="d-flex justify-content-end gap-2 pt-2" style={{ borderTop: '1px solid var(--border-color)' }}>
-        <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={onClose}>
+      <div className="d-flex justify-content-end gap-2 pt-2 modal-footer-divider">
+        <button type="button" className="btn btn-outline-secondary rounded-3" onClick={onClose}>
           Cancelar
         </button>
         <button
           type="button"
-          className="btn-brand btn fw-semibold"
-          style={{ borderRadius: 8 }}
+          className="btn-brand btn fw-semibold rounded-3"
           disabled={!canConfirm}
           onClick={handleConfirm}
         >

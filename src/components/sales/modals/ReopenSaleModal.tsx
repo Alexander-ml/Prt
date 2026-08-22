@@ -70,22 +70,21 @@ export const ReopenSaleModal: React.FC<ReopenSaleModalProps> = ({ isOpen, onClos
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Corregir Venta ${sale.serie}-${sale.correlativo}`} size="md">
-      <div className="p-2 rounded-3 mb-3 d-flex align-items-center gap-2" style={{ background: 'var(--color-amber-bg)', border: '1px solid #fcd34d' }}>
-        <i className="bi bi-info-circle-fill" style={{ color: 'var(--color-amber-text)' }}></i>
-        <small style={{ color: 'var(--color-amber-text)' }}>
+      <div className="p-2 rounded-3 mb-3 d-flex align-items-center gap-2 payment-pending-warning">
+        <i className="bi bi-info-circle-fill"></i>
+        <small>
           Esto corrige el comprobante o la forma de pago de una venta ya cobrada. El total ({formatMoney(sale.total)}) no cambia. No emite una nota de crédito ante SUNAT.
         </small>
       </div>
 
       <div className="mb-3">
-        <label className="form-label fw-bold">Tipo de Comprobante</label>
+        <label className="form-label">Tipo de Comprobante</label>
         <div className="d-flex gap-2">
           {(['ticket', 'boleta', 'factura'] as TipoComprobante[]).map(t => (
             <button
               key={t}
               type="button"
-              className={`btn flex-fill fw-semibold ${comprobanteTipo === t ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
-              style={{ borderRadius: 8, minHeight: 40 }}
+              className={`btn flex-fill fw-semibold rounded-3 modal-toggle-btn ${comprobanteTipo === t ? 'btn-primary' : 'btn-outline-secondary bg-white'}`}
               onClick={() => setComprobanteTipo(t)}
             >
               {COMPROBANTE_LABELS[t]}
@@ -109,13 +108,13 @@ export const ReopenSaleModal: React.FC<ReopenSaleModalProps> = ({ isOpen, onClos
             ))}
           </select>
           {requiresCliente && !clienteObj && (
-            <small className="d-block mt-1 text-danger" style={{ fontSize: '0.75rem' }}>Una factura requiere un cliente con RUC.</small>
+            <small className="d-block mt-1 text-danger text-size-sm">Una factura requiere un cliente con RUC.</small>
           )}
         </div>
       )}
 
       <div className="mb-3">
-        <label className="form-label fw-bold" htmlFor="reopenMetodo">Forma de Pago Correcta</label>
+        <label className="form-label" htmlFor="reopenMetodo">Forma de Pago Correcta</label>
         <select
           id="reopenMetodo"
           className="form-select"
@@ -148,11 +147,10 @@ export const ReopenSaleModal: React.FC<ReopenSaleModalProps> = ({ isOpen, onClos
       )}
 
       <div className="mb-3">
-        <label className="form-label fw-bold" htmlFor="reopenMotivo">Motivo de la Corrección <span className="text-danger">*</span></label>
+        <label className="form-label" htmlFor="reopenMotivo">Motivo de la Corrección <span className="text-danger">*</span></label>
         <textarea
           id="reopenMotivo"
-          className="form-control"
-          style={{ borderRadius: 8 }}
+          className="form-control rounded-3"
           rows={2}
           placeholder="Ej. El cliente indicó que pagó con Visa, no en efectivo"
           value={reason}
@@ -160,11 +158,11 @@ export const ReopenSaleModal: React.FC<ReopenSaleModalProps> = ({ isOpen, onClos
         />
       </div>
 
-      <div className="d-flex justify-content-end gap-2 pt-2" style={{ borderTop: '1px solid var(--border-color)' }}>
-        <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={onClose}>
+      <div className="d-flex justify-content-end gap-2 pt-2 modal-footer-divider">
+        <button type="button" className="btn btn-outline-secondary rounded-3" onClick={onClose}>
           Cancelar
         </button>
-        <button type="button" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }} disabled={!isValid} onClick={handleConfirm}>
+        <button type="button" className="btn-brand btn fw-semibold rounded-3" disabled={!isValid} onClick={handleConfirm}>
           <i className="bi bi-arrow-repeat me-1"></i>Guardar Corrección
         </button>
       </div>

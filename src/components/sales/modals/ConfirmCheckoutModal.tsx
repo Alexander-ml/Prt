@@ -40,23 +40,23 @@ export const ConfirmCheckoutModal: React.FC<ConfirmCheckoutModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Confirmar Cobro" size="sm">
       <div className="d-flex flex-column gap-3 mb-4">
         <div className="d-flex justify-content-between">
-          <span style={{ color: 'var(--text-muted)' }}>Mesa</span>
+          <span className="text-muted">Mesa</span>
           <span className="fw-bold">#{order.tableNumber} — {order.areaName}</span>
         </div>
         <div className="d-flex justify-content-between">
-          <span style={{ color: 'var(--text-muted)' }}>Comprobante</span>
+          <span className="text-muted">Comprobante</span>
           <Badge status={COMPROBANTE_LABELS[comprobanteTipo].toUpperCase()} variant="primary" />
         </div>
         {clienteLabel && (
           <div className="d-flex justify-content-between">
-            <span style={{ color: 'var(--text-muted)' }}>Cliente</span>
-            <span className="fw-semibold text-end" style={{ maxWidth: 220 }}>{clienteLabel}</span>
+            <span className="text-muted">Cliente</span>
+            <span className="fw-semibold text-end confirm-checkout-cliente-value">{clienteLabel}</span>
           </div>
         )}
-        <div className="pt-2" style={{ borderTop: '1px dashed var(--border-color)' }}>
+        <div className="pt-2 confirm-checkout-payment-list">
           {paymentBreakdown.map(p => (
-            <div key={p.id} className="d-flex justify-content-between" style={{ fontSize: '0.85rem' }}>
-              <span style={{ color: 'var(--text-muted)' }}>
+            <div key={p.id} className="d-flex justify-content-between confirm-checkout-payment-row">
+              <span className="text-muted">
                 <i className={`bi ${getPaymentMethodMeta(p.method).icon} me-1`}></i>
                 {getPaymentMethodMeta(p.method).label}
               </span>
@@ -65,24 +65,23 @@ export const ConfirmCheckoutModal: React.FC<ConfirmCheckoutModalProps> = ({
           ))}
         </div>
         {cashDetail && (
-          <div className="d-flex justify-content-between" style={{ fontSize: '0.85rem', color: 'var(--color-emerald-text)' }}>
+          <div className="d-flex justify-content-between confirm-checkout-change-row">
             <span className="fw-semibold"><i className="bi bi-cash-coin me-1"></i>Vuelto</span>
             <span className="fw-bold">{formatMoney(cashDetail.changeGiven)}</span>
           </div>
         )}
-        <div className="d-flex align-items-baseline justify-content-between pt-2" style={{ borderTop: '2px solid var(--border-color)' }}>
-          <span style={{ fontWeight: 800 }}>TOTAL</span>
-          <span style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--color-brand)' }}>{formatMoney(totalAmount)}</span>
+        <div className="d-flex align-items-baseline justify-content-between pt-2 confirm-checkout-total-row">
+          <span className="confirm-checkout-total-label">TOTAL</span>
+          <span className="confirm-checkout-total-value">{formatMoney(totalAmount)}</span>
         </div>
       </div>
-      <div className="d-flex justify-content-end gap-2 pt-2" style={{ borderTop: '1px solid var(--border-color)' }}>
-        <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={onClose}>
+      <div className="d-flex justify-content-end gap-2 pt-2 modal-footer-divider">
+        <button type="button" className="btn btn-outline-secondary rounded-3" onClick={onClose}>
           Volver
         </button>
         <button
           type="button"
-          className="btn fw-bold"
-          style={{ borderRadius: 8, background: 'linear-gradient(135deg, #059669, #10b981)', color: '#fff', border: 'none' }}
+          className="btn fw-bold rounded-3 confirm-checkout-confirm-btn"
           onClick={() => { onConfirm(); onClose(); }}
         >
           <i className="bi bi-check-circle-fill me-2"></i>Confirmar y Cobrar

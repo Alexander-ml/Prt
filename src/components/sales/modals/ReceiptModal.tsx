@@ -31,18 +31,15 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ sale, onClose, onPri
 
   return (
     <Modal isOpen={!!sale} onClose={onClose} title={`Comprobante ${sale.serie}-${String(sale.correlativo).padStart(4, '0')}`} size="sm">
-      <div
-        className="p-3 rounded-3"
-        style={{ fontFamily: 'monospace', background: '#fafafa', border: '1px solid var(--border-color)', fontSize: '0.8rem' }}
-      >
+      <div className="p-3 rounded-3 receipt-paper">
         <div className="text-center mb-1">
-          <div className="fw-bold" style={{ fontSize: '1rem' }}>{restaurantName}</div>
-          <div style={{ color: 'var(--text-muted)' }}>RUC {restaurantRuc}</div>
-          <div style={{ color: 'var(--text-muted)' }}>{restaurantAddress}</div>
+          <div className="fw-bold receipt-restaurant-name">{restaurantName}</div>
+          <div className="text-muted">RUC {restaurantRuc}</div>
+          <div className="text-muted">{restaurantAddress}</div>
         </div>
         <hr className="my-2" />
         <div className="text-center mb-1">
-          <div className="fw-bold" style={{ fontSize: '0.95rem' }}>{COMPROBANTE_LABELS[sale.comprobanteTipo].toUpperCase()} ELECTRÓNIC{sale.comprobanteTipo === 'boleta' ? 'A' : 'O'}</div>
+          <div className="fw-bold receipt-comprobante-type">{COMPROBANTE_LABELS[sale.comprobanteTipo].toUpperCase()} ELECTRÓNIC{sale.comprobanteTipo === 'boleta' ? 'A' : 'O'}</div>
           <div>{sale.serie}-{String(sale.correlativo).padStart(4, '0')}</div>
         </div>
         <hr className="my-2" />
@@ -55,7 +52,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ sale, onClose, onPri
             <hr className="my-2" />
             <div className="d-flex justify-content-between"><span>{sale.cliente.tipoDocumento}:</span><span>{sale.cliente.numeroDocumento}</span></div>
             <div className="text-truncate">{sale.cliente.nombreORazonSocial}</div>
-            {sale.cliente.direccion && <div className="text-truncate" style={{ color: 'var(--text-muted)' }}>{sale.cliente.direccion}</div>}
+            {sale.cliente.direccion && <div className="text-truncate text-muted">{sale.cliente.direccion}</div>}
           </>
         )}
         <hr className="my-2" />
@@ -79,7 +76,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ sale, onClose, onPri
         {sale.roundingAdjustment !== 0 && (
           <div className="d-flex justify-content-between"><span>Redondeo:</span><span>{formatMoney(sale.roundingAdjustment)}</span></div>
         )}
-        <div className="d-flex justify-content-between fw-bold" style={{ fontSize: '1rem', marginTop: 4 }}>
+        <div className="d-flex justify-content-between fw-bold receipt-total-row">
           <span>TOTAL:</span><span>{formatMoney(sale.total)}</span>
         </div>
         <hr className="my-2" />
@@ -101,10 +98,10 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ sale, onClose, onPri
           <Badge status={estadoBadge.text} variant={estadoBadge.variant} />
         </div>
         {sale.isCancelled && sale.cancellationReason && (
-          <div className="text-center" style={{ color: 'var(--color-rose-text)', fontSize: '0.72rem' }}>Motivo: {sale.cancellationReason}</div>
+          <div className="text-center receipt-cancel-reason">Motivo: {sale.cancellationReason}</div>
         )}
         {sale.editedAt && (
-          <div className="text-center" style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
+          <div className="text-center receipt-footnote">
             Corregida el {sale.editedAt}{sale.editReason ? ` · ${sale.editReason}` : ''}
           </div>
         )}
@@ -113,16 +110,16 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ sale, onClose, onPri
             a SUNAT/OSE y no recibe una Constancia de Recepción (CDR), así que
             esa frase afirmaba una validez tributaria que hoy nadie puede
             verificar. Este comprobante es un documento interno del sistema. */}
-        <div className="text-center mt-2" style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
+        <div className="text-center mt-2 receipt-footnote">
           <i className="bi bi-info-circle me-1"></i>Comprobante interno — pendiente de integración con SUNAT
         </div>
-        <div className="text-center" style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>¡Gracias por su preferencia!</div>
+        <div className="text-center receipt-thanks">¡Gracias por su preferencia!</div>
       </div>
-      <div className="d-flex justify-content-end gap-2 mt-3 pt-2" style={{ borderTop: '1px solid var(--border-color)' }}>
-        <button type="button" className="btn btn-outline-secondary" style={{ borderRadius: 8 }} onClick={onClose}>
+      <div className="d-flex justify-content-end gap-2 mt-3 pt-2 modal-footer-divider">
+        <button type="button" className="btn btn-outline-secondary rounded-3" onClick={onClose}>
           Cerrar
         </button>
-        <button type="button" className="btn-brand btn fw-semibold" style={{ borderRadius: 8 }} onClick={onPrint}>
+        <button type="button" className="btn-brand btn fw-semibold rounded-3" onClick={onPrint}>
           <i className="bi bi-printer me-1"></i> Imprimir
         </button>
       </div>

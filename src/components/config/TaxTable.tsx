@@ -20,7 +20,7 @@ export const TaxTable: React.FC<TaxTableProps> = ({ taxes, isAdmin, onEdit }) =>
   return (
     <div className="table-responsive-x">
       <div className="custom-table-container">
-        <table className="custom-table" style={{ minWidth: 600 }}>
+        <table className="custom-table tax-table">
           <thead>
             <tr>
               <th>Nombre del Impuesto</th>
@@ -39,8 +39,8 @@ export const TaxTable: React.FC<TaxTableProps> = ({ taxes, isAdmin, onEdit }) =>
             ) : (
               taxes.map(tax => (
                 <tr key={tax.id}>
-                  <td><div className="fw-bold" style={{ color: 'var(--text-primary)' }}>{tax.name}</div></td>
-                  <td><span className="fw-bold fs-6" style={{ color: 'var(--color-brand)' }}>{tax.percentage}%</span></td>
+                  <td><div className="fw-bold tax-table-name">{tax.name}</div></td>
+                  <td><span className="fw-bold fs-6 tax-table-percentage">{tax.percentage}%</span></td>
                   <td>
                     <Badge
                       status={tax.active ? 'Activo en Ventas' : 'Desactivado'}
